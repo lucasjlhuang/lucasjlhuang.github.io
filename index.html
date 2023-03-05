@@ -14,21 +14,7 @@
     <!--Main vs title vs heading vs head?-->
     <body>
         <!--Navigation Bar-->
-        <header>
-            <nav class-="row">
-                <div id="logo-container" class="col-1">
-                    <img id="site-logo" src="images/web-icon.png" alt="Site logo">
-                </div>
-                <div id="navbar-container" class="col-11">
-                    <ul>
-                        <li><a href="index.html">Works</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="pages/LucasHuangResume.pdf" target="blank">Resume</a></li>
-                        <li><a href="https://www.linkedin.com/in/lucasjlhuang" target="blank">Linkedin</a></li>
-                    </ul>
-                </div>
-            </nav>
-        </header>
+        <lucasnav></lucasnav>
 
          <!--Hero Section-->
         <main> 
@@ -44,12 +30,12 @@
         <section>
          <div class="portfolio-projects">
                 <div class="row">
-                     <div id="project" class="col-6"><a href="pages/Projects/vogro.html"> <img class="cover" src="images/vogro-cover.png" alt="VoGro Project Photo"></a> </div>
-                     <div id="project" class="col-6"><a href="#"> <img  class="cover" src="images/hyperloop-cover.png" alt="Hyperloop Project Photo"> </a></div>
+                     <div id="project" class="col-6"><a href="pages/projects/vogro"> <img class="cover" src="images/vogro-cover.png" alt="VoGro project Photo"></a> </div>
+                     <div id="project" class="col-6"><a href="#"> <img  class="cover" src="images/hyperloop-cover.png" alt="Hyperloop project Photo"> </a></div>
                 </div>
                 <div class="row">
-                    <div id="project" class="col-6"><a href="#"><img class="cover" src="images/bettermind-cover.png" alt="Bettermind Project Photo"> </a></div>
-                    <div id="project" class="col-6"><a href =""><img class="cover" src="images/driverseat-cover.png" alt="Driverseat Project Photo"></a></div>
+                    <div id="project" class="col-6"><a href="#"><img class="cover" src="images/bettermind-cover.png" alt="Bettermind project Photo"> </a></div>
+                    <div id="project" class="col-6"><a href ="#"><img class="cover" src="images/driverseat-cover.png" alt="Driverseat project Photo"></a></div>
                 </div>
          </div>
         </section>
@@ -65,4 +51,5 @@
         </div>
     </footer>
 </body>
+<script src="/components/navbar.js"></script>
 </html>

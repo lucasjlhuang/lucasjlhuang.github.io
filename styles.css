@@ -152,7 +152,7 @@ html {
   height: 15rem;
 }
 
-/*  Project drop shadows and hover interactions */
+/*  project drop shadows and hover interactions */
 .cover {
 box-shadow: 0rem 0.5rem 0.6rem rgba(0,0,0, .06   ) !important;
 transition: transform .5s ease;
