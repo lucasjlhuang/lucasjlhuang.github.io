@@ -38,7 +38,7 @@
   padding: 15px;
 
   /* View containers */
-  /* border: 1px solid red; */
+  border: 1px solid red;
 }
 
 /* Double colon? */
@@ -99,9 +99,13 @@ height: 100%;
 
 #logo-container {
   height: 100%;
-  width: auto;
+ 
   display: none;
   align-items: center;
+}
+
+#right-filler{
+  display: none;
 }
 
 #site-logo {
@@ -303,6 +307,7 @@ footer {
     /* Desktop - home page */
     /* Nav */
     #logo-container {display: flex;}
+    #right-filler{display:flex}
 
     /* Hero Section */
     #hero-image-container {display: block;}

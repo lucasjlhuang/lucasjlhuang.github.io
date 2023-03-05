@@ -13,7 +13,7 @@ nav.innerHTML = `
                         <li><a href="https://www.linkedin.com/in/lucasjlhuang" target="blank">Linkedin</a></li>
                     </ul>
                 </div>
-                <div id="logo-container" class="col-1">
+                <div id="right-filler" class="col-1">
                 </div>
             </nav>
         </header>
