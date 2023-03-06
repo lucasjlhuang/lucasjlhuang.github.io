@@ -8,7 +8,7 @@ nav.innerHTML = `
                 <div id="navbar-container" class="col-10">
                     <ul>
                         <li><a href="/">Works</a></li>
-                        <li><a href="/pages/about.html">About</a></li>
+                        <li><a href="/pages/about">About</a></li>
                         <li><a href="/pages/LucasHuangResume.pdf" target="blank">Resume</a></li>
                         <li><a href="https://www.linkedin.com/in/lucasjlhuang" target="blank">Linkedin</a></li>
                     </ul>
