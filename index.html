@@ -16,6 +16,26 @@
         <!--Navigation Bar-->
         <lucasnav></lucasnav>
 
+        <!-- SCROLL TO TOP  -->
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+        <script>
+         $(document).ready(function () {
+             $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('.scrollup').fadeIn();
+                 } else {
+                     $('.scrollup').fadeOut();
+                 }
+             });
+             $('.scrollup').click(function () {
+                 $("html, body").animate({
+                     scrollTop: 0
+                 }, 600);
+                 return false;
+             });
+         });
+        </script>
+
          <!--Hero Section-->
         <main> 
             <div id="hero-section" class="row">
@@ -49,7 +69,14 @@
             <div class="footerlink"><h3><a href="https://www.instagram.com/lucasjlhuang/" target="blank">Instagram. &nbsp&nbsp</a></h3></div>
             <div class="footerlink"><h3><a href="pages/LucasHuangResume.pdf" target="blank">Resume. &nbsp&nbsp</a></h3></div>
         </div>
+
+         <!-- SCROLL TO TOP  -->
+        <a href="#" class="scrollup">Scroll</a>
+        
     </footer>
 </body>
+
+ <!-- SCROLL TO TOP  -->
 <script src="/components/navbar.js"></script>
+
 </html>

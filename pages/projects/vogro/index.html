@@ -14,6 +14,26 @@
 <body>
     <lucasnav></lucasnav>
 
+       <!-- SCROLL TO TOP  -->
+       <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+       <script>
+        $(document).ready(function () {
+            $(window).scroll(function () {
+                if ($(this).scrollTop() > 100) {
+                    $('.scrollup').fadeIn();
+                } else {
+                    $('.scrollup').fadeOut();
+                }
+            });
+            $('.scrollup').click(function () {
+                $("html, body").animate({
+                    scrollTop: 0
+                }, 600);
+                return false;
+            });
+        });
+       </script>
+       
     <!-- Hero section -->
     <main>
 
@@ -370,37 +390,14 @@
             <h3><a href="/pages/LucasHuangResume.pdf" target="blank">Resume. &nbsp&nbsp</a></h3>
         </div>
         </div>
+
+         <!-- SCROLL TO TOP  -->
+        <a href="#" class="scrollup">Scroll</a>
+
     </footer>
 </body>
+
+ <!-- SCROLL TO TOP  -->
 <script src="/components/navbar.js"></script>
 
 </html>
-
-<!-- Section templates -->
-<!--  Big image -->
-<!-- <div id="#" class="row">
-            <div class="col-12"></div>
-        </div> -->
-
-<!-- One column -->
-<!-- <div id="#" class="row">
-            <div class="col-3"></div>
-            <div class="col-6"></div>
-            <div class="col-3"></div>
-        </div> -->
-
-<!-- Two Column SKINNY -->
-<!-- <div id="#" class="row">
-        <div class="col-3"></div>
-            <div class="col-3"></div>
-            <div class="col-3"></div>
-        <div class="col-3"></div>
-    </div> -->
-
-<!-- Two Column WIDE -->
-<!-- <div id="#" class="row">
-        <div class="col-2"></div>
-            <div class="col-4"></div>
-            <div class="col-4"></div>
-        <div class="col-2"></div>
-    </div> -->

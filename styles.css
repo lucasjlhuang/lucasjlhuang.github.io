@@ -1,30 +1,31 @@
-
 /*  Declaring Fonts */
 @font-face {
-  font-family: 'Neue Montreal';
-  src:  url('/fonts/NeueMontreal-Regular.woff') format('woff');
+  font-family: "Neue Montreal";
+  src: url("/fonts/NeueMontreal-Regular.woff") format("woff");
   font-weight: normal;
 }
 
 @font-face {
-  font-family: 'Neue Montreal';
-  src:  url('/fonts/NeueMontreal-Bold.woff') format('woff');
+  font-family: "Neue Montreal";
+  src: url("/fonts/NeueMontreal-Bold.woff") format("woff");
   font-weight: bold;
 }
 
 @font-face {
-  font-family: 'Neue Montreal';
-  src:  url('/fonts/NeueMontreal-Medium.woff') format('woff');
+  font-family: "Neue Montreal";
+  src: url("/fonts/NeueMontreal-Medium.woff") format("woff");
   font-weight: 500;
 }
 
-@font-face{
+@font-face {
   font-family: "General Sans";
-  src:url('fonts/GeneralSans-Regular.woff')format("woff");
+  src: url("fonts/GeneralSans-Regular.woff") format("woff");
   font-weight: normal;
 }
 
-html { font-size: 10px;}
+html {
+  font-size: 10px;
+}
 
 /* Take from W3 to create responsive design, what are the square brackets and "*" around class?*/
 /* Responsive Design */
@@ -51,18 +52,20 @@ html { font-size: 10px;}
   width: 100%;
 }
 
-#hero-image-container {display: none;}
+#hero-image-container {
+  display: none;
+}
 
 /* .nagivationg-bar vs ul.navigation-bar vs .navigation-bar ul */
 /*  Navigation Bar */
 nav {
- height: 3.75rem;
-  }
+  height: 3.75rem;
+}
 
 #navbar-container {
- height: 100%;
- display: inline-flex;
- align-items: center;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
 }
 
 #navbar-container ul {
@@ -72,14 +75,14 @@ nav {
   margin-left: auto;
 }
 
-#navbar-container ul li{
+#navbar-container ul li {
   box-sizing: border-box;
   display: inline-block;
 }
 
 /*  Nav Link Properties */
-#navbar-container a{
-  color:#bbbbbb;
+#navbar-container a {
+  color: #bbbbbb;
   padding: 1rem 1rem;
   text-decoration: none;
   font-family: "Neue Montreal";
@@ -98,12 +101,12 @@ nav {
 
 #logo-container {
   height: 100%;
- 
+
   display: none;
   align-items: center;
 }
 
-#right-filler{
+#right-filler {
   display: none;
 }
 
@@ -157,12 +160,12 @@ html {
 
 /*  project drop shadows and hover interactions */
 .cover {
-box-shadow: 0rem 0.5rem 0.6rem rgba(0,0,0, .06   ) !important;
-transition: transform .5s ease;
+  box-shadow: 0rem 0.5rem 0.6rem rgba(0, 0, 0, 0.06) !important;
+  transition: transform 0.5s ease;
 }
 
 .cover:hover {
-  box-shadow: 0rem 0.5rem 0.6rem  rgba(0,0,0, .1) !important;
+  box-shadow: 0rem 0.5rem 0.6rem rgba(0, 0, 0, 0.1) !important;
   transform: scale(1.01);
 }
 
@@ -179,7 +182,7 @@ transition: transform .5s ease;
 span.error {
   text-decoration: #fb7470 wavy underline;
   text-decoration-skip-ink: none;
-  text-decoration-thickness:  .45rem;
+  text-decoration-thickness: 0.45rem;
 }
 
 span.down-here {
@@ -190,18 +193,18 @@ span.down-here {
 
 .cover {
   max-width: 100%;
-  max-height: auto;  
+  max-height: auto;
   border-radius: 0.5em;
 }
 
 /* Footer Section */
 /* Is this an ok way of spacing the elements? */
 #message-emoji {
-  margin-bottom: -1rem;;
+  margin-bottom: -1rem;
 }
 
 /* Ensure footer is always at bottom */
-body{
+body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -212,11 +215,11 @@ footer {
   padding-left: 0.75rem;
 }
 
-.footerlink{
+.footerlink {
   display: inline-block;
 }
 
-.footerlink a{
+.footerlink a {
   color: #bbbbbb;
   text-decoration: none;
 }
@@ -229,8 +232,8 @@ footer {
 /* About page */
 
 #lucas-illustrated {
-  display:none;
-  height:15rem;
+  display: none;
+  height: 15rem;
   width: auto;
 }
 
@@ -251,32 +254,58 @@ footer {
 }
 
 /* Tablet */
-@media only screen and (min-width:769px) {
-  .col-s-1 {width: 8.33%;}
-  .col-s-2 {width: 16.66%;}
-  .col-s-3 {width: 25%;}
-  .col-s-4 {width: 33.33%;}
-  .col-s-5 {width: 41.66%;}
-  .col-s-6 {width: 50%;}
-  .col-s-7 {width: 58.33%;}
-  .col-s-8 {width: 66.66%;}
-  .col-s-9 {width: 75%;}
-  .col-s-10 {width: 83.33%;}
-  .col-s-11 {width: 91.66%;}
-  .col-s-12 {width: 100%;}
+@media only screen and (min-width: 769px) {
+  .col-s-1 {
+    width: 8.33%;
+  }
+  .col-s-2 {
+    width: 16.66%;
+  }
+  .col-s-3 {
+    width: 25%;
+  }
+  .col-s-4 {
+    width: 33.33%;
+  }
+  .col-s-5 {
+    width: 41.66%;
+  }
+  .col-s-6 {
+    width: 50%;
+  }
+  .col-s-7 {
+    width: 58.33%;
+  }
+  .col-s-8 {
+    width: 66.66%;
+  }
+  .col-s-9 {
+    width: 75%;
+  }
+  .col-s-10 {
+    width: 83.33%;
+  }
+  .col-s-11 {
+    width: 91.66%;
+  }
+  .col-s-12 {
+    width: 100%;
+  }
 
-  html {font-size: 20px}
-/* Tablet - home page */
-    /* Hero Section */
+  html {
+    font-size: 20px;
+  }
+  /* Tablet - home page */
+  /* Hero Section */
 
-    #hero-section {
-      margin-top: 5em;
-      padding-left: 5rem;
-      padding-right: 5rem;
-    }
+  #hero-section {
+    margin-top: 5em;
+    padding-left: 5rem;
+    padding-right: 5rem;
+  }
 
-    #hero-text {
-  font-size: 2.1rem;
+  #hero-text {
+    font-size: 2.1rem;
   }
 
   #about-hero-text {
@@ -284,109 +313,167 @@ footer {
   }
 
   #scroll-prompt {
-  margin-top: 5rem;
-  padding-left: 5rem;
-  margin-bottom: 0.5rem;
-}
-}
+    margin-top: 5rem;
+    padding-left: 5rem;
+    margin-bottom: 0.5rem;
+  }
 
-  /* Desktop: */
-  @media only screen and (min-width: 1024px) {
-    .col-1 {width: 8.33%;}
-    .col-2 {width: 16.66%;}
-    .col-3 {width: 25%;}
-    .col-4 {width: 33.33%;}
-    .col-5 {width: 41.66%;}
-    .col-6 {width: 50%;}
-    .col-7 {width: 58.33%;}
-    .col-8 {width: 66.66%;}
-    .col-9 {width: 75%;}
-    .col-10 {width: 83.33%;}
-    .col-11 {width: 91.66%;}
-    .col-12 {width: 100%;}
-    
-    html {font-size: 20px}
-
-    /* Desktop - home page */
-    /* Nav */
-    #logo-container {display: flex;}
-    #right-filler{display:flex}
-
-    /* Hero Section */
-    #hero-image-container {display: block;}
-
-    #hero-section {
-      margin-top: 5em;
-      padding-left: 5rem;
-      padding-right: 5rem;
-    }
-
-    #hero-text {
-      font-size: 2.1rem;
-      }
-
-
-#scroll-prompt {
-  margin-top: 5rem;
-  padding-left: 5rem;
-  margin-bottom: 0.5rem;
-}
-
-/* Desktop - about page */
-#about-main {
-  margin-top: 5rem;;
-}
-
-#about-hero-text {
-  font-size: 3rem;
-}
+  /* Scroll to top button */
+ .scrollup {
+  width: 40px;
+  height: 40px;
   
-#lucas-illustrated {
-  display: flex;
-  float: right;
-  height:10rem;
-  width: auto;
+  position: fixed;
+  bottom: 50px;
+  right: 160px;
+  display: none;
+  text-indent: -9999px;
+  background: url("/images/to-top.png")  no-repeat;
+  object-fit: fill;
+ }
 }
+
+/* Desktop: */
+@media only screen and (min-width: 1024px) {
+  .col-1 {
+    width: 8.33%;
   }
-
-
-  /* Portfolio case-study */
-  /* Case-study images */
-  .big-image {
-    width: 80%;
-    height: auto;
-    display:block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
+  .col-2 {
+    width: 16.66%;
   }
-
-  .medium-image {
+  .col-3 {
+    width: 25%;
+  }
+  .col-4 {
+    width: 33.33%;
+  }
+  .col-5 {
+    width: 41.66%;
+  }
+  .col-6 {
+    width: 50%;
+  }
+  .col-7 {
+    width: 58.33%;
+  }
+  .col-8 {
+    width: 66.66%;
+  }
+  .col-9 {
+    width: 75%;
+  }
+  .col-10 {
+    width: 83.33%;
+  }
+  .col-11 {
+    width: 91.66%;
+  }
+  .col-12 {
     width: 100%;
-    height: auto;
   }
 
-  .small-image {
-    width: 100%;
-    height: auto;
+  html {
+    font-size: 20px;
   }
 
-  .extra-small-image {
-    width: 100%;
-    height: auto;
+  /* Desktop - home page */
+  /* Nav */
+  #logo-container {
+    display: flex;
+  }
+  #right-filler {
+    display: flex;
   }
 
-  /* Case-study text */
-  .project-title {
-    font-family: "Neue Montreal";
-    font-weight: 500;
+  /* Hero Section */
+  #hero-image-container {
+    display: block;
+  }
+
+  #hero-section {
+    margin-top: 5em;
+    padding-left: 5rem;
+    padding-right: 5rem;
+  }
+
+  #hero-text {
+    font-size: 2.1rem;
+  }
+
+  #scroll-prompt {
+    margin-top: 5rem;
+    padding-left: 5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Desktop - about page */
+  #about-main {
+    margin-top: 5rem;
+  }
+
+  #about-hero-text {
     font-size: 3rem;
-    color: #222222;
-    text-align: center;
-    margin-top: 6rem;
-    margin-bottom: 1rem;
   }
+
+  #lucas-illustrated {
+    display: flex;
+    float: right;
+    height: 10rem;
+    width: auto;
+  }
+
+  /* Scroll to top button */
+ .scrollup {
+  width: 40px;
+  height: 40px;
+  
+  position: fixed;
+  bottom: 50px;
+  right: 160px;
+  display: none;
+  text-indent: -9999px;
+  background: url("/images/to-top.png")  no-repeat;
+  object-fit: fill;
+ }
+}
+
+/* Portfolio case-study */
+/* Case-study images */
+.big-image {
+  width: 80%;
+  height: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.medium-image {
+  width: 100%;
+  height: auto;
+}
+
+.small-image {
+  width: 100%;
+  height: auto;
+}
+
+.extra-small-image {
+  width: 100%;
+  height: auto;
+}
+
+/* Case-study text */
+.project-title {
+  font-family: "Neue Montreal";
+  font-weight: 500;
+  font-size: 3rem;
+  color: #222222;
+  text-align: center;
+  margin-top: 6rem;
+  margin-bottom: 1rem;
+}
 
 .project-sub-title {
   font-family: "General Sans";
@@ -396,7 +483,7 @@ footer {
   text-align: center;
 }
 
-.project-section-title{
+.project-section-title {
   font-family: "General Sans";
   font-size: 0.56rem;
   font-weight: 400;
@@ -404,91 +491,97 @@ footer {
   color: #757575;
 }
 
-  .project-body{
-    font-family: "Neue Montreal";
-    font-weight: normal;
-    font-size: 1rem;
-    line-height: 1.8rem;
-    color: #222222;
-  }
-
-  .project-body-small {
-    font-family: "Neue Montreal";
-    font-weight: normal;
-    font-size: 0.7rem;
-    line-height: 1.2rem;
-    color: #757575;
-  }
-
-  #first-iteration-subtext {
-    width: 80%;
-    text-align: center;
-    display:block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: 2rem;
-  }
-
-.section-title-parent {
-height: 2rem;
+.project-body {
+  font-family: "Neue Montreal";
+  font-weight: normal;
+  font-size: 1rem;
+  line-height: 1.8rem;
+  color: #222222;
 }
 
-#next-project{
+.project-body-small {
+  font-family: "Neue Montreal";
+  font-weight: normal;
+  font-size: 0.7rem;
+  line-height: 1.2rem;
+  color: #757575;
+}
+
+#first-iteration-subtext {
+  width: 80%;
+  text-align: center;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2rem;
+}
+
+.section-title-parent {
+  height: 2rem;
+}
+
+#next-project {
   text-align: center;
   margin-top: 5rem;
 }
 
-  .next-project-button {
-    font-family: "Neue Montreal";
-    font-weight: bold;
-    font-size: 5rem;
-    color: #222222;
+.next-project-button {
+  font-family: "Neue Montreal";
+  font-weight: bold;
+  font-size: 5rem;
+  color: #222222;
 
-    margin-top: 0;
-  }
+  margin-top: 0;
+}
 
-  /* Lists */
-  /* .vogro-numbered {
+/* Lists */
+/* .vogro-numbered {
   
   } */
 
-  .vogro-bullet {
-    font: "Neue Montreal";
-  }
- 
+.vogro-bullet {
+  font: "Neue Montreal";
+}
+
 /* Project prototype */
 
 .prototype {
   width: 80%;
   height: auto;
-  
+
   border-radius: 17.5px;
   margin-top: 2rem;
   margin-bottom: 2rem;
 }
 
 
-/* Scroll to top button */
-  /* .header{
-    padding-top: 20px !important;
- }
- 
- .header-inner {
-    padding-bottom: 0px;
- }
 
- .scrollup {
- width: 40px;
- height: 40px;
- 
- position: fixed;
- bottom: 50px;
- right: 160px;
- display: none;
- text-indent: -9999px;
- background: #000000 no-repeat;
- object-fit: contain;
 
- @media screen and (max-width: 768px) {
-  display: none !important;
- } */
+ /* <!-- Section templates -->
+ <!--  Big image -->
+ <!-- <div id="#" class="row">
+             <div class="col-12"></div>
+         </div> -->
+ 
+ <!-- One column -->
+ <!-- <div id="#" class="row">
+             <div class="col-3"></div>
+             <div class="col-6"></div>
+             <div class="col-3"></div>
+         </div> -->
+ 
+ <!-- Two Column SKINNY -->
+ <!-- <div id="#" class="row">
+         <div class="col-3"></div>
+             <div class="col-3"></div>
+             <div class="col-3"></div>
+         <div class="col-3"></div>
+     </div> -->
+ 
+ <!-- Two Column WIDE -->
+ <!-- <div id="#" class="row">
+         <div class="col-2"></div>
+             <div class="col-4"></div>
+             <div class="col-4"></div>
+         <div class="col-2"></div>
+     </div> --> */
