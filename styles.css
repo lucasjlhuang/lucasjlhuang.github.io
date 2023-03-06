@@ -550,10 +550,26 @@ footer {
   height: auto;
 
   border-radius: 17.5px;
-  margin-top: 2rem;
+  margin-top: 3.5rem;
   margin-bottom: 2rem;
 }
 
+/* Next project buttons  */
+
+.next-project-button a {
+  text-decoration: none;
+  color: #222222;
+}
+
+.next-project-button a:hover {
+  color: #fb7470;
+  transition-duration: 0.5s;
+}
+
+#hyperloop:hover {
+  pointer-events: none;
+}
+  
 
 
 
