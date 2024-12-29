@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="author" content="Lucas Huang">
+
+        <meta name="viewport" content="width=device-width", initial-scale="1.0">
+        <link rel="stylesheet" href="styles.css">
+        <link rel="icon" type="image/png" href="images/web-icon.png">
+        <title>Lucas Lee Huang</title>
+    </head>
+
+    <!--Main vs title vs heading vs head?-->
+    <body>
+        <!--Navigation Bar-->
+        <lucasnav></lucasnav>
+
+        <!-- SCROLL TO TOP  -->
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+        <script>
+         $(document).ready(function () {
+             $(window).scroll(function () {
+                 if ($(this).scrollTop() > 100) {
+                     $('.scrollup').fadeIn();
+                 } else {
+                     $('.scrollup').fadeOut();
+                 }
+             });
+             $('.scrollup').click(function () {
+                 $("html, body").animate({
+                     scrollTop: 0
+                 }, 600);
+                 return false;
+             });
+         });
+        </script>
+
+         <!--Hero Section-->
+        <main> 
+            <div id="hero-section" class="row">
+                <div style="white-space: nowrap;" id="hero-text" class ="col-9"><h1> Lucas Huang, <br> <span class="error">prduct designr,</span> <br>telling stories,<br>and jokes</h1></div>
+                <div id="hero-image-container" class="col-3"> <img id="hero-image" src="images/lucas.jpg" alt="Picture of Lucas Huang"></div>
+            </div>
+            <div id="scroll-prompt" class="col-12"><h2> 👋 There's some <span class="down-here">cool things down here</span></h2></div>
+     </main>
+
+<!--Class vs ID, can I not just use ID and target that ID-->
+<!--Portfolio Gallery Section-->
+        <section>
+         <div class="portfolio-projects">
+                <div class="row">
+                     <div id="project" class="col-6"><a href="pages/projects/vogro"> <img class="cover" src="images/vogro-cover.png" alt="VoGro project Photo"></a> </div>
+                     <div id="project" class="col-6"><a href="pages/projects/bettermind/"><img class="cover" src="images/bettermind-cover.png" alt="Bettermind project Photo"> </a></div>
+                </div>
+                <div class="row">
+                    <div id="project" class="col-6"> <img  id="hyperloop" class="cover" src="images/hyperloop-cover.png" alt="Hyperloop project Photo"></div>
+                    <div id="project" class="col-6"><a href ="pages/projects/driverseat/"><img class="cover" src="images/driverseat-cover.png" alt="Driverseat project Photo"></a></div>
+                </div>
+         </div>
+        </section>
+
+
+    <!--Footer-->
+    <footer class="col-12">
+        <div id="message-emoji"><h3>💬</h3></div> 
+            <div class="footerlink"><h3><a href="mailto: leejlhuang@gmail.com" target="blank">Email. &nbsp&nbsp</a></h3></div>
+            <div class="footerlink"><h3><a href="https://www.linkedin.com/in/lucasjlhuang" target="blank">Linkedin. &nbsp&nbsp</a></h3></div>
+            <div class="footerlink"><h3><a href="https://www.instagram.com/lucasjlhuang/" target="blank">Instagram. &nbsp&nbsp</a></h3></div>
+            <div class="footerlink"><h3><a href="pages/LucasHuangResume.pdf" target="blank">Resume. &nbsp&nbsp</a></h3></div>
+        </div>
+
+         <!-- SCROLL TO TOP  -->
+        <a href="#" class="scrollup">Scroll</a>
+
+    </footer>
+</body>
+
+ <!-- SCROLL TO TOP  -->
+<script src="/components/navbar.js"></script>
+
+</html>

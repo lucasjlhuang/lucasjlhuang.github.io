@@ -1,0 +1,132 @@
+@font-face {
+    /* font-family: 'Berlingske Serif';
+    src: url('BerlingskeSerif-Regular.eot');
+    src: local('Berlingske Serif Regular'), local('BerlingskeSerif-Regular'),
+        url('BerlingskeSerif-Regular.eot?#iefix') format('embedded-opentype'),
+        url('BerlingskeSerif-Regular.woff2') format('woff2'),
+        url('BerlingskeSerif-Regular.woff') format('woff'),
+        url('BerlingskeSerif-Regular.ttf') format('truetype'); */
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* MOBILE LAYOUT */
+
+body {
+    margin-left: 1rem;
+    margin-right: 1rem
+}
+
+.grid{
+    margin-top: 4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    
+    column-gap: 0.5rem;
+    row-gap: 0.5rem;
+}
+
+[class*="project-"] {
+    width: 100%;
+    height: 200px;
+    position: relative;
+  }
+
+.project-image {
+    object-fit: cover;
+    height: inherit;
+}
+
+.tags {
+    position: absolute;
+    bottom: -0.5rem;
+    left: 0.5rem;
+    
+    font-family: 'Berlingske Serif';
+    font-size: 0.7rem;
+    font-weight: normal;
+    
+    color: #ffffff;
+    opacity: 0;
+}
+
+@media only screen and (min-width: 769px) {
+    body {
+        margin-left: 3rem;
+        margin-right: 3rem
+    }
+    
+}
+
+/* DESKTOP LAYOUT */
+@media only screen and (min-width: 1024px) {
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: repeat (6, 1fr);
+        column-gap: 0.5rem;
+        row-gap: 0.5rem;
+    }
+
+    .project-1 {
+        grid-column: 1 / 3;
+        grid-row: 1 / 3;
+        
+        height: 100%;
+    }
+
+    .project-2 {
+        grid-column: 3 / 5;
+        height: 100%;
+    }
+
+    .project-3 {
+        grid-column: 5 / 7;
+        height: 100%;
+    }
+
+    .project-4 {
+        grid-row: 2 / 4;
+        height: 100%;
+    }
+    .project-5 {
+        grid-row: 2 / 4;
+        height: 100%;
+    }
+
+    .project-6 {
+        height: 100%;
+    }
+
+    .project-7 {
+     height: 100%;
+    }
+
+    .project-8 {
+        grid-column: 1 / 3;
+        
+    }
+
+    .project-9 {
+        grid-column: 5 / 7;
+    }
+    
+    
+    /* HOVER FOR DESKTOP */
+    [class*="project-"]:hover + .tags{
+        opacity: 1;
+    }
+    
+    .tags {       
+    opacity: 0;
+    transition: 0.3s;
+    }
+    
+    .project-image:hover {
+        filter: brightness(85%);
+        box-shadow: 0px 0px 11px 3px rgba(0, 0, 0, 0.03);
+        
+        transition: 0.3s;
+    }
+}
