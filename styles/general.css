@@ -1,4 +1,40 @@
 
+/* Fonts */
+@font-face {
+    font-family: 'SFRegular';
+    src: url('/fonts/SFPRODISPLAYREGULAR.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SFItalic';
+    src: url('/fonts/SFPRODISPLAYTHINITALIC.woff2') format('woff2');
+    font-weight: 100;
+    font-style: thin;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SFMedium';
+    src: url('/fonts/SFPRODISPLAYMEDIUM.woff2') format('woff2');
+    font-weight: 100;
+    font-style: italic; 
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'SFBold';
+    src: url('/fonts/SFPRODISPLAYBOLD.woff2') format('woff2');
+    font-weight: bold;
+    font-style: bold;
+    font-display: swap;
+}
+
+p {
+  font-family: 'SFRegular', sans-serif;
+}
 
 /* landing page screen size and wallpaper */
 body.desktop {
@@ -17,7 +53,7 @@ div.wallpaper {
   height: 100%;
   margin: 0;
   padding: 0;
-  
+}
   
 /* Project folders on the desktop */
 div.projectfolder {
