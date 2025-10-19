@@ -32,10 +32,6 @@
     font-display: swap;
 }
 
-p {
-  font-family: 'SFRegular', sans-serif;
-}
-
 /* landing page screen size and wallpaper */
 body.desktop {
     height: 100vh;
@@ -63,6 +59,10 @@ div.projectfolder {
   padding: 0px;
   margin: 0px;
   text-align: center;
+  font-family: 'SFMedium', sans-serif;
+  font-size:  13px;
+  color: #ffffff;
+  text-shadow: 0px 1px 6px rgba(0, 0, 0, 0.6);
 }
 
 div.projectfolderheader {   
