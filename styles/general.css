@@ -41,7 +41,7 @@ body.desktop {
 }
 
 div.wallpaper {
-  background-image: url(/images/backgrounds/wallpaper-light.jpg);
+  background-image: url(/images/lightmode.jpg);
   background-position: center;
   background-repeat: no-repeat;
   background-size: fill;
@@ -52,11 +52,9 @@ div.wallpaper {
   
 
 .projectfolder:hover .projectfolderheader {
-    /* Remove the old scaling rule to prevent double-scaling */
-    /* Ensure only the background and padding changes remain */
-    transition: none; /* No transform transition here */
-    cursor: pointer;
+    transition: none; 
 }
+
 /* Project folders on the desktop */
 div.projectfolder {
   position: absolute;
@@ -69,7 +67,6 @@ div.projectfolder {
   color: #ffffff;
   text-shadow: 0px 1px 6px rgba(0, 0, 0, 0.6);
   
-   /* Set up transition for smooth hover effects (Lift and Shadow) */
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, z-index 0s, background-color 0.6s ease-in-out;
 }
 
@@ -86,14 +83,12 @@ div.projectfolderheader {
 img.projectimage {
     height: 6vh;
     width: 6vh;
-    object-fit: cover; /* Ensures image covers container without distortion */
+    object-fit: cover; 
     display: block;
     border: 0px solid #ffffff;
     background-color: #ffffff00;
     border-radius: 5px;
 }
-
-/* Folder Hover */
 
 .dock-container {
   font-family: 'SFRegular', sans-serif;
@@ -101,30 +96,33 @@ img.projectimage {
     bottom: 0;
     width: 100%;
     text-align: center;
-    padding-bottom: 5vh; /* Space below the dock */
+    padding-bottom: 5vh; 
     z-index: 1000;
 }
-/* Text label beneath the icon */
+
 .ProjectText {
     color: #fff;
     font-size: 1.3vh;
     margin: 0;
     padding: 7px 0;
-    /* Background for readability (similar to macOS icon labels) */
+   
     background: rgba(0, 0, 0, 0, 0);
     border-radius: 5px;
     transition: background-color 0.7s ease-in, 0.2s ease-out;
 }
 .projectfolder:hover {
-    /* Bring the hovered icon above others immediately on hover */
     z-index: 100; 
+    cursor: pointer;
 }
 
-/* NEW: Change the background of the text label to blue when the folder is hovered */
+.projectimage:hover {
+  cursor: pointer;
+}
+
 .projectfolder:hover p {
   padding: 3px 5px;
    transform: translateY(8px) scale(0.909);
-    background-color: #007afd; /* A bright, standard system blue */
+    background-color: #007afd; 
       
 }
 
@@ -134,68 +132,60 @@ img.projectimage {
   border: 1px solid #e4e4e450;
 }
 
-/* Ensure the scale is applied to the main container for centered effect */
 .projectfolder:hover {
-    /* Bring the hovered icon above others immediately on hover */
+ 
     z-index: 100; 
 
-    /* Apply the scale and the centering adjustment simultaneously */
-    /* scale(1.1) increases size by 10%. translate(-5%, -5%) shifts it back 
-       by half of that 10% on both the X and Y axis (i.e., 5%) to counteract 
-       the natural shift and keep the center point fixed in the viewport. */
     transform: scale(1.1) translate(-5%, -5%);
 }
 
+.projectfolder.is-dragging {
 
+    transform: none !important;
+    
+    z-index: 9999 !important; 
+    
+    transition: none !important; 
+}
 
-
-
-
-/* The dock list itself */
 .dock {
     list-style: none;
-    display: inline-flex; /* Use flex for horizontal layout and spacing */
+    display: inline-flex;
     padding: 1.2vh 1vh;
     margin: 0;
-    /* Rounded translucent background */
+
     background: #ffffff20;
     border-radius: 15px;
-    backdrop-filter: blur(8px); /* Blur effect (for modern browsers) */
-    box-shadow: 0 2px 3px #00000040;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 3px #00000010;
 }
 
-/* --- ICON WRAPPER (The Anchor) --- */
+/* ICON WRAPPER */
 .dock li {
-    margin: 0 0.75vh; /* Space between icons */
-    /* *** CRITICAL FIX PROPERTIES *** */
-    position: relative; /* 1. Anchors the absolute positioned bubble */
-    width: 4.5vh; /* 2. Gives the anchor a defined width for centering */
-    /* ***************************** */
+    margin: 0 0.75vh; 
+  
+    position: relative; 
+    width: 4.5vh; 
 }
 
-/* Base icon styling - NO hover effects */
 .dock li img {
-    width: 4.5vh; /* Default icon size */
+    width: 4.5vh; 
     height: 4.5vh;
     display: block;
 }
 
-/* --- SPEECH BUBBLE BODY (::before) --- */
+/* SPEECH BUBBLE BODY B */
 
 .dock li::before {
-    content: attr(data-label); /* Pulls text from the li's data-label attribute */
+    content: attr(data-label);
     
-    /* Hidden State */
     visibility: hidden;
     opacity: 0;
     
-    /* Positioning (Relative to the li) */
     position: absolute;
-    bottom: 7vh; /* Positioned above the icon */
+    bottom: 7vh; 
     left: 50%;
-    transform: translateX(-50%) translateY(5px); /* Start slightly low */
-    
-    /* Appearance */
+    transform: translateX(-50%) translateY(5px);
     padding: 6px 10px;
     background-color: #33333380;
     color: #ffffff;
@@ -207,67 +197,130 @@ img.projectimage {
     z-index: 10;
     pointer-events: none; 
 
-    /* Animation */
     transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
 
-/* --- SPEECH BUBBLE ARROW (::after) --- */
+/* SPEECH BUBBLE ARROW A */
 
 .dock li::after {
     content: '';
     
-    /* Hidden State */
-    visibility: hidden;
     opacity: 0;
 
-    /* Positioning and Shape (Relative to the li) */
     position: absolute;
-    bottom: 7vh; /* Anchors the arrow to the same height as the bubble body */
+    bottom: 7vh;
     left: 50%;
-    margin-left: 0px; /* Half the arrow base width */
-    margin-bottom: -12px; /* Pulls the arrow down to sit below the bubble body */
+    margin-left: 0px;
+    margin-bottom: -12px; 
     
     border-width: 6px;
     border-style: solid;
-    border-color: #33333380 transparent transparent transparent; /* Creates a downward-pointing triangle */
+    border-color: #33333380 transparent transparent transparent;
 
-    /* ADDED: Initial transform to match the bubble body for smooth transition */
     transform: translateX(-50%) translateY(5px);
     
     z-index: 10;
     pointer-events: none;
     
-    /* Animation */
-    transition: opacity 0.2s ease-out, transform 0.2s ease-out; /* Updated transition to include transform */
+  
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out; 
 }
 
-/* --- Hover Effect --- */
+/* Hover Effect */
 
 .dock li:hover::before,
 .dock li:hover::after {
     visibility: visible;
     opacity: 1;
-    /* This ensures both the bubble body (::before) and the arrow (::after) move up together */
+  
     transform: translateX(-50%) translateY(0); 
 }
 
-/* --- Divider Element Styling --- */
 .dock .divider {
     width: 1.3px;
-    height: 4.5vh; /* Slightly smaller than the icon height */
-    background-color: rgba(255, 255, 255, 0.1); /* Subtle white line */
+    height: 4.5vh; 
+    background-color: rgba(255, 255, 255, 0.1); 
     margin: 0 1vh;
     
-    /* Reset for divider element */
     position: static; 
     cursor: default;
     
-    /* Ensure the divider stays fixed and doesn't zoom */
     transform: none !important;
     transition: none !important;
 }
-/* Ensure the divider doesn't show a speech bubble */
+
 .dock .divider::before,
 .dock .divider::after {
     content: none;
+}
+
+/* LIGHT AND DARK MODE */
+:root {
+    --wallpaper-image: url('/images/lightmode.jpg');
+    --dock-bg-color: #ffffff20;
+    --dock-blur: blur(8px);
+    
+    --toggle-icon-image: url('/images/nightmode.png'); 
+}
+
+.dark-mode {
+    --wallpaper-image: url('/images/darkmode.jpg'); 
+    --text-color: #e0e0e0;
+    --dock-bg-color: #00000020;
+    --dock-blur: blur(12px);
+    
+    --toggle-icon-image: url('/images/daymode.png');
+}
+
+
+div.wallpaper {
+  background-image: var(--wallpaper-image); 
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover; 
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  transition: background-image 0.8s ease-in-out; 
+}
+
+.dock {
+    list-style: none;
+    display: inline-flex;
+    padding: 1.2vh 1vh;
+    margin: 0;
+    background: var(--dock-bg-color); 
+    border-radius: 15px;
+    backdrop-filter: var(--dock-blur); 
+    box-shadow: 0 2px 3px #00000010;
+    transition: background 0.6s ease-in-out, backdrop-filter 0.6s ease-in-out;
+}
+
+.theme-toggle-btn .icon {
+    display: block; 
+    width: 100%; 
+    height: 100%; 
+    
+    background-image: var(--toggle-icon-image);
+    
+    background-size: 56%; 
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.theme-toggle-btn {
+    position: fixed; 
+    
+    top: 2vh; 
+    right: 2vh; 
+    z-index: 9999; 
+
+    background: rgba(255, 255, 255, 0.0); 
+    border-color: rgba(0,0,0,0);
+  
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    cursor: pointer;
+    transition: background 0.3s, border-color 0.3s;
 }
