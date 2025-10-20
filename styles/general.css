@@ -50,6 +50,13 @@ div.wallpaper {
   padding: 0;
 }
   
+
+.projectfolder:hover .projectfolderheader {
+    /* Remove the old scaling rule to prevent double-scaling */
+    /* Ensure only the background and padding changes remain */
+    transition: none; /* No transform transition here */
+    cursor: pointer;
+}
 /* Project folders on the desktop */
 div.projectfolder {
   position: absolute;
@@ -137,12 +144,6 @@ img.projectimage {
        by half of that 10% on both the X and Y axis (i.e., 5%) to counteract 
        the natural shift and keep the center point fixed in the viewport. */
     transform: scale(1.1) translate(-5%, -5%);
-}
-
-.projectfolder:hover .projectfolderheader {
-    /* Remove the old scaling rule to prevent double-scaling */
-    /* Ensure only the background and padding changes remain */
-    transition: none; /* No transform transition here */
 }
 
 
