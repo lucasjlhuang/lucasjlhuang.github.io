@@ -324,3 +324,7 @@ div.wallpaper {
     cursor: pointer;
     transition: background 0.3s, border-color 0.3s;
 }
+
+button:hover .theme-toggle-btn {
+    cursor: pointer;
+}
