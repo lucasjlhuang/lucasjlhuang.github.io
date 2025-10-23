@@ -2,10 +2,15 @@ function makeMovable(folder, header) {
     let isDragging = false;
     let offset = { x: 0, y: 0 };
     
-    // Set initial grab cursor for the header
     header.style.cursor = 'move';
 
     function startDrag(e) {
+        // ⭐ CRITICAL CHECK: Ignore mousedown events that originate inside a window.
+        // This prevents the folder drag logic from interfering with the movable/resizable windows.
+        if (e.target.closest('.window')) {
+            return;
+        }
+
         // Prevent text selection and default touch actions (like scrolling)
         e.preventDefault(); 
         isDragging = true;

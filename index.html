@@ -12,6 +12,7 @@
 
 <script src="/folders.js" defer></script>
 <script src="/daynightoggle.js" defer></script>
+<script src="/windows.js" defer></script>
 
 <body class="desktop">
     
@@ -49,6 +50,45 @@
             
         <!-- Nav Bar -->
          
+        <!-- Windows -->
+         <!-- PROJECTS AND OTHERS -->
+         <div id="window-template" class="window" style="display: none;">
+    <div class="window-header">
+        <span class="window-title"></span>
+        <button class="window-close-btn"></button> 
+    </div>
+    <div class="window-content">
+        </div>
+    
+    <div class="window-resize-handle top-left"></div>
+    <div class="window-resize-handle top-right"></div>
+    <div class="window-resize-handle bottom-left"></div>
+    <div class="window-resize-handle bottom-right"></div>
+    
+</div>
+
+<!-- PHOTSHOP, ILLUSTRATOR, FIGMA, VS CODE -->
+      <div id="styled-window-template" class="window application-window other-tabs" style="display: none;">
+    <div class="window-header other-tabs">
+        <span class="window-title other-tabs"></span>
+    </div>
+    <div class="window-content application-content other-tabs">
+        <p class="other-tabs-text"> Hey!<br> This isn't one of my projects, just the tool I use.</p>
+        <button class="window-close-btn app-close-btn">Go look at my projects!</button> 
+    </div>
+    
+    <div class="window-resize-handle top-left"></div>
+    <div class="window-resize-handle top-right"></div>
+    <div class="window-resize-handle bottom-left"></div>
+    <div class="window-resize-handle bottom-right"></div>
+    <div class="window-resize-handle left"></div>
+    <div class="window-resize-handle right"></div>
+    <div class="window-resize-handle top"></div>
+    <div class="window-resize-handle bottom"></div>
+</div>
+    
+</div>
+        
     <div class="dock-container">
         <ul class="dock">
             <li data-label="Photoshop"><a href="#"><img src="/images/Dock Icons/photoshop.png" alt="Photoshop"></a></li>

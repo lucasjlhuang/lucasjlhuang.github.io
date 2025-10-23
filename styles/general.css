@@ -328,3 +328,250 @@ div.wallpaper {
 button:hover .theme-toggle-btn {
     cursor: pointer;
 }
+
+/* --- Resizable and Movable Window Styles --- */
+
+.window {
+    position: absolute;
+    top: 15vh;
+    left: 20vw;
+    width: 400px; /* Initial width */
+    height: 300px; /* Initial height */
+    min-width: 250px;
+    min-height: 200px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    box-shadow: 0 2px 3px #00000010;
+    overflow: hidden;
+    z-index: 1001; /* Above the dock */
+    /* Add a sleek, translucent mac-like look */
+    background: rgba(230, 230, 230, 0.85); 
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    display: flex; /* To manage header and content layout */
+    flex-direction: column;
+}
+
+.window-header {
+    height: 30px;
+    background: rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: move;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    font-family: 'SFMedium', sans-serif;
+    user-select: none;
+    flex-shrink: 0; /* Prevents header from shrinking */
+}
+
+.window-title {
+    font-size: 14px;
+    color: #333;
+}
+
+.window-close-btn {
+    background: #ff605c; /* Red close button */
+    color: white;
+    border: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    font-size: 8px; /* Keep small for the circle */
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0; 
+    transition: opacity 0.1s;
+
+    /* ⭐ KEY CHANGES START HERE ⭐ */
+    position: relative; /* Needed for absolute positioning of pseudo-element */
+    overflow: hidden; /* Hide the default 'X' character if it's there */
+    background: #ff605c; /* Keep the red background for the circle */
+}
+
+/* ⭐ NEW: Use a pseudo-element to insert the emoji and style it ⭐ */
+/* Original Button Styling (Modified) */
+.window-close-btn {
+    /* Setup for the emoji */
+    position: relative; 
+    display: flex; /* Helps center the emoji */
+    justify-content: center;
+    align-items: center;
+}
+
+/* Emoji Styling using the pseudo-element */
+/* Styling for the transparent close button container */
+.window-close-btn {
+    /* REMOVED: background, width, height, border-radius */
+    background: transparent; /* Make the button background invisible */
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    
+    /* Set dimensions slightly larger than the emoji to make it easily clickable */
+    width: 25px; 
+    height: 25px;
+    
+    /* Ensure it's always visible */
+    opacity: 1; 
+    transition: none; /* Remove transitions */
+    
+    /* Centering the emoji */
+    position: relative; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Styling for the '👋' emoji */
+.window-close-btn::before {
+    content: '👋'; /* The emoji! */
+    font-size: 1.5vh;/* Adjust size of emoji as needed */
+    line-height: 1;
+    color: #444; /* Dark gray for visibility against the light header */
+    opacity: 1; /* Always visible */
+    transition: color 0.1s, font-size 0.1s;
+}
+
+/* ⭐ Hover Effects ⭐ */
+
+/* Hovering over the header does nothing to the opacity (it's always 1) */
+.window-header:hover .window-close-btn {
+    opacity: 1;
+}
+
+/* Hovering directly over the transparent button */
+.window-close-btn:hover::before {
+    color: #000; /* Darken the emoji color on hover */
+    font-size: 1.6vh; /* Slightly enlarge the emoji on hover for feedback */
+    rotate: 75deg;
+}
+
+/* Ensure the button circle effect is gone */
+.window-close-btn:hover {
+    background: transparent;
+}
+.window-content {
+    padding: 10px;
+    overflow: auto;
+    flex-grow: 1; /* Content takes remaining space */
+    color: #333;
+    /* You'll load your window content here. For example: */
+    /*
+    font-family: 'SFRegular', sans-serif;
+    */
+}
+
+/* Resize Handles (Invisible click targets) */
+.window-resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    z-index: 10000; /* ⭐ INCREASED Z-INDEX TO BE SAFE ⭐ */
+}
+
+.top-left { top: -5px; left: -5px; cursor: nwse-resize; }
+.top-right { top: -5px; right: -5px; cursor: nesw-resize; }
+.bottom-left { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.bottom-right { bottom: -5px; right: -5px; cursor: nwse-resize; }
+/* Add side handles if you want more specific resizing */
+
+/* ========================================================= */
+/* ⭐ NEW: Application Window Styles (Photoshop, VS Code, etc.) */
+/* ========================================================= */
+
+.application-window {
+    /* Example color to differentiate from the standard window */
+    background-color: #f1f1f1; 
+    border: 1px solid #777;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.application-window .window-header .window-title {
+    /* Center the title and use a darker bar */
+    justify-content: center;
+    background-color: #333; /* Darker header */
+    font-size: 1.2vh;
+    font-family: "SFMedium";
+}
+
+.application-window .window-title {
+    /* Ensure the title is absolutely centered */
+    text-align: center;
+    flex-grow: 1; /* Allows it to occupy full width for centering */
+}
+
+/* Application Window Content (For repeating image background) */
+.application-content {
+    /* Ensures the content area is ready for the background image */
+    background-repeat: repeat;
+    background-size: initial; /* Use the natural size of the image */
+    background-position: center;
+    background-color: #fff; /* Fallback */
+    
+    /* Ensure content is positioned correctly relative to the new close button */
+    padding-bottom: 50px; /* Make space for the button at the bottom */
+    position: relative;
+}
+
+/* ⭐ New Close Button in the Content Body (Bottom Right) ⭐ */
+.application-window .window-close-btn.app-close-btn {
+    content: none; /* Remove the emoji from the button's ::before pseudo-element */
+    position: absolute;
+    bottom: 1.2vh; /* Position from the bottom */
+    right: 1.3vh; /* Position from the right */
+    width: auto;
+    height: auto;
+    padding: 7px 10px;
+    border-radius: 5px;
+    background-color: #6e90ff;
+    color: #ffffff;
+    font-size: 1.2vh;
+    opacity: 1; /* Always visible */
+    transition: background-color 0.1s;
+}
+
+.application-window .window-close-btn.app-close-btn:hover {
+    background-color: #3363ff;
+    cursor: pointer;
+}
+
+/* Remove the empty close button container from the header for this template */
+.application-window .window-header .window-close-btn {
+    display: none; 
+}
+
+/* Reset the pseudo-element style from the general CSS */
+.application-window .window-header .window-close-btn::before {
+    content: none;
+}
+
+/* ========================================================= */
+/* ⭐ Application Window Close Button Fix ⭐ */
+/* ========================================================= */
+
+/* Target the standard close button when it is inside the application-window header */
+.application-window .window-header .window-close-btn {
+    /* Hide the button container entirely in the header, as the text button is in the content body */
+    display: none; 
+}
+
+/* This is a safeguard, but ensure the pseudo-element content is explicitly cleared 
+   for the new text button as well, in case it inherits the global style. */
+.application-window .window-close-btn.app-close-btn::before {
+    content: none !important; /* Force removal of the waving hand emoji */
+}
+
+.other-tabs{
+    background: #303030;
+    color: #ffffff70;
+}
+
+.other-tabs-text {
+    padding: 0.4vh 3vw ;
+    color: #ffffff70;
+    font-family: 'SFMedium';
+    font-size: 1.2vh;
+}
