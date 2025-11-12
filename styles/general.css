@@ -337,8 +337,6 @@ button:hover .theme-toggle-btn {
     left: 20vw;
     width: 400px; /* Initial width */
     height: 300px; /* Initial height */
-    min-width: 250px;
-    min-height: 200px;
     background: #f0f0f0;
     border-radius: 10px;
     box-shadow: 0 2px 3px #00000010;
@@ -492,7 +490,6 @@ button:hover .theme-toggle-btn {
 .application-window .window-header .window-title {
     /* Center the title and use a darker bar */
     justify-content: center;
-    background-color: #333; /* Darker header */
     font-size: 1.2vh;
     font-family: "SFMedium";
 }
