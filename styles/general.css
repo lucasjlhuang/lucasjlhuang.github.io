@@ -1,3 +1,4 @@
+/* general.css */
 
 /* Fonts */
 @font-face {
@@ -43,6 +44,7 @@ body.desktop {
 
 .spotifywarning {
     font-family: 'SFMedium';
+    color: var(--text-color); /* Applied dynamic color */
 }
 
 /* Add these styles to your general.css file */
@@ -54,7 +56,7 @@ body.desktop {
     left: 50%;
     transform: translate(-50%, -50%); /* Center perfectly */
     padding: 15px 30px;
-    color: black;
+    color: var(--text-color); /* Applied dynamic color */
     font-size: 24px;
     z-index: 30000; /* High z-index to be on top */
     opacity: 0; /* Initially hidden */
@@ -281,13 +283,13 @@ img.projectimage {
     --wallpaper-image: url('/images/lightmode.jpg');
     --dock-bg-color: #ffffff20;
     --dock-blur: blur(8px);
-    
+    --text-color: #000000; /* Default (Light Mode) Text Color is Black */
     --toggle-icon-image: url('/images/nightmode.png'); 
 }
 
 .dark-mode {
     --wallpaper-image: url('/images/darkmode.jpg'); 
-    --text-color: #e0e0e0;
+    --text-color: #e0e0e0; /* Dark Mode Text Color is Light Gray/White */
     --dock-bg-color: #00000020;
     --dock-blur: blur(12px);
     
