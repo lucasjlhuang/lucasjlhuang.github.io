@@ -38,6 +38,28 @@ body.desktop {
     width: 100%;
     margin: 0;
     padding: 0;
+    font-family: 'SFRegular', sans-serif; /* <-- New Default Font */
+}
+
+.spotifywarning {
+    font-family: 'SFMedium';
+}
+
+/* Add these styles to your general.css file */
+
+#rotation-message {
+    position: fixed; /* Keep it over everything */
+    font-family: 'SFBold';
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center perfectly */
+    padding: 15px 30px;
+    color: black;
+    font-size: 24px;
+    z-index: 30000; /* High z-index to be on top */
+    opacity: 0; /* Initially hidden */
+    pointer-events: none; /* Allows clicks through when hidden */
+    transition: opacity 0.4s ease-in-out; /* Smooth fade in/out */
 }
 
 div.wallpaper {

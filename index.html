@@ -92,18 +92,31 @@
             <li data-label="E-mail"><a href="mailto:lucashuang2000@gmail.com" target="_blank"><img src="/images/Dock Icons/Mail.png" alt="E-Mail"></a></li>
             <li data-label="Resume"><a href="LucasHuang_Resume.pdf" target="_blank"><img src="/images/Dock Icons/web-icon.png" alt="Resume"></a></li>
             <li class="divider"></li>
-            <li data-label="Why me?"><a href="#"><img src="/images/Dock Icons/notes.png" alt="Why me?"></a></li>
-            <li data-label="Hobbies"><a href="#"><img src="/images/Dock Icons/photos.png" alt="Hobbies"></a></li>
+            <li data-label="Spotify"><a href="#"><img src="/images/Dock Icons/Spotify.png" alt="Spotify"></a></li>            <li data-label="Hobbies"><a href="#"><img src="/images/Dock Icons/photos.png" alt="Hobbies"></a></li>
             <li class="divider"></li>
             <li data-label="Trash"><a href="#"><img src="/images/Dock Icons/garbage.png" alt="Trash"></a></li>
         </ul>
 
     </div>
+    
+    <div id="spotify-player-widget" class="desktop-widget" style="position: fixed; left: 5vw; bottom: 10vh; width: 400px; height: 177px; background: transparent; border-radius: 12px;  z-index: 9999; overflow: hidden; opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none;">
+        
+    <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/playlist/2vT1S1uzNAdwaLV8xce5Lu?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    <div class="spotifywarning" style="text-align: center; padding: 0px; font-size: 0.75rem; height: 25px;">
+        Please adjust your volume!!
+        </div>
+    </div>  
+    
     <button id="mode-toggle" class="theme-toggle-btn">
     <span class="icon"></span> </button>
     </button>
         
     </div>
+    
+    <div id="rotation-message">
+        CONGRATULATIONS!!!
+    </div>
+    
 </body>
 
 </html>

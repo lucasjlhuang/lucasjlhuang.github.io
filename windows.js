@@ -62,17 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3 style="margin-top: 0;">Interactive Web Gallery Portfolio 🎨</h3>
             <p>This is a custom-built, interactive online portfolio to showcase my fine art and digital illustration work. It features dynamic sorting and high-resolution viewing of pieces.</p>
             <p>It's a testament to front-end development skills combined with artistic presentation.</p>
-        `,
-        
-        // CONTENT FOR DOCK ITEMS (Using the data-label)
-        "Why me?": `
-            <h3 style="margin-top: 0;">The 'Why Me?' Manifesto 💡</h3>
-            <p>My strength lies in bridging the gap between elegant design and robust development. I don't just create pretty interfaces; I build functional, performant, and maintainable products.</p>
-            <p>I bring a **designer's eye** and a **developer's logic** to every problem.</p>
-        `,
-        "Trash": `
-            <h3 style="margin-top: 0;">The Digital Dumpster 🗑️</h3>
-            <p>This is where old ideas and unfinished experiments go. Everything in here is digital trash! Feel yourself to empty it.</p>
         `
     };
 
@@ -91,8 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "Illustrator",
         "VS Code",
         "Figma",
-        "Trash",
-        "Why me?"
     ];
 
     // ⭐ List of apps that should be centered AND offset (UNCHANGED) ⭐
@@ -108,8 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "Photoshop": "Adobe Photoshop", 
         "Illustrator": "Adobe Illustrator",
         "VS Code": "Visual Studio Code",
-        "Why me?": "Why me?",
-        "Trash": "Trash",
         "Figma": "Figma",
         "Hobbies": "Hobbies", 
         "BANK OF TAIWAN": "Bank of Taiwan",
@@ -125,9 +110,10 @@ document.addEventListener('DOMContentLoaded', () => {
         "Illustrator": { width: '375px', height: '150px' },
         "VS Code": { width: '375px', height: '150px' },
         "Figma": { width: '375px', height: '150px' },
-        "Trash": { width: '20vw', height: '30vh' },
-        "Why me?": { width: '35vw', height: '45vh' }
     };
+    
+    // ⭐ NEW: Variable to track the rotation angle for the Trash icon ⭐
+    let trashRotationAngle = 0; 
     
     
     // Helper Functions
@@ -158,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getNextZIndex() {
         // Include hobby images in z-index calculation
         let maxZ = 1001; 
-        document.querySelectorAll('.window:not([style*="display: none"]), .sprawled-hobby-image').forEach(el => {
+        document.querySelectorAll('.window:not([style*="display: none"]), .sprawled-hobby-image, #spotify-player-widget').forEach(el => {
             const z = parseInt(el.style.zIndex);
             if (!isNaN(z) && z > maxZ) {
                 maxZ = z;
@@ -166,6 +152,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return maxZ + 1;
     }
+
+    function showRotationMessage() {
+        const messageElement = document.getElementById('rotation-message');
+        if (!messageElement) return;
+
+        // 1. Show the message (Fade in)
+        messageElement.style.opacity = '1';
+
+        // 2. Set a timeout to hide the message (Fade out) after 2 seconds (2000ms)
+        setTimeout(() => {
+            messageElement.style.opacity = '0';
+        }, 1500); 
+    }
+
+
     
     function preloadHobbyImages() {
     console.log("Preloading hobby images...");
@@ -267,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set styles for base setup
             img.style.position = 'absolute';
             img.style.zIndex = getNextZIndex(); 
-            img.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.3)';
+            img.style.boxShadow = '0 5px 10px rgba(154,160,185,.05), 0 15px 40px rgba(166,173,201,.2)';
             img.style.cursor = 'grab';
             
             // Set initial state (from icon) - NO TRANSITION applied yet
@@ -326,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isDragging = true;
             element.style.zIndex = getNextZIndex();
             element.style.cursor = 'grabbing';
-            element.style.boxShadow = '0 15px 30px rgba(0, 0, 0, 0.5)';
+            element.style.boxShadow = '0 5px 10px rgba(0, 0, 0, 0.1), 0 15px 40px rgba(0, 0, 0, 0.3)';
             // Disable the animation transition while dragging
             element.style.transition = 'none';
 
@@ -352,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const onStopDrag = () => {
             isDragging = false;
             element.style.cursor = 'grab'; 
-            element.style.boxShadow = '0 10px 20px rgba(0, 0, 0, 0.3)';
+            element.style.boxShadow = '0 5px 10px rgba(154,160,185,.05), 0 15px 40px rgba(166,173,201,.2)';
             
             // ⭐ CRITICAL: Save the new position back to the map ⭐
             hobbyImagePositions.set(key, {
@@ -589,9 +590,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const interactiveTags = ['A', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT'];
-            if (interactiveTags.includes(e.target.tagName) || e.target.closest('a, button, input, textarea, select')) {
-                return;
+            const interactiveTags = ['A', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'IFRAME']; // Added IFRAME to prevent dragging when interacting with it
+            // Check if the click originated within the window's content but not on the header/title bar (if applicable)
+            if (e.target.closest('.window-content') && !e.target.closest('.window-header')) {
+                // If the element is an iframe, or inside an iframe (though the latter requires extra steps), don't drag.
+                if (interactiveTags.includes(e.target.tagName) || e.target.closest('a, button, input, textarea, select, iframe')) {
+                    return;
+                }
             }
             
             e.preventDefault(); 
@@ -628,7 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
             content.style.cursor = 'move';
         }
     }
-    
+
     // Window resizing logic (unchanged)
     function makeWindowResizable(win) {
         const handles = win.querySelectorAll('.window-resize-handle');
@@ -759,6 +764,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     return; // Stop execution here
                 }
                 
+                // ⭐ NEW: Handle Trash Click Separately (Rotation Logic) ⭐
+                if (windowTitle === "Trash") {
+                    // Increment the rotation angle by 45 degrees
+                    trashRotationAngle += 45;
+                    
+                    // Select the <img> element inside the dock item
+                    const trashImage = item.querySelector('img');
+                    
+                    if (trashImage) {
+                        // Apply the rotation via CSS transform
+                        trashImage.style.transition = 'transform 0.3s ease-out'; // Add a smooth transition
+                        trashImage.style.transform = `rotate(${trashRotationAngle}deg)`;
+                        
+                        // --- NEW: Check for 360 degree completion ---
+                        if (trashRotationAngle % 360 === 0) {
+                            showRotationMessage();
+                        }
+                    }
+                    return; // Stop execution here
+                }
+                
                 if (SINGLE_INSTANCE_APPS.includes(windowTitle)) {
                     // Check if an instance exists and bring it to front
                     const existingWindowsCount = bringWindowsToFront(windowTitle);
@@ -821,5 +847,58 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+    
+  // --- NEW: Spotify Player Toggle Logic (Direct on Desktop) ---
+    const spotifyDockItem = document.querySelector('[data-label="Spotify"]');
+    const spotifyPlayer = document.getElementById('spotify-player-widget');
+    const spotifyIframe = spotifyPlayer ? spotifyPlayer.querySelector('iframe') : null;
+
+    if (spotifyDockItem && spotifyPlayer && spotifyIframe) {
+        
+        // Flag to track if the iframe has successfully loaded its content once
+        let contentLoaded = false;
+        
+        // 1. Listen for the iframe content to load
+        spotifyIframe.addEventListener('load', () => {
+            contentLoaded = true;
+        });
+
+        spotifyDockItem.addEventListener('click', (e) => {
+            // Check if the clicked element is an <a> tag and prevent default navigation
+            if (e.target.closest('a')) {
+                e.preventDefault(); 
+            }
+            e.stopPropagation();
+            
+            // Toggle visibility based on the opacity state
+            const isVisible = spotifyPlayer.style.opacity === '1';
+
+            if (isVisible) {
+                // Fade Out and hide
+                spotifyPlayer.style.opacity = '0';
+                spotifyPlayer.style.pointerEvents = 'none';
+            } else {
+                // Show/Fade In
+                // If content is already loaded, show immediately.
+                if (contentLoaded) {
+                    spotifyPlayer.style.opacity = '1';
+                    spotifyPlayer.style.pointerEvents = 'auto';
+                } else {
+                    // If content is not loaded, show when the 'load' event fires.
+                    // The element is already at opacity: 0, so no visible black box.
+                    
+                    // We attach a one-time listener to fade it in right after the load event
+                    const handleLoadAndShow = () => {
+                        spotifyPlayer.style.opacity = '1';
+                        spotifyPlayer.style.pointerEvents = 'auto';
+                        spotifyIframe.removeEventListener('load', handleLoadAndShow);
+                    };
+                    spotifyIframe.addEventListener('load', handleLoadAndShow);
+                }
+            }
+        });
+    }
+    // --- END Spotify Player Toggle Logic ---
+    
     preloadHobbyImages();
 });
