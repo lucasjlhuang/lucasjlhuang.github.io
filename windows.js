@@ -17,12 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const HOBBIES_IMAGES = [
         // Source, dimensions (doubled), and upright rotation
         // Initial position (initial_x in vw, initial_y in vh) - Used if no saved position exists
-        { src: "images/Hobbies/MAJ.jpeg", alt: "Mahjong", width: 360, height: 450, initial_x: 10, initial_y: 15, rotate: 0 },
-        { src: "images/Hobbies/Warhammer.jpeg", alt: "Warhammer", width: 240, height: 360, initial_x: 70, initial_y: 45, rotate: 0 },
-        { src: "/images/Hobbies/Guitar.jpeg", alt: "Electric Guitar", width: 260, height: 400, initial_x: 55, initial_y: 10, rotate: 0 }, 
-        { src: "images/Hobbies/Travel.jpeg", alt: "Travel", width: 360, height: 320, initial_x: 80, initial_y: 20, rotate: 0 }, 
-        { src: "/images/Hobbies/MTG.jpeg", alt: "MTG", width: 260, height: 320, initial_x: 5, initial_y: 50, rotate: 0 }, 
-        { src: "/images/Hobbies/Lifedrawing.jpeg", alt: "Life Drawing", width: 280, height: 280, initial_x: 50, initial_y: 60, rotate: 0 }, 
+        { src: "images/Hobbies/MAJ.png", alt: "Mahjong", width: 360, height: 450, initial_x: 10, initial_y: 15, rotate: 0 },
+        { src: "images/Hobbies/Warhammer.png", alt: "Warhammer", width: 240, height: 360, initial_x: 70, initial_y: 45, rotate: 0 },
+        { src: "/images/Hobbies/Guitar.png", alt: "Electric Guitar", width: 260, height: 400, initial_x: 55, initial_y: 10, rotate: 0 }, 
+        { src: "images/Hobbies/Travel.png", alt: "Travel", width: 360, height: 320, initial_x: 80, initial_y: 20, rotate: 0 }, 
+        { src: "/images/Hobbies/MTG.png", alt: "MTG", width: 260, height: 320, initial_x: 5, initial_y: 50, rotate: 0 }, 
+        { src: "/images/Hobbies/Lifedrawing.png", alt: "Life Drawing", width: 280, height: 280, initial_x: 50, initial_y: 60, rotate: 0 }, 
     ];
 
     // ⭐ Map for Custom Window Content (UNCHANGED) ⭐
