@@ -361,23 +361,26 @@ button:hover .theme-toggle-btn {
     left: 20vw;
     width: 400px; /* Initial width */
     height: 300px; /* Initial height */
-    background: #f0f0f0;
-    border-radius: 10px;
-    box-shadow: 0 2px 3px #00000010;
     overflow: hidden;
     z-index: 1001; /* Above the dock */
-    /* Add a sleek, translucent mac-like look */
-    background: rgba(230, 230, 230, 0.85); 
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    
+    /* ⭐ START: Glassmorphism Effect for Project Folders (.window) ⭐ */
+    background: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+    border-radius: 16px; /* Increased border radius */
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    backdrop-filter: blur(5px); /* The main blur effect */
+    -webkit-backdrop-filter: blur(5px); /* Vendor prefix for compatibility */
+    border: 1px solid rgba(255, 255, 255, 0.17); /* Light border */
+    /* ⭐ END: Glassmorphism Effect ⭐ */
+    
     display: flex; /* To manage header and content layout */
     flex-direction: column;
 }
 
 .window-header {
     height: 30px;
-    background: rgba(255, 255, 255, 0.4);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    /* background: rgba(255, 255, 255, 0.4); */
+    /* border-bottom: 1px solid rgba(0, 0, 0, 0.1); */
     cursor: move;
     display: flex;
     justify-content: space-between;
@@ -389,6 +392,7 @@ button:hover .theme-toggle-btn {
 }
 
 .window-title {
+    font-family: 'SFmedium';
     font-size: 14px;
     color: #333;
 }
@@ -596,3 +600,118 @@ button:hover .theme-toggle-btn {
     font-family: 'SFMedium';
     font-size: 1.2vh;
 }
+
+/* general.css */
+
+/* --------------------------------------------------------- */
+/* ⭐ New: Responsive Image Gallery for Windows ⭐ */
+/* --------------------------------------------------------- */
+
+/* Define the window border radius as a variable for consistency across the application. 
+   Assuming 12px from other styles in index.html for widgets. */
+:root {
+    --window-border-radius: 12px;
+}
+
+/* Ensure the main window container uses the radius and clips content */
+.application-window {
+    /* You may already have this, but ensure it's set */
+    border-radius: var(--window-border-radius);
+    overflow: hidden; /* Important for clipping any full-width content (like images) to the rounded corners */
+}
+
+/* Container for the images inside the window content area */
+.window-content .image-gallery {
+    padding: 10px; /* Optional: adds a small margin around the gallery */
+    text-align: center; /* Centers the inline-block images */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Styling for images inside the gallery */
+.window-content .image-gallery img {
+    /* 1. Use inline-block CSS */
+    
+    /* 2 & 4. Adjust themselves to fit and adjust size when window resizes */
+    /* This makes the images responsive to the parent window's size. 
+       - max-width: 100% ensures it never exceeds its parent container's width.
+       - width: calc(...) makes them scale relative to the container.
+       - height: auto maintains the aspect ratio. */ 
+    max-width: 100%;
+    margin: 0px; /* Spacing between the inline-block images */
+    vertical-align: top; /* Ensures proper alignment of inline-block elements */
+
+    /* 3. Rounded corners the same value as the window */
+    border-radius: var(--window-border-radius); 
+    
+    /* Ensure the image content is properly cropped if the dimensions are tight */
+    object-fit: cover; 
+}
+
+.window-bank-of-taiwan .image-gallery img {
+      display: inline-block;
+      width: calc(25% - 10px);
+      margin: 5px;
+}
+
+.botcomp {
+    width: 100%;
+    margin: 0px; /* Spacing between the inline-block images */
+        vertical-align: top; /* Ensures proper alignment of inline-block elements */
+     border-radius: var(--window-border-radius); 
+     object-fit: cover; 
+}
+
+.window-vogro .image-gallery img {
+      display:block;
+     width: 100%;
+     height: auto;
+}
+
+.window-about-me .window-content {
+ display: flex;         
+    /* Optional: Ensures children stay in one row */
+    flex-wrap: nowrap;     
+    /* Optional: Vertically aligns items in the center */
+    align-items: center; 
+    /* Required to ensure padding/borders don't mess up width */
+    box-sizing: border-box;
+    
+    
+}
+
+.window-about-me .window-content img {
+        width: 50%;
+        height:20%;
+        object-fit: cover; 
+}
+
+.window-about-me .about-me-text {
+     width: 50%;
+     padding-left: 50px;
+     font-family: "SFBold";;
+     font-size: 5rem;
+     max-height: 500px; 
+    
+    /* Enable vertical scrollbar only when content exceeds max-height */
+    overflow-y: auto;
+    
+    /* Optional: Ensure content doesn't break into a second row */
+    overflow-x: hidden;
+
+    /* Add padding to the scrollable content for better aesthetics */
+    padding-right: 15px; /* Adds space so the text doesn't touch the scrollbar */
+}
+
+/* .window-webgallery .image-gallery img {
+      display:block;
+     width: 100%;
+     height: auto;
+} */
+
+/* .window-canadian-hyperloop-conference .image-gallery img {
+      display:block;
+     width: 100%;
+     height: auto;
+} */
+

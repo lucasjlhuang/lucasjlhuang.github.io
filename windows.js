@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const desktop = document.querySelector('.desktop');
     
     // Map to track currently open windows (used by 'closeWindow' and for initial offset calculations)
+    // IMPORTANT: openWindowsMap now stores { windowElement, folderRect } for project windows
     const openWindowsMap = new Map(); 
 
     // ⭐ NEW: Map to store the last known position of each hobby image
@@ -29,39 +30,71 @@ document.addEventListener('DOMContentLoaded', () => {
     const WINDOW_CONTENT_MAP = {
         // CONTENT FOR PROJECT FOLDERS (Using the inner text/title)
         "ABOUT ME": `
-            <h3 style="margin-top: 0;">Hi, I'm Lucas! 👋</h3>
-            <p>Welcome to my digital space. This section is where I share a little more about my journey and who I am outside of design and code. I'm passionate about creating user-centric and beautiful experiences.</p>
-            <div style="display: flex; justify-content: space-around; padding: 10px;">
-                <img src="/images/Me_Portrait_1.jpg" alt="A photo of Lucas smiling" style="width: 45%; height: auto; border-radius: 8px; object-fit: cover;">
-                <img src="/images/Me_Portrait_2.jpg" alt="A photo of Lucas working" style="width: 45%; height: auto; border-radius: 8px; object-fit: cover;">
-            </div>
-            <p>I believe that the best work comes from a balance of technical skill and creative vision.</p>
+       <div class="window-content">
+       <img src="/images/about-me.png" alt="It's me! Lucas!">
+        <div class="about-me-text">
+            <p>
+                     Waterloo Graduate
+                <br>
+                <br>
+                    Designer  by accident.
+                <br>
+                <br>
+                    Bridging gaps through design.
+            </p>
+        </div>
+
+</div>
         `,
         "VOGRO": `
-            <h3 style="margin-top: 0;">VoGro: Mobile Gardening App 🥕</h3>
-            <p>VoGro is a concept for a mobile application designed to help city dwellers manage and track their small-space gardens. The design focuses on intuitive plant management and community sharing.</p>
-            <div style="text-align: center;">
-                <img src="/images/vogro_mockup_1.png" alt="VoGro mobile app screenshot" style="width: 60%; height: auto; border-radius: 8px; margin: 10px 0;">
+           <div class="window-content">
+                 <div class="image-gallery">
+        
+                    <img src="/images/vogro-images/vogro-header.png" alt="1">
+                    <img src="/images/vogro-images/VoGro Problem Statistics.png" alt="2">
+                    <img src="/images/vogro-images/vogro-iteration.png" alt="3">
+                    <img src="/images/vogro-images/vogro-user-testing.png" alt="4">
+                    <img src="/images/vogro-images/vogro-user-research.png" alt="5">
+                    <img src="/images/vogro-images/vogro-user-results.png" alt="6">
+                    <img src="/images/vogro-images/vogro-solution.png" alt="7">
+                    
+                 </div>
             </div>
-            <p>Key features include a personalized watering schedule, pest identification tool, and a social feed to share harvests.</p>
         `,
         "BANK OF TAIWAN": `
-            <h3 style="margin-top: 0;">Bank of Taiwan Rebrand & UI/UX 🏦</h3>
-            <p>A comprehensive redesign of the Bank of Taiwan's digital presence, focusing on simplifying complex banking flows and modernizing the overall aesthetic. This project involved extensive user research.</p>
-            <ul style="padding-left: 20px;">
-                <li>**Goal:** Improve accessibility and user trust.</li>
-                <li>**Outcome:** A cleaner, more efficient mobile and web experience.</li>
-            </ul>
+         <div class="window-content">
+             <div class="image-gallery">
+        
+                    <img src="/images/bot-images/1.png" alt="1">
+                    <img src="/images/bot-images/2.png" alt="2">
+                    <img src="/images/bot-images/3.png" alt="3">
+                    <img src="/images/bot-images/4.png" alt="4">
+                    <img src="/images/bot-images/5.png" alt="5">
+                    <img src="/images/bot-images/6.png" alt="6">
+                    
+                   
+                </div>
+                
+                <div class="botcomp">
+                    <img class="botcomp" src="/images/bot-images/7.png" alt="7">
+                </div>
+                
+                </div>
         `,
         "CANADIAN HYPERLOOP CONFERENCE": `
-            <h3 style="margin-top: 0;">Canadian Hyperloop Conference Branding 🚄</h3>
-            <p>I developed the full visual identity for the annual Canadian Hyperloop Conference, including the logo, website design, and promotional materials. The design needed to be sleek, modern, and high-tech.</p>
-            <p>The core concept was to convey speed and future-forward transportation.</p>
+        <br>
+             <br> <br> <br> <br> <br> <br> <br> <br> <br> <br>
+             <p>Well this is embarassing, it's a little empty here. 
+             <br>
+             More is coming soon, I promise :)</p>
         `,
         "WEBGALLERY": `
-            <h3 style="margin-top: 0;">Interactive Web Gallery Portfolio 🎨</h3>
-            <p>This is a custom-built, interactive online portfolio to showcase my fine art and digital illustration work. It features dynamic sorting and high-resolution viewing of pieces.</p>
-            <p>It's a testament to front-end development skills combined with artistic presentation.</p>
+            <br>
+             <br> <br> <br> <br> <br> <br> <br> <br> <br> <br>
+             <p>Well this is embarassing, it's a little empty here. 
+             <br>
+             More is coming soon, I promise :)</p>
+         
         `
     };
 
@@ -110,13 +143,40 @@ document.addEventListener('DOMContentLoaded', () => {
         "Illustrator": { width: '375px', height: '150px' },
         "VS Code": { width: '375px', height: '150px' },
         "Figma": { width: '375px', height: '150px' },
+        
+        "ABOUT ME:": { width: '600px', height: '400px' },
+        
+        // Add a default size for project folders for use in the Genie animation
+        "PROJECT_DEFAULT": { width: '1000px', height: '600px' } 
     };
     
     // ⭐ NEW: Variable to track the rotation angle for the Trash icon ⭐
     let trashRotationAngle = 0; 
     
+    // ⭐ NEW: Genie Animation Constants ⭐
+    const GENIE_EASING = 'cubic-bezier(0.7, -0.01, 0.4, 1)';
+    const TRANSITION_DURATION = '0.5s';
+    
     
     // Helper Functions
+    
+    /**
+     * Finds the desktop project folder element by its title text.
+     * @param {string} title The inner text of the project folder's <p class="ProjectText">.
+     * @returns {HTMLElement | null} The project folder div.
+     */
+    function getProjectFolderElement(title) {
+        let element = null;
+        projectFolders.forEach(folder => {
+            const projectText = folder.querySelector('.ProjectText');
+            // Normalize the text before comparison (removing extra spaces and newlines)
+            if (projectText && projectText.innerText.replace(/\s+/g, ' ').trim() === title) {
+                element = folder;
+            }
+        });
+        return element;
+    }
+    
     function getHobbiesIconRect() {
         // Use the 'Hobbies' dock item's bounding box
         const dockItem = document.querySelector('.dock li[data-label="Hobbies"]');
@@ -208,17 +268,103 @@ document.addEventListener('DOMContentLoaded', () => {
         return windowsFound;
     }
 
-    // closeWindow: Only called by the X button or the nav-link swap logic.
-    function closeWindow(title) {
-        const windowToClose = openWindowsMap.get(title);
-        if (windowToClose) {
-            windowToClose.remove();
-            // This line ensures the map entry is cleared, but doesn't prevent other instances from existing.
-            openWindowsMap.delete(title);
+    // MODIFIED: Determines the current text color based on the body class (light/dark mode).
+    function getCurrentTextColor() {
+        // Check if the body element has the 'dark-mode' class
+        if (document.body.classList.contains('dark-mode')) {
+            return '#ffffff'; // White for Dark Mode
+        }
+        // Otherwise, assume Light Mode
+        return '#000000'; // Black for Light Mode
+    }
+
+    // NEW FUNCTION: Updates the text color of all open windows.
+    function updateAllWindowColors() {
+        const color = getCurrentTextColor();
+        
+        document.querySelectorAll('.window:not([style*="display: none"])').forEach(windowElement => {
+            // 1. Update window title text
+            const titleElement = windowElement.querySelector('.window-title');
+            if (titleElement) {
+                // The transition property added in openNewWindow will animate this change
+                titleElement.style.color = color;
+            }
+            
+            // 2. Update window content text
+            const contentElement = windowElement.querySelector('.window-content');
+            if (contentElement) {
+                // The transition property added in openNewWindow will animate this change
+                contentElement.style.color = color;
+            }
+        });
+    }
+
+    // MODIFIED: closeWindow now precisely controls map deletion for NAV swaps and 'X' clicks.
+    function closeWindow(title, bypassAnimation = false, collapseToFolder = null) {
+        const windowData = openWindowsMap.get(title);
+        
+        if (windowData) {
+            const windowToClose = windowData.windowElement || windowData;
+            const originalFolderRect = windowData.folderRect;
+            const isProject = windowToClose.getAttribute('data-project-key');
+            
+            // This flag is needed to decide if we delete the key immediately (NAV swap) or later ('X' button).
+            const isNavSwap = collapseToFolder !== null;
+
+            // Check if it's a project folder window AND if we should run the Genie animation
+            if (isProject && (originalFolderRect || collapseToFolder) && !bypassAnimation) {
+                // --- CLOSE ANIMATION (Reverse Genie) ---
+                
+                // 1. Determine the target folder element for the collapse
+                let targetFolderElement = collapseToFolder;
+                if (!targetFolderElement) {
+                    // If no specific collapse target is provided (i.e., header 'X' click), use the original folder element
+                    targetFolderElement = getProjectFolderElement(title);
+                }
+
+                if (!targetFolderElement) {
+                    // Fallback to simple removal if the target folder can't be found
+                    windowToClose.remove();
+                    openWindowsMap.delete(title); // Ensure deletion in fallback
+                    return;
+                }
+                
+                const rect = targetFolderElement.getBoundingClientRect(); 
+                
+                // 2. Start Animation
+                windowToClose.style.overflow = 'visible';
+                windowToClose.style.transition = `left ${TRANSITION_DURATION} ${GENIE_EASING}, top ${TRANSITION_DURATION} ${GENIE_EASING}, width ${TRANSITION_DURATION} ${GENIE_EASING}, height ${TRANSITION_DURATION} ${GENIE_EASING}, opacity ${TRANSITION_DURATION} ease-out, transform ${TRANSITION_DURATION} ease-out, box-shadow 0.1s`;
+
+                windowToClose.style.left = `${rect.left}px`;
+                windowToClose.style.top = `${rect.top}px`;
+                windowToClose.style.width = `${rect.width}px`; // Shrink to folder size
+                windowToClose.style.height = `${rect.height}px`; // Shrink to folder size
+                windowToClose.style.opacity = '0'; // Fade out
+                windowToClose.style.transform = `scale(0.1)`; // Scale down
+
+                // 3. Remove the element after the transition is complete
+                windowToClose.addEventListener('transitionend', function removeAfterTransition(e) {
+                    // Only remove on a single property (e.g., 'opacity') to ensure all transitions are done
+                    if (e.propertyName === 'opacity') {
+                        windowToClose.removeEventListener('transitionend', removeAfterTransition);
+                        windowToClose.remove();
+                        
+                        // If it was NOT a NAV swap ('X' button close), delete the map entry here.
+                        if (!isNavSwap) {
+                           openWindowsMap.delete(title);
+                        }
+                    }
+                });
+                
+            } else {
+                // Default close behavior (for all other apps or nav-link swaps *that bypass animation*)
+                windowToClose.remove();
+                openWindowsMap.delete(title);
+            }
         }
     }
 
-    // ⭐ UPDATED: Toggles the sprawled images for Hobbies with Genie-like animation and persistence ⭐
+    // UPDATED: Toggles the sprawled images for Hobbies with Genie-like animation and persistence
     function toggleHobbySprawl() {
         const existingImages = document.querySelectorAll('.sprawled-hobby-image');
         const iconRect = getHobbiesIconRect();
@@ -229,8 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Custom cubic-bezier for a strong, swoopy acceleration/deceleration (Genie approximation)
-        const genieEasing = 'cubic-bezier(0.7, -0.01, 0.4, 1)';
-        const transitionDuration = '0.5s';
+        const genieEasing = GENIE_EASING;
+        const transitionDuration = TRANSITION_DURATION;
 
         if (existingImages.length > 0) {
             // --- CLOSE ANIMATION (Reverse Genie) ---
@@ -317,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ⭐ UPDATED: Movable logic for the new images (now saves position) ⭐
+    // UPDATED: Movable logic for the new images (now saves position)
     function makeMovable(element, key) {
         let isDragging = false;
         let offset = { x: 0, y: 0 };
@@ -362,22 +508,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // Re-enable the animation transition after dragging stops (needed for the close animation)
-            const genieEasing = 'cubic-bezier(0.7, -0.01, 0.4, 1)';
-            const transitionDuration = '0.5s';
-            element.style.transition = `left ${transitionDuration} ${genieEasing}, top ${transitionDuration} ${genieEasing}, width ${transitionDuration} ${genieEasing}, height ${transitionDuration} ${genieEasing}, opacity ${transitionDuration} ease-out, transform ${transitionDuration} ease-out, box-shadow 0.1s`;
+            element.style.transition = `left ${TRANSITION_DURATION} ${GENIE_EASING}, top ${TRANSITION_DURATION} ${GENIE_EASING}, width ${TRANSITION_DURATION} ${GENIE_EASING}, height ${TRANSITION_DURATION} ${GENIE_EASING}, opacity ${TRANSITION_DURATION} ease-out, transform ${TRANSITION_DURATION} ease-out, box-shadow 0.1s`;
             
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', onStopDrag);
         };
     }
     
-    function openNewWindow(title, geometry = {}) {
+    // ⭐ MODIFIED: openNewWindow now applies coloring and a color transition to title and content.
+    function openNewWindow(title, geometry = {}, folderElement = null) {
         const defaultTemplate = windowTemplate; 
 
         const styledApps = ["Photoshop", "Illustrator", "VS Code", "Figma"];
         const useStyledTemplate = styledApps.includes(title);
         const isProjectFolder = PROJECT_TITLES.includes(title);
-        
+        // Only apply Genie Open if explicitly starting from a desktop folder
+        const applyGenieOpen = isProjectFolder && folderElement !== null && geometry.left === undefined; 
+
         const templateToUse = useStyledTemplate ? 
                               document.getElementById('styled-window-template') : 
                               defaultTemplate;
@@ -386,66 +533,132 @@ document.addEventListener('DOMContentLoaded', () => {
         newWindow.id = ''; 
         newWindow.style.display = 'flex'; 
         newWindow.style.zIndex = getNextZIndex(); 
+        
+        // Disable transitions initially for correct positioning/sizing
+        newWindow.style.transition = 'none';
 
         // Store the project key OR app key on the element for identification
         if (isProjectFolder) {
             newWindow.setAttribute('data-project-key', title);
+            
+            // ⭐ ADDED FOR INDIVIDUAL STYLING ⭐
+            // 1. Create a CSS-safe title (e.g., "BANK OF TAIWAN" -> "bank-of-taiwan")
+            const safeTitle = title.toLowerCase().replace(/\s/g, '-');
+            // 2. Add the unique class name to the window element
+            newWindow.classList.add(`window-${safeTitle}`);
+            
         } else if (SINGLE_INSTANCE_APPS.includes(title)) {
             newWindow.setAttribute('data-app-key', title);
         }
         
-        // --- Apply Custom or Default Size ---
-        const defaultWidth = '700px';
-        const defaultHeight = '500px';
+        // --- Determine Size and Position ---
+        const defaultWidth = WINDOW_SIZE_MAP.PROJECT_DEFAULT.width;
+        const defaultHeight = WINDOW_SIZE_MAP.PROJECT_DEFAULT.height;
         const customSize = WINDOW_SIZE_MAP[title];
 
-        // Use passed geometry for size if available
         newWindow.style.width = geometry.width || (customSize ? customSize.width : defaultWidth);
         newWindow.style.height = geometry.height || (customSize ? customSize.height : defaultHeight);
         
-        // Positioning logic with dynamic offset
-        if (geometry.left && geometry.top) {
-            // Case 1: Use captured geometry (e.g., from a nav-link swap)
-            newWindow.style.top = geometry.top;
-            newWindow.style.left = geometry.left;
-        } else if (CENTERED_APPS.includes(title)) {
-            // Case 2: Center and dynamically offset the window for specified apps
-            
-            // 1. Temporarily append to DOM to get actual pixel size from vw/vh values
-            if (!newWindow.parentElement) {
-                desktop.appendChild(newWindow);
-            }
+        // 1. Append to DOM temporarily (needed for centering calculation)
+        if (!newWindow.parentElement) {
+            desktop.appendChild(newWindow);
+        }
 
+        // 2. Determine final target position
+        let targetX, targetY;
+
+        if (geometry.left && geometry.top) {
+            // Case A: Use captured geometry (e.g., from a nav-link swap) -> Opens INSTANTLY
+            targetX = geometry.left;
+            targetY = geometry.top;
+        } else if (CENTERED_APPS.includes(title)) {
+            // Case B: Center and dynamically offset the window for specified apps
             const windowWidth = newWindow.offsetWidth;
             const windowHeight = newWindow.offsetHeight;
-            
-            // 2. Calculate base center position
             const centerX = (window.innerWidth / 2) - (windowWidth / 2);
             const centerY = (window.innerHeight / 2) - (windowHeight / 2);
-            
-            // 3. Get the count of other existing, currently open centered apps
-            // Since this window is already in the DOM (appended above), we subtract 1
             let offsetCount = getCenteredAppCount() - 1;
             offsetCount = Math.max(0, offsetCount); 
+            // Corrected offset to use pixels consistently
+            const offset = offsetCount * 20; 
 
-            // 4. Apply base position + offset (using CSS calc for vw/vh units)
-            // Offset: +1vw to the right, +1vh down per existing open centered window.
-            newWindow.style.left = `calc(${centerX}px + ${offsetCount}vw)`;
-            newWindow.style.top = `calc(${centerY}px + ${offsetCount}vh)`;
-
+            targetX = `calc(${centerX}px + ${offset}px)`;
+            targetY = `calc(${centerY}px + ${offset}px)`;
         } else {
-            // Case 3: Fallback to offset logic (non-centered apps)
-            const offset = (document.querySelectorAll('.window:not([style*="display: none"])').length % 5) * 20; 
-            newWindow.style.top = `calc(15vh + ${offset}px)`;
-            newWindow.style.left = `calc(20vw + ${offset}px)`;
+            // ⭐ Case C: New Random Default Position (for Genie Final Destination & Standard Opens) ⭐
+            // X: 30% to 50%
+            // Y: 10% to 30%
+            const randomX = Math.random() * 35 + 15; // 30.0 to 49.99...
+            const randomY = Math.random() * 15 + 5; // 10.0 to 29.99...
+            
+            targetX = `${randomX}vw`;
+            targetY = `${randomY}vh`;
+        }
+
+        // 3. Apply Positioning: Genie Open vs. Standard
+        if (applyGenieOpen) {
+            // Case D: Genie Open Animation
+            const folderRect = folderElement.getBoundingClientRect();
+            
+            // Set initial state: Start small, transparent, at the folder's location
+            newWindow.style.left = `${folderRect.left}px`;
+            newWindow.style.top = `${folderRect.top}px`;
+            newWindow.style.width = `${folderRect.width}px`;
+            newWindow.style.height = `${folderRect.height}px`;
+            newWindow.style.opacity = '0';
+            newWindow.style.transform = 'scale(0.1)';
+            newWindow.style.overflow = 'hidden'; // Ensure content doesn't pop in early
+            
+            // Use setTimeout to start the transition after the initial state is rendered
+            setTimeout(() => {
+                // Apply the transition property
+                newWindow.style.transition = `left ${TRANSITION_DURATION} ${GENIE_EASING}, top ${TRANSITION_DURATION} ${GENIE_EASING}, width ${TRANSITION_DURATION} ${GENIE_EASING}, height ${TRANSITION_DURATION} ${GENIE_EASING}, opacity ${TRANSITION_DURATION} ease-out, transform ${TRANSITION_DURATION} ease-out, box-shadow 0.1s`;
+                
+                // Animate to the final target position/size (which is now random)
+                newWindow.style.left = targetX;
+                newWindow.style.top = targetY;
+                newWindow.style.width = geometry.width || (customSize ? customSize.width : defaultWidth);
+                newWindow.style.height = geometry.height || (customSize ? customSize.height : defaultHeight);
+                newWindow.style.opacity = '1';
+                newWindow.style.transform = 'scale(1)';
+                
+                // After the transition, remove overflow:hidden so content displays correctly
+                newWindow.addEventListener('transitionend', function removeOverflow(e) {
+                    if (e.propertyName === 'opacity') {
+                        newWindow.style.overflow = 'hidden';
+                        newWindow.removeEventListener('transitionend', removeOverflow);
+                        // Reset transition to 'none' so dragging/resizing isn.t sluggish.
+                        newWindow.style.transition = 'none'; 
+                    }
+                });
+            }, 20);
+            
+        } else {
+            // Standard Open (from nav bar or non-project apps, or if geometry was provided)
+            newWindow.style.left = targetX;
+            newWindow.style.top = targetY;
+            newWindow.style.opacity = '1';
+            newWindow.style.transform = 'scale(1)';
+            newWindow.style.transition = 'none'; // Ensure no transition is active
         }
         
+        // --- Content & Title Injection ---
         const displayTitle = DISPLAY_TITLE_MAP[title] || capitalizeTitle(title);
-        newWindow.querySelector('.window-title').textContent = displayTitle;
+        const titleElement = newWindow.querySelector('.window-title'); // Get title element
+        titleElement.textContent = displayTitle;
         
-        // Inject Custom Content (existing logic)
         const contentHTML = WINDOW_CONTENT_MAP[title];
         const contentContainer = newWindow.querySelector('.window-content');
+        
+        // ⭐ UPDATED: Apply color transition to title and content (Matching wallpaper transition of 0.8s)
+        const colorTransition = 'color 0.8s ease-in-out';
+        titleElement.style.transition = colorTransition;
+        contentContainer.style.transition = colorTransition;
+        
+        // Apply initial dynamic text color
+        const currentColor = getCurrentTextColor();
+        titleElement.style.color = currentColor;
+        contentContainer.style.color = currentColor;
         
         if (contentHTML && !useStyledTemplate) {
             contentContainer.innerHTML = contentHTML; 
@@ -453,22 +666,28 @@ document.addEventListener('DOMContentLoaded', () => {
             contentContainer.innerHTML = `<h3 style="margin-top: 0;">${displayTitle}</h3><p>Content for ${displayTitle} is coming soon!</p>`;
         }
         
-        // Inject Static Navigation Bar (existing logic)
+        // --- Static Navigation Bar (existing logic) ---
         const navContainer = newWindow.querySelector('.window-footer-nav');
         
         if (navContainer && isProjectFolder) { 
             const allProjects = PROJECT_TITLES;
             
-            let navHTML = '<div class="window-nav-inner" style="display: flex; justify-content: space-around; width: 100%; border-top: 1px solid var(--border-color); padding: 8px 0;">';
+            // ⭐ NEW/UPDATED: Define the common transition for size/font change ⭐
+            const navTransition = 'color 0.1s, font-size 0.3s, transform 0.3s'; // Transition for smooth magnification effect
+
+            let navHTML = '<div class="window-nav-inner" style="display: flex; justify-content: space-around; width: 100%; border-top: 1px solid var(--border-color); padding: 15px 0px 12px 0;">';
             
             allProjects.forEach(projectKey => {
                 const navTitle = DISPLAY_TITLE_MAP[projectKey] || capitalizeTitle(projectKey);
                 const isActive = projectKey === title;
 
-                // Hardcoded color values to prevent theme change for nav text
-                const navStyle = isActive 
-                    ? 'color: #000; font-weight: bold; text-decoration: none; font-size: 0.8rem; cursor: pointer; transition: color 0.1s;' 
-                    : 'color: #007aff; text-decoration: none; font-size: 0.8rem; cursor: pointer; transition: color 0.1s;';
+                // ⭐ CORRECTED ACTIVE LINK STYLES: Now includes !important for guaranteed size/scale match ⭐
+// ⭐ CORRECTED ACTIVE LINK STYLES: Now guarantees size and scale match with !important flags ⭐
+                const activeStyle = `text-decoration: none; color: #3399ff; font-family: 'SFBold'; font-size: 1.1rem !important; cursor: default; transform: scale(1.1) !important; transition: ${navTransition};`;                
+                // ⭐ INACTIVE LINK STYLES: Normal size, normal font (Base style, will be overridden on hover) ⭐
+                const inactiveStyle = `color: #007aff; font-weight: normal; font-family: sans-serif; text-decoration: none; font-size: 0.8rem; cursor: pointer; transform: scale(1.0); transition: ${navTransition};`;
+
+                const navStyle = isActive ? activeStyle : inactiveStyle;
                     
                 navHTML += `<a href="#" class="nav-project-link" data-target-key="${projectKey}" 
                              style="${navStyle}">
@@ -489,7 +708,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // 1. Prioritize: Check if a window for the target project is already open.
                     if (bringWindowsToFront(targetKey) > 0) {
-                        // Windows were found and brought to front. We do NOT close the current window.
                         return;
                     }
                     
@@ -508,40 +726,52 @@ document.addEventListener('DOMContentLoaded', () => {
                         top: currentWindow.style.top
                     };
                     
-                    // 2b. Remove the current window from the DOM
-                    currentWindow.remove();
+                    // 2b. Get the desktop folder element for the *target* project (where the OLD window will collapse to).
+                    const targetFolderElement = getProjectFolderElement(targetKey);
+
+                    // 2c. Close the current window (which contains the OLD content)
+                    //     Set bypassAnimation to TRUE to instantly remove the old window without animation.
+                    closeWindow(title, true, targetFolderElement); 
                     
-                    // 2c. Remove the reference from the map ONLY IF it is the one currently mapped to the title.
-                    if (openWindowsMap.get(title) === currentWindow) {
-                        openWindowsMap.delete(title); 
-                    }
-                    
-                    // 2d. Open a brand NEW window with the target content and the captured geometry.
+                    // 2d. Open a brand NEW window with the target content
+                    //     - Pass the captured geometry to open instantly in the same spot.
+                    //     - Pass folderElement = null (default) to skip the open Genie animation.
                     openNewWindow(targetKey, geometry); 
                 });
-                // Hardcoded hover color value to prevent theme change
+                
+                // ⭐ UPDATED: Apply SFBold and Magnification on Mouseover (for INACTIVE links only) ⭐
                 link.addEventListener('mouseover', (e) => { 
-                    if (e.target.getAttribute('data-target-key') !== title) {
+                    const targetKey = e.target.getAttribute('data-target-key');
+                    
+                    if (targetKey !== title) { // Only apply to inactive links
+                        // Apply color and magnification/boldness
                         e.target.style.color = '#3399ff'; // Fixed hyperlink hover color
+                        e.target.style.fontWeight = 'bold'; 
+                        e.target.style.fontFamily = '"SFBold", sans-serif'; 
+                        e.target.style.fontSize = '1.1rem'; 
+                        e.target.style.transform = 'scale(1.1)'; 
                     }
                 });
+
+                // ⭐ UPDATED: Remove Magnification on Mouseout (for INACTIVE links only) ⭐
                 link.addEventListener('mouseout', (e) => { 
-                    if (e.target.getAttribute('data-target-key') !== title) {
+                    const targetKey = e.target.getAttribute('data-target-key');
+                    
+                    if (targetKey !== title) { // Only apply to inactive links
+                        // Revert to inactive style
                         e.target.style.color = '#007aff'; // Fixed hyperlink color
-                    } else {
-                        e.target.style.color = '#000'; // Fixed text color
+                        e.target.style.fontWeight = 'normal';
+                        e.target.style.fontFamily = 'sans-serif'; // Revert to generic sans-serif
+                        e.target.style.fontSize = '0.8rem'; 
+                        e.target.style.transform = 'scale(1.0)';
                     }
                 });
             });
         }
 
-        // Set Background Image (for styled apps - existing logic)
+        // --- Styled App Background (existing logic) ---
         if (useStyledTemplate) {
-            // FIX: Convert the Title ("VS Code", "Photoshop") to the actual asset filename (e.g., "vscode.png")
-            // This handles both the lowercasing and the removal of the space.
             let finalImageFileName = `${title.toLowerCase().replace(/\s/g, '')}.png`; 
-
-            // FIX: Correct the folder casing from 'dock icons' to 'Dock Icons' (matching index.html)
             const imageURL = `/images/Dock Icons/${finalImageFileName}`; 
             
             const appContentContainer = newWindow.querySelector('.application-content');
@@ -556,7 +786,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Attach closing functionality (existing logic)
         newWindow.querySelector('.window-close-btn').addEventListener('click', () => {
-            closeWindow(title);
+            // Call the modified closeWindow function with bypassAnimation = false to enable the Genie effect
+            closeWindow(title, false); 
         });
 
         newWindow.addEventListener('mousedown', () => {
@@ -567,8 +798,29 @@ document.addEventListener('DOMContentLoaded', () => {
         makeWindowDraggable(newWindow);
         makeWindowResizable(newWindow);
         
-        // Track the instance by its title key. This is a reference to the *latest* instance of this title.
-        openWindowsMap.set(title, newWindow); 
+        // Track the instance by its title key. For project folders, store the folder's initial rectangle.
+        if (isProjectFolder) {
+            
+            let rectToStore = null;
+            // Case 1: Opened from Desktop folder (applyGenieOpen is true) -> use the passed folderElement
+            if (folderElement) {
+                rectToStore = folderElement.getBoundingClientRect();
+            } else if (geometry.left && geometry.top) {
+                // Case 2: Opened from NAV Swap -> Find its own desktop folder for future Genie close 
+                const ownFolder = getProjectFolderElement(title);
+                if (ownFolder) {
+                    rectToStore = ownFolder.getBoundingClientRect();
+                }
+            }
+            
+            openWindowsMap.set(title, {
+                windowElement: newWindow,
+                folderRect: rectToStore
+            });
+        } else {
+            // For all other windows (dock apps, nav-link swaps), just store the element
+            openWindowsMap.set(title, { windowElement: newWindow });
+        }
         
         // If the window was not added earlier for centering, it should already be in the DOM.
         if (!newWindow.parentElement) {
@@ -790,7 +1042,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const existingWindowsCount = bringWindowsToFront(windowTitle);
                     
                     if (existingWindowsCount === 0) {
-                        // No window found, open a new one
+                        // No window found, open a new one (Standard open)
                         openNewWindow(windowTitle);
                     }
                 } 
@@ -836,14 +1088,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const projectTitleElement = folder.querySelector('.ProjectText');
+            // Normalize the text to match the key in WINDOW_CONTENT_MAP
             const windowTitle = projectTitleElement.innerText.replace(/\s+/g, ' ').trim();
             
             // Logic: Check for existing windows.
             const existingWindowsCount = bringWindowsToFront(windowTitle);
             
             if (existingWindowsCount === 0) {
-                // No windows found for this project, open a new one.
-                openNewWindow(windowTitle);
+                // No windows found for this project, open a new one with the Genie effect
+                // IMPORTANT: Pass the folder element to trigger the Genie open animation
+                openNewWindow(windowTitle, {}, folder);
             }
         });
     });
@@ -900,5 +1154,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // --- END Spotify Player Toggle Logic ---
     
+    // ⭐ NEW: MutationObserver to detect dark-mode class change on the body
+    const observer = new MutationObserver((mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                // Class list changed, check if it's the dark-mode class being added or removed
+                if (mutation.target.classList.contains('dark-mode') || !mutation.target.classList.contains('dark-mode')) {
+                    updateAllWindowColors();
+                }
+            }
+        }
+    });
+
+    // Start observing the body element for attribute changes (specifically 'class')
+    observer.observe(document.body, { attributes: true });
+    // ⭐ END MutationObserver Setup ⭐
+
     preloadHobbyImages();
 });
