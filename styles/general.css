@@ -296,6 +296,10 @@ img.projectimage {
     --toggle-icon-image: url('/images/daymode.png');
 }
 
+body.dark-mode {
+    --text-color: #ffffff; /* Dark Mode: Pure White */
+}
+
 
 div.wallpaper {
   background-image: var(--wallpaper-image); 
@@ -663,27 +667,80 @@ button:hover .theme-toggle-btn {
 }
 
 .window-vogro .image-gallery img {
-      display:block;
+     display:block;
      width: 100%;
      height: auto;
 }
 
-.window-about-me .window-content {
- display: flex;         
-    /* Optional: Ensures children stay in one row */
-    flex-wrap: nowrap;     
-    /* Optional: Vertically aligns items in the center */
-    align-items: center; 
-    /* Required to ensure padding/borders don't mess up width */
-    box-sizing: border-box;
+.vogro-introduction {
+    display: grid;
+    /* This creates two columns of exactly equal width (1 fraction each) */
+    grid-template-columns: 1fr 2fr; 
     
+    /* Adds space between the text and the video */
+    gap: 10px; 
     
+    /* Optional: Adds some vertical breathing room */
+    margin: 10px 0;
 }
 
-.window-about-me .window-content img {
-        width: 50%;
-        height:20%;
-        object-fit: cover; 
+#vogro-introduction-text {
+    text-align: center;
+    margin: 0;
+    line-height: 1.6;
+}
+
+#VoGroVideo {
+    display:block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--window-border-radius);
+}
+
+.sticky-note {
+    position: fixed;
+    left: 3rem; /* 3rem from left as requested */
+    top: 3rem;  /* 3rem from top as requested */
+    width: 200px;
+    min-height: 200px;
+    background-color: #fef39c; /* Classic yellow sticky note */
+    padding: 1.5rem 1rem 1rem 1rem;
+    box-shadow: 2px 5px 15px rgba(0,0,0,0.2);
+    z-index: 1000; /* Stays below windows but above wallpaper */
+    transform: rotate(-1deg);
+    cursor: grab;
+    color: #333;
+}
+
+.sticky-note:active {
+    cursor: grabbing;
+}
+
+.sticky-note-content {
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+
+.sticky-title {
+    font-family: SFMedium;
+    font-size: 1rem;
+}
+
+
+/* ABOUT ME */
+
+.about-me-text, 
+.tldr-column h4, 
+.tldr-column ul li {
+    color: var(--text-color); /* This variable follows your light/dark toggle */
+    transition: color 0.3s ease; /* Smooth transition when toggling modes */
+}
+
+.window-about-me .window-content {
+   display: flex;
+    flex-direction: column;
+    height: 100%;       /* Fill the window exactly */
+    overflow: hidden;   /* DISALLOW any scrolling on the main container */
 }
 
 .window-about-me .about-me-text {
@@ -703,15 +760,174 @@ button:hover .theme-toggle-btn {
     padding-right: 15px; /* Adds space so the text doesn't touch the scrollbar */
 }
 
-/* .window-webgallery .image-gallery img {
-      display:block;
-     width: 100%;
-     height: auto;
-} */
+.about-me-text {
+    flex: 0 0 50%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 40px;
+    box-sizing: border-box;
+    
+    /* Animation setup */
+    opacity: 0;
+    transform: translateY(30px); /* Start 30px lower */
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    
+    -webkit-overflow-scrolling: touch;
+}
 
-/* .window-canadian-hyperloop-conference .image-gallery img {
-      display:block;
-     width: 100%;
-     height: auto;
-} */
+/* 2. The class that triggers the slide-up */
+.about-me-text.visible {
+    opacity: 1;
+    transform: translateY(0); /* Slide to original position */
+}
 
+.about-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px); /* Adjust based on your nav height */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.about-layout-wrapper {
+    display: flex;
+    align-items: flex-start; /* Aligns top of slideshow with top of text */
+    width: 100%;
+    gap: 20px;
+}
+
+.tldr-trigger {
+    color: var(--text-color); /* Matches your theme toggle */
+    font-family: 'SFBold', sans-serif;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 10px;
+}
+
+.tldr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    padding: 10px;
+    padding-top: 0px;
+    margin-top: 0px;
+}
+
+.tldr-title {
+    font-size: 1.1rem;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.tldr-column ul {
+    padding-top: 0;
+    margin-top: 0.5rem;
+    padding-bottom: 2rem;
+}
+
+/* Optional: Smooth transition between slides */
+.fade {
+    animation: fadeAnim 1.5s;
+}
+
+@keyframes fadeAnim {
+    from {opacity: .4} 
+    to {opacity: 1}
+}
+
+/* 2. The Wrapper */
+.about-layout-wrapper {
+    display: flex;
+    flex: 1; /* This tells the wrapper to take up all remaining height */
+    width: 100%;
+    min-height: 0; /* Important for flex children to scroll */
+    gap: 0;           /* Clean split, or add gap: 20px if you want space */
+}
+
+
+/* 3. The Slideshow Square (50% Width) */
+/* Ensure these exist in general.css */
+.about-slideshow {
+    position: relative;
+    width: 50%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    align-self: flex-start; /* Keeps the square at the top */
+}
+
+.about-slideshow .mySlides {
+    position: absolute; /* Stacks them on top of each other */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none; /* Hidden until the script runs */
+    /* This makes the rapid swaps look like a motion blur */
+    animation: quickFade 0.4s ease-in-out;
+}
+
+@keyframes quickFade {
+    from { opacity: 0.9; }
+    to { opacity: 1; }
+}
+
+/* Force the Square Aspect Ratio */
+.about-slideshow::before {
+    content: "";
+    display: block;
+    padding-top: 100%; /* This creates the perfect square based on width */
+}
+
+.about-slideshow {
+    cursor: pointer; /* Changes mouse to a hand icon */
+}
+
+/* Optional: Add a subtle transition when images swap */
+.about-slideshow .mySlides {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.about-me-text::-webkit-scrollbar {
+    display: none; /* This actually hides the bar in Chrome/Safari */
+}
+
+/* 2. Hide scrollbar for Firefox */
+.about-me-text {
+    scrollbar-width: none; 
+}
+
+/* 3. Hide scrollbar for IE and Edge */
+.about-me-text {
+    -ms-overflow-style: none; 
+    line-height: 0;
+}
+
+.about-title-text {
+    display: inline-block;
+    line-height:4.5rem;
+    margin-bottom: 0;
+    margin-top: 4rem;
+    padding: 0;
+}
+
+.about-body-text {
+    display: inline-block;
+    margin: 0;
+    margin-top: 1rem;
+    padding: 0;
+    font-family: SFRegular;
+    font-size: 1rem;
+    line-height: 1.3rem;
+}
+
+.about-me-link {
+    text-decoration: none;
+    color: #007afd;
+}
+
+.prevent-select {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}

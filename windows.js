@@ -26,77 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
         { src: "/images/Hobbies/Lifedrawing.png", alt: "Life Drawing", width: 280, height: 280, initial_x: 50, initial_y: 60, rotate: 0 }, 
     ];
 
-    // ⭐ Map for Custom Window Content (UNCHANGED) ⭐
-    const WINDOW_CONTENT_MAP = {
-        // CONTENT FOR PROJECT FOLDERS (Using the inner text/title)
-        "ABOUT ME": `
-       <div class="window-content">
-       <img src="/images/about-me.png" alt="It's me! Lucas!">
-        <div class="about-me-text">
-            <p>
-                     Waterloo Graduate
-                <br>
-                <br>
-                    Designer  by accident.
-                <br>
-                <br>
-                    Bridging gaps through design.
-            </p>
-        </div>
-
-</div>
-        `,
-        "VOGRO": `
-           <div class="window-content">
-                 <div class="image-gallery">
-        
-                    <img src="/images/vogro-images/vogro-header.png" alt="1">
-                    <img src="/images/vogro-images/VoGro Problem Statistics.png" alt="2">
-                    <img src="/images/vogro-images/vogro-iteration.png" alt="3">
-                    <img src="/images/vogro-images/vogro-user-testing.png" alt="4">
-                    <img src="/images/vogro-images/vogro-user-research.png" alt="5">
-                    <img src="/images/vogro-images/vogro-user-results.png" alt="6">
-                    <img src="/images/vogro-images/vogro-solution.png" alt="7">
-                    
-                 </div>
-            </div>
-        `,
-        "BANK OF TAIWAN": `
-         <div class="window-content">
-             <div class="image-gallery">
-        
-                    <img src="/images/bot-images/1.png" alt="1">
-                    <img src="/images/bot-images/2.png" alt="2">
-                    <img src="/images/bot-images/3.png" alt="3">
-                    <img src="/images/bot-images/4.png" alt="4">
-                    <img src="/images/bot-images/5.png" alt="5">
-                    <img src="/images/bot-images/6.png" alt="6">
-                    
-                   
-                </div>
-                
-                <div class="botcomp">
-                    <img class="botcomp" src="/images/bot-images/7.png" alt="7">
-                </div>
-                
-                </div>
-        `,
-        "CANADIAN HYPERLOOP CONFERENCE": `
-        <br>
-             <br> <br> <br> <br> <br> <br> <br> <br> <br> <br>
-             <p>Well this is embarassing, it's a little empty here. 
-             <br>
-             More is coming soon, I promise :)</p>
-        `,
-        "WEBGALLERY": `
-            <br>
-             <br> <br> <br> <br> <br> <br> <br> <br> <br> <br>
-             <p>Well this is embarassing, it's a little empty here. 
-             <br>
-             More is coming soon, I promise :)</p>
-         
-        `
-    };
 
     // ⭐ List of all 5 project keys for static navigation (unchanged) ⭐
     const PROJECT_TITLES = [
@@ -104,7 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
         "VOGRO",
         "BANK OF TAIWAN",
         "CANADIAN HYPERLOOP CONFERENCE",
-        "WEBGALLERY"
+        "HESS",
+        "BETTERMIND"
     ];
 
     // ⭐ List of dock apps that should only have one instance (UNCHANGED) ⭐
@@ -133,8 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
         "BANK OF TAIWAN": "Bank of Taiwan",
         "CANADIAN HYPERLOOP CONFERENCE": "Canadian Hyperloop Conference",
         "VOGRO": "Vogro",
-        "WEBGALLERY": "Web Gallery",
-        "ABOUT ME": "About Me"
+        "HESS": "HESS Education",
+        "ABOUT ME": "About Me",
+        "BETTERMIND": "Bettermind"
     };
 
     // ⭐ Map for Custom Default Window Sizes (UNCHANGED) ⭐
@@ -235,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = config.src;
         // The image is now loaded in the background. No need to append it to the DOM.
     });
-}
+    }  
 
     // NEW HELPER: Counts currently open windows in the CENTERED_APPS group.
     function getCenteredAppCount() {
@@ -642,29 +573,57 @@ document.addEventListener('DOMContentLoaded', () => {
             newWindow.style.transition = 'none'; // Ensure no transition is active
         }
         
-        // --- Content & Title Injection ---
-        const displayTitle = DISPLAY_TITLE_MAP[title] || capitalizeTitle(title);
-        const titleElement = newWindow.querySelector('.window-title'); // Get title element
-        titleElement.textContent = displayTitle;
-        
-        const contentHTML = WINDOW_CONTENT_MAP[title];
-        const contentContainer = newWindow.querySelector('.window-content');
-        
-        // ⭐ UPDATED: Apply color transition to title and content (Matching wallpaper transition of 0.8s)
-        const colorTransition = 'color 0.8s ease-in-out';
-        titleElement.style.transition = colorTransition;
-        contentContainer.style.transition = colorTransition;
-        
-        // Apply initial dynamic text color
-        const currentColor = getCurrentTextColor();
-        titleElement.style.color = currentColor;
-        contentContainer.style.color = currentColor;
-        
-        if (contentHTML && !useStyledTemplate) {
-            contentContainer.innerHTML = contentHTML; 
-        } else if (!useStyledTemplate) {
-            contentContainer.innerHTML = `<h3 style="margin-top: 0;">${displayTitle}</h3><p>Content for ${displayTitle} is coming soon!</p>`;
-        }
+       // --- Content & Title Injection ---
+    const displayTitle = DISPLAY_TITLE_MAP[title] || capitalizeTitle(title);
+    const titleElement = newWindow.querySelector('.window-title');
+    titleElement.textContent = displayTitle;
+    
+    // 1. Generate the filename (e.g., "BANK OF TAIWAN" -> "bank-of-taiwan.html")
+    const safeTitle = title.toLowerCase().replace(/\s+/g, '-');
+    const fileName = `projects/${safeTitle}.html`;
+    
+    const contentContainer = newWindow.querySelector('.window-content');
+
+    // --- Transition Styles ---
+    const colorTransition = 'color 0.8s ease-in-out';
+    titleElement.style.transition = colorTransition;
+    contentContainer.style.transition = colorTransition;
+
+    const currentColor = getCurrentTextColor();
+    titleElement.style.color = currentColor;
+    contentContainer.style.color = currentColor;
+
+    // 2. Fetch external content if it's NOT a styled app (like Photoshop)
+    if (!useStyledTemplate) {
+        // Show a temporary loading state
+        contentContainer.innerHTML = `<div class="loading-state" style="padding: 20px; opacity: 0.5;">Loading ${displayTitle}...</div>`;
+
+        fetch(fileName)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Could not find ${fileName}`);
+                }
+                return response.text();
+            })
+            .then(html => {
+                // Inject the fetched HTML into the window
+                contentContainer.innerHTML = html;
+                
+                if (title === "ABOUT ME") {
+                    initSlideshow();
+                }
+                
+            })
+            .catch(err => {
+                console.error("Fetch error:", err);
+                contentContainer.innerHTML = `
+                    <div style="padding: 20px; color: #ff3b30;">
+                        <h3 style="margin-top: 0;">Update Needed</h3>
+                        <p>Unable to load <strong>${fileName}</strong>.</p>
+                        <p><small>Error: ${err.message}</small></p>
+                    </div>`;
+            });
+    }
         
         // --- Static Navigation Bar (existing logic) ---
         const navContainer = newWindow.querySelector('.window-footer-nav');
@@ -1165,6 +1124,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+    
+    // Initialize the Sticky Note
+const stickyNote = document.getElementById('sticky-note');
+if (stickyNote) {
+    // We use 'StickyNote' as a key for potential position saving later
+    makeMovable(stickyNote, 'StickyNote');
+    
+    // Ensure clicking the editable text doesn't trigger a drag incorrectly
+    const content = stickyNote.querySelector('.sticky-note-content');
+    content.addEventListener('mousedown', (e) => {
+        e.stopPropagation(); // Prevents makeMovable from taking over when you want to edit
+    });
+}
 
     // Start observing the body element for attribute changes (specifically 'class')
     observer.observe(document.body, { attributes: true });
