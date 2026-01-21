@@ -794,7 +794,7 @@ button:hover .theme-toggle-btn {
     /* Animation setup */
     opacity: 0;
     transform: translateY(30px); /* Start 30px lower */
-    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    transition: opacity 0.8s ease-out, transform 1.8s ease-out;
     
     -webkit-overflow-scrolling: touch;
 }

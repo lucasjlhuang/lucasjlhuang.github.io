@@ -66,25 +66,34 @@ function initSlideshow() {
     }
 
     function showSlides() {
-        slideIndex++;
-        if (slideIndex > slides.length) {
-            slideIndex = 1;
-            cycleCount++;
-        }
+    slideIndex++;
+    
+    // 1. Keep the flicker going through the images
+    if (slideIndex > slides.length) {
+        slideIndex = 1;
+        cycleCount++;
+    }
 
+    updateDisplay();
+
+    if (cycleCount < 1) {
+        // Continue flickering fast
+        slideshowInterval = setTimeout(showSlides, 100); 
+    } else {
+        // --- 2. THE RANDOMIZATION STEP ---
+        // Flicker is done. Now, pick a truly random slide to land on.
+        slideIndex = Math.floor(Math.random() * slides.length) + 1;
+        
+        // Update the display one last time to show the random slide
         updateDisplay();
 
-        if (cycleCount < 1) {
-            // Flicker phase
-            slideshowInterval = setTimeout(showSlides, 50); // Fast flicker
-        } else {
-            // End of flicker: show text and start scroll
-            if (textColumn) {
-                textColumn.classList.add("visible");
-                startAutoScroll();
-            }
+        // 3. Show text and start scroll
+        if (textColumn) {
+            textColumn.classList.add("visible");
+            startAutoScroll();
         }
     }
+}
 
     // Start logic after window animation
     setTimeout(showSlides, 400);
