@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+    
+    
     // Select both dock items and project folders
     const dockItems = document.querySelectorAll('.dock li a');
     const projectFolders = document.querySelectorAll('.projectfolder');
@@ -393,7 +395,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 20); 
         });
     }
+    
+        // Start the random growth sequence
+        // 1. Grab all folders and convert to an Array
+        const folders = Array.from(document.querySelectorAll('.projectfolder'));
 
+        // 2. Fisher-Yates Shuffle Algorithm (shuffles the order of the array)
+        for (let i = folders.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [folders[i], folders[j]] = [folders[j], folders[i]];
+        }
+
+        // 3. Trigger the growth with a consistent rhythm
+        // Even though the timing is 200ms every time, the ORDER is random
+        setTimeout(() => {
+            folders.forEach((folder, index) => {
+                setTimeout(() => {
+                    folder.classList.add('appear');
+                }, index * 200); // Change 200 to 100 for faster or 300 for slower rhythm
+            });
+        }, 200); // Initial 0.5s delay before the first one pops
+    
+    
     // UPDATED: Movable logic for the new images (now saves position)
     function makeMovable(element, key) {
         let isDragging = false;
@@ -519,7 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // ⭐ Case C: New Random Default Position (for Genie Final Destination & Standard Opens) ⭐
             // X: 30% to 50%
             // Y: 10% to 30%
-            const randomX = Math.random() * 35 + 15; // 30.0 to 49.99...
+            const randomX = Math.random() * 35 + 10; // 30.0 to 49.99...
             const randomY = Math.random() * 15 + 5; // 10.0 to 29.99...
             
             targetX = `${randomX}vw`;
@@ -624,6 +647,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>`;
             });
     }
+    
+    
         
         // --- Static Navigation Bar (existing logic) ---
         const navContainer = newWindow.querySelector('.window-footer-nav');
