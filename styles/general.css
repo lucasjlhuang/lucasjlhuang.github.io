@@ -423,6 +423,8 @@ button:hover .theme-toggle-btn {
     font-family: 'SFmedium';
     font-size: 14px;
     color: #333;
+    
+    visibility: hidden;
 }
 
 .window-close-btn {
@@ -958,4 +960,63 @@ button:hover .theme-toggle-btn {
   -webkit-user-select: none; /* Safari */
   -ms-user-select: none; /* IE 10 and IE 11 */
   user-select: none; /* Standard syntax */
+}
+
+.dock-item-title {
+    visibility: visible;
+    color: white !important;
+}
+
+
+/* 1. Hide the bubble by default */
+.is-tooltip-only .folder-bubble {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 120%; /* Position above the icon */
+    left: 50%;
+    transform: translateX(-50%) translateY(10px); /* Start slightly lower for animation */
+    background-color: #33333380;
+    color: #ffffff;
+    text-align: center;
+    pointer-events: none; 
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'SFRegular', sans-serif;
+    text-shadow: none;
+    white-space: nowrap;
+    font-weight: 500;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+    pointer-events: none; /* Prevents the bubble from blocking mouse movements */
+    z-index: 1000;
+}
+
+/* 2. Create the triangle/tail */
+.is-tooltip-only .folder-bubble::after {
+    content: "";
+    position: absolute;
+    top: 100%; /* Sits exactly at the bottom edge */
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* Size of the tail area */
+    width: 12px;
+    height: 8px;
+    
+    background-color: #33333380;
+    
+    /* This "clips" the rectangle into a triangle shape */
+    /* Points: Top-Left, Top-Right, Bottom-Center */
+    clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+    
+    /* Subtle overlap to prevent sub-pixel gaps */
+    margin-top: -0.5px; 
+}
+
+/* 3. Show the bubble when the FOLDER is hovered */
+.is-tooltip-only:hover .folder-bubble {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0); /* Slide up into position */
 }

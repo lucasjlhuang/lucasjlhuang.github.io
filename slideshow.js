@@ -78,7 +78,7 @@ function initSlideshow() {
 
     if (cycleCount < 1) {
         // Continue flickering fast
-        slideshowInterval = setTimeout(showSlides, 100); 
+        slideshowInterval = setTimeout(showSlides, 75); 
     } else {
         // --- 2. THE RANDOMIZATION STEP ---
         // Flicker is done. Now, pick a truly random slide to land on.
@@ -97,7 +97,7 @@ function initSlideshow() {
 
     // Start logic after window animation
     setTimeout(showSlides, 400);
-
+    
     // Manual Click
     container.onclick = () => {
         slideIndex++;

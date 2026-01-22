@@ -13,121 +13,81 @@
 </head>
 
 <body>
-    <nav>
-        <div id="logo"><a class="logo-link" href="/index.html">Lucas / Lee</a></div>
-        <div class="links">
-            <div class="nav-link"><a href="/index.html">projects</a></div>
-            <div class="nav-link"><a href="/pages/playground">playground</a></div>
-            <div class="nav-link"><a id="focus" href="/pages/about/">about</a></div>
-        </div>
-    </nav>
 
-       <!-- SCROLL TO TOP  -->
-       <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
-       <script>
-        $(document).ready(function () {
-            $(window).scroll(function () {
-                if ($(this).scrollTop() > 100) {
-                    $('.scrollup').fadeIn();
-                } else {
-                    $('.scrollup').fadeOut();
-                }
-            });
-            $('.scrollup').click(function () {
-                $("html, body").animate({
-                    scrollTop: 0
-                }, 600);
-                return false;
-            });
-        });
-       </script>
-       
     <!-- Hero section -->
     <main>
-
+        
         <!-- Introduction section -->
-        <div id="intro" class="row">
+        <div id="intro" class="row title-row">
             <div class="col-12">
                 <h1 class="project-title">VoGro Mobile App</h1>
                 <h3 class="project-sub-title">PRODUCT DESIGN · RESEARCH · UX DESIGN</h3>
             </div>
+        </div>
+        
             <div class="col-12"><img class="big-image" src="/images/vogro-images/vogro-header.png"
                     alt="VoGro product image"></div>
-            <div class="col-3 spacer"></div>
-            <div class="col-6">
-                <h3 class="project-section-title">INTRODUCTION</h3>
-                <p class="project-body">
-                    VoGro is a volunteer management platform, initially designed to improve the lives of those impacted
-                    by the pandemic. The platform evolved, encompassing
-                    community and social opportunities as well. We wanted to make this platform as accessible as
-                    possible. Following the development of our dashboard, we set out to<b> design and develop VoGro’s
-                        mobile app
-                        that enables a helping hand.</b></p>
+                    
+            <div class="row">
+                <div class="col-6">
+                    <h3 class="project-section-title">INTRODUCTION</h3>
+                    <p class="project-body">
+                        VoGro is a volunteer management platform, initially designed to improve the lives of those impacted
+                        by the pandemic. The platform evolved, encompassing
+                        community and social opportunities as well. We wanted to make this platform as accessible as
+                        possible. Following the development of our dashboard, we set out to enable a helping hand.</p>
+                </div>
+            
+                <div class="col-6">
+                <h3 class="project-section-title">PROBLEM STATEMENT</h3>
+                    <p class="project-body">VoGro was created to help the community
+                        and aid those limited by the pandemic and its restrictions. VoGro was struggling to connect
+                        volunteers with community opportunities.
+                        <b>How might we bring opportunities to volunteers in the midst of a pandemic?</b>
+                    </p>
+                </div>
             </div>
-            <div class="col-3 spacer"></div>
-        </div>
 
-        <div id="project-role" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-2">
+        <!-- <div id="project-role" class="row">
+            <div class="col-4">
                 <h3 class="project-section-title">MY ROLE</h3>
                 <h3 class=" project-body-small">Research, analysis, product design, mobile design, user-testing</h3>
             </div>
-            <div class="col-2">
+            <div class="col-4">
                 <h3 class="project-section-title">TOOLS</h3>
                 <h3 class="project-body-small">Figma, Illustrator</h3>
             </div>
-            <div class="col-2">
+            <div class="col-4">
                 <h3 class="project-section-title">TIMELINE<h3 class="project-body-small">Nov 2022 - Aug 2021</h3>
             </div>
-            <div class="col-3 spacer"></div>
-        </div>
+
+        </div> -->
 
         <div id="project-prototype" class="row">
-            <center>
+          
             <div class="col-12">
                 <video class="prototype" autoplay loop muted>
                     <source src="/prototypes/vogro-proto.mp4" type="video/mp4">
                     Your browser does not support this video tag
                 </video>
-            </center>
             </div>
-        </div>
-
-        <div id="project-problem-breakdown" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-6">
-                <h3 class="project-section-title">PROBLEM STATEMENT</h3>
-                <p class="project-body">VoGro was created to help the community
-                    and aid those limited by the pandemic and its restrictions. VoGro was struggling to connect
-                    volunteers with community opportunities.
-                    <b>How might we bring opportunities to volunteers in the midst of a pandemic?</b>
-                </p>
-            </div>
-            <div class="col-3 spacer"></div>
         </div>
 
         <div id="#" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-6 section-title-parent">
+             <div class="col-12 section-title-parent">
                 <h3 class="project-section-title">BREAKDOWN OF THE PROBLEM</h3>
             </div>
-            <div class="col-3 spacer"></div>
-        </div>
-
-        <div id="#" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-3">
-                <p class="project-body">🔎 Volunteers are unable to find opportunities</p>
-                <h3 class="project-body-small">Our dashboard and website platforms are not effective at recruiting new
-                    users or connecting them with volunteer opportunities.</h3>
+            <div class="col-6">
+                <p class="project-body">🔎 Volunteers are unable to find opportunities:<br>
+                Our dashboard and website platforms are not effective at recruiting new
+                    users or connecting them with volunteer opportunities
+                </p>
             </div>
-            <div class="col-3">
-                <p class="project-body">😕 New users are often confused and do not follow through</p>
-                <h3 class="project-body-small">The new users we were bringing in found that our website and email system
-                    were inefficient, and often confusing.</h3>
+            <div class="col-6">
+                <p class="project-body">😕 New users are often confused and do not follow through:<br>
+                The new users we were bringing in found that our website and email system
+                    were inefficient, and often confusing.</p>
             </div>
-            <div class="col-3 spacer"></div>
         </div>
 
     </main>
@@ -139,53 +99,41 @@
                     src="/images/vogro-images/vogro-problem-statistics.png" alt="VoGro industry statistics"></div>
         </div>
 
-        <div id="project-problem-breakdown" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-6 section-title-parent">
+        <div class="row">
+             <div class="col-12 section-title-parent">
                 <h3 class="project-section-title">LETS DO OUR RESEARCH</h3>
             </div>
-            <div class="col-3 spacer"></div>
-        </div>
-
-        <div class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-3">
+            <div class="col-6">
                 <p class="project-body">Step-one was looking into what was out there, the different volunteering
                     platforms on the market.
                     We were looking into what worked, and what we could improve on.</p>
             </div>
-            <div class="col-3">
-                <h3 class="project-body-small">Our main users include high-school and university students as well as
-                    young adults for volunteers.
-                    The elderly and charities made up the other part of our user base. Our research was focused on
-                    helping these groups.
-                    We came up with three main features,<b> a task map feature, news and updates, and a chat
-                        feature.</b></h3>
-            </div>
-            <div class="col-3 spacer"></div>
-        </div>
-
-        <div class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-6"><img class="medium-image" src="/images/vogro-images/vogro-market-research.png"
-                    alt="Other companies in the volunteering market"></div>
-            <div class="col-3 spacer"></div>
-        </div>
-
-        <div class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-3"><img class="extra-small-image" src="/images/vogro-images/vogro-user-research.png"
-                    alt="VoGro user journey map"></div>
-            <div class="col-3">
-                <p class="project-body">Step-two was finding out what are the users saying.
-                <h3 class="project-body-small"> Our main users include high-school and university students as well as
+            
+             <div class="col-6">
+                <p class="project-body">Step-two was finding out what our users were saying.
+                <!-- <h3 class="project-body-small"> Our main users include high-school and university students as well as
                     young adults for volunteers. The elderly and charities made up the other part of our user base.
                     Our research was focused on helping these groups. We came up with three main features, a task map
-                    feature, news and updates, and a chat feature.</h3>
+                    feature, news and updates, and a chat feature.</h3> -->
 
                 </p>
-            </div>
+            
+             </div>
+        </div>
+
+
+          <div class="row title-row">
             <div class="col-3 spacer"></div>
+                <div class="col-6"><img class="medium-image" src="/images/vogro-images/vogro-market-research.png"
+                       alt="Other companies in the volunteering market"></div>
+            <div class="col-3 spacer"></div>
+        </div>
+             
+        <div class="row title-row .no-bottom-image">
+             <div class="col-3 spacer"></div>
+            <div class="col-6"><img class="extra-small-image" src="/images/vogro-images/vogro-user-research.png"
+                    alt="VoGro user journey map"></div>
+             <div class="col-3 spacer"></div>   
         </div>
     </section>
 
@@ -196,57 +144,39 @@
                     alt="VoGro first iteration designs"></div>
         </div>
 
-        <div id="#" class="row">
-            <div class="col-12">
-                <h3 id="first-iteration-subtext" class="project-body-small">Following the style guide and design system
-                    created by the web design UI team, I created these screens as our first Iteration.
-                    This Iteration only included the core features from our planning phase, allowing users to carry out
-                    their primary goals</h3>
-            </div>
-        </div>
-
-        <div id="#" class="row">
-            <div class="col-2 spacer"></div>
-            <div class="col-4"><img class="small-image" src="/images/vogro-images/vogro-iteration-screen-1.png"
+        <div id="#" class="row title-row">
+            <div class="col-6"><img class="small-image" src="/images/vogro-images/vogro-iteration-screen-1.png"
                     alt="VoGro iteration image"></div>
-            <div class="col-4">
-                <h3 class="project-section-title">FIRST ITERATION</h3>
-                <p class="project-body">Make it as easy as possible for users to track their tasks</p>
-                <h3 class="project-body-small">An important feature we wanted to implement is our task tracker, which
+            <div class="col-6">
+                <h3 class="project-section-title">Organized Task List</h3>
+                <h3 class="project-body">An important feature we wanted to implement is our task tracker, which
                     provided users the ability to stay up-to-date with their commitments and track their volunteer
                     hours. </h3>
             </div>
-            <div class="col-2 spacer"></div>
         </div>
 
-        <div id="#" class="row">
-            <div class="col-2 spacer"></div>
-            <div class="col-4">
-                <h3 class="project-section-title">FIRST ITERATION</h3>
-                <p class="project-body">Visualize distance and location when exploring</p>
-                <h3 class="project-body-small">We built a familiar map feature that gives our users a visual
+        <div id="#" class="row title-row">
+            <div class="col-6">
+                <h3 class="project-section-title">Easy to Understand Map</h3>
+                <h3 class="project-body">We built a familiar map feature that gives our users a visual
                     representation of their location.
                     Understanding how far, and how much time that might be committed was a large influencing factor for
                     volunteers. </h3>
             </div>
-            <div class="col-4"><img class="small-image" src="/images/vogro-images/vogro-iteration-screen-2.png"
+            <div class="col-6"><img class="small-image" src="/images/vogro-images/vogro-iteration-screen-2.png"
                     alt="VoGro iteration image"></div>
-            <div class="col-2 spacer"></div>
         </div>
 
-        <div id="#" class="row">
-            <div class="col-2 spacer"></div>
-            <div class="col-4"><img class="small-image" src="/images/vogro-images/vogro-iteration-screen-3.png"
+        <div id="#" class="row title-row">
+            <div class="col-6"><img class="small-image" src="/images/vogro-images/vogro-iteration-screen-3.png"
                     alt="VoGro iteration image"></div>
-            <div class="col-4">
-                <h3 class="project-section-title">FIRST ITERATION</h3>
-                <p class="project-body">Actionable and Informative</p>
-                <h3 class="project-body-small">It is important our users know how and what they are committing to.
+            <div class="col-6">
+                <h3 class="project-section-title">Detailed Descriptions</h3>
+                <h3 class="project-body">It is important our users know how and what they are committing to.
                     We wanted full transparency between event hosts and the volunteers.
                     It is important that volunteers know all necessary information and are able to accept upon interest.
                 </h3>
             </div>
-            <div class="col-2 spacer"></div>
         </div>
     </section>
 
@@ -258,26 +188,21 @@
         </div>
 
         <div id="#" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-6">
+            <div class="col-12">
                 <h3 class="project-section-title">USER TESTING</h3>
                 <p class="project-body">We tested our first iteration with a group of 15 members, all of who were either
                     active or formerly active volunteers.</p>
             </div>
-            <div class="col-3 spacer"></div>
-        </div>
-
-        <div id="#" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-3">
-                <h3 class="project-body-small">The primary goal was to enable the success of members in finding and
+            
+             <div class="col-6">
+                <h3 class="project-body">The primary goal was to enable the success of members in finding and
                     accepting tasks.
                     The group was given a prototype via Figma and monitored/recorded over a discord video call as they
                     completed tasks given to them.
                     The metrics of this study were:</h3>
             </div>
-            <div class="col-3">
-                <ul class="vogro-bullet">
+            <div class="col-6">
+                <ul class="project-bullet">
                     <li>
                         <h3 class="project-body-small">Task completion rate</h3>
                     </li>
@@ -289,16 +214,12 @@
                     </li>
                 </ul>
             </div>
-            <div class="col-3 spacer"></div>
-        </div>
-
-        <div id="#" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-3">
+            
+                <div class="col-3">
                 <h3 class="project-body-small">GIVEN TASKS</h3>
             </div>
             <div class="col-3">
-                <ol class="vogro-numbered">
+                <ol class="project-numbered">
                     <li>
                         <h3 class="project-body-small">Find and accept a specific task using map view</h3>
                     </li>
@@ -313,20 +234,15 @@
                     </li>
                 </ol>
             </div>
-            <div class="col-3 spacer"></div>
-        </div>
-
-
-        <div id="#" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-6">
-                <p class="project-body-small">Overall users found the designs easy to follow and were able to complete
+         
+               <div class="col-12">
+                <p class="project-body">Overall users found the designs easy to follow and were able to complete
                     all tasks given to them.
                     The problem areas of the designs were found in the in-between of the process.
                     Our group reported only a 73% satisfaction rate going through the processes of the given tasks,
                     despite the 100% completion rate.</p>
             </div>
-            <div class="col-3 spacer"></div>
+            
         </div>
 
         <div id="#" class="row">
@@ -341,65 +257,19 @@
         </div>
 
         <div id="#" class="row">
-            <div class="col-2 spacer"></div>
-            <div class="col-4">
-                <p class="project-body"><b>Room for improvement? For sure!</b></p>
-                <h3 class="project-body-small">Iterate, Iterate, Iterate.
+            <div class="col-12">
+                <p class="project-section-title"><b>Room for improvement? For sure!</b></p>
+                <h3 class="project-body">Iterate, Iterate, Iterate.
                     I am happy with the journey and final product of the VoGro app, but in hindsight could have tested
                     and iterated more.
                     We jumped from the first iteration to the final product with only one user testing session, seeing
                     major changes in the UX and UI,
-                    and I think if we iterated more and kept building we could create something even better.</h3>
+                    and I thin  k if we iterated more and kept building we could create something even better.</h3>
             </div>
-            <div class="col-4">
-                <p class="project-body"><b><br></b></p>
-                <h3 class="project-body-small">Keep it Simple Stupid. In the early stages, I was exploring too many
-                    options and possible features,
-                    trying to have the “perfect” application. I ended up re-imaging the entire app at least four times
-                    with each new concept being more complex than the last.
-                    In my next project I’m going to focus on the core features of the application and ask myself, “is
-                    this something we need?”.</h3>
-            </div>
-            <div class="col-2 spacer"></div>
         </div>
     </section>
 
-    <!-- Next project -->
-    <section id="next-project">
-        <div class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-6 section-title-parent">
-                <h3 class="project-section-title">Next project</h3>
-            </div>
-            <div class="col-3 spacer"></div>
-        </div>
-
-        <div id="#" class="row">
-            <div class="col-3 spacer"></div>
-            <div class="col-6">
-                <h1 class="next-project-button"><a href="/pages/projects/bettermind/">Bettermind</a></h1>
-            </div>
-            <div class="col-3 spacer"></div>
-        </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer>
-        <div id="outro">That's all folks.</div>
-        <div class="links">
-            <div class="footer-link"><a href="mailto: leejlhuang@gmail.com" target="blank">Email</a></div>
-            <div class="footer-link"><a href="https://www.linkedin.com/in/lucasjlhuang" target="blank">LinkedIn</a>
-            </div>
-            <div class="footer-link"><a href="pages/LucasHuangResume.pdf" target="blank">Resume</a></div>
-    </footer>
-
-         <!-- SCROLL TO TOP  -->
-        <a href="#" class="scrollup">Scroll</a>
-
-    </footer>
 </body>
-
- <!-- SCROLL TO TOP  -->
-<script src="/components/navbar.js"></script>
+ 
 
 </html>

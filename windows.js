@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "VOGRO",
         "BANK OF TAIWAN",
         "CANADIAN HYPERLOOP CONFERENCE",
-        "HESS",
         "BETTERMIND"
     ];
 
@@ -101,14 +100,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function getProjectFolderElement(title) {
         let element = null;
         projectFolders.forEach(folder => {
+            
             const projectText = folder.querySelector('.ProjectText');
             // Normalize the text before comparison (removing extra spaces and newlines)
             if (projectText && projectText.innerText.replace(/\s+/g, ' ').trim() === title) {
                 element = folder;
             }
+            
         });
         return element;
     }
+    
     
     function getHobbiesIconRect() {
         // Use the 'Hobbies' dock item's bounding box
@@ -542,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // ⭐ Case C: New Random Default Position (for Genie Final Destination & Standard Opens) ⭐
             // X: 30% to 50%
             // Y: 10% to 30%
-            const randomX = Math.random() * 35 + 10; // 30.0 to 49.99...
+            const randomX = Math.random() * 35 + 5; // 30.0 to 49.99...
             const randomY = Math.random() * 15 + 5; // 10.0 to 29.99...
             
             targetX = `${randomX}vw`;
@@ -621,22 +623,36 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show a temporary loading state
         contentContainer.innerHTML = `<div class="loading-state" style="padding: 20px; opacity: 0.5;">Loading ${displayTitle}...</div>`;
 
-        fetch(fileName)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Could not find ${fileName}`);
-                }
-                return response.text();
-            })
-            .then(html => {
-                // Inject the fetched HTML into the window
-                contentContainer.innerHTML = html;
-                
-                if (title === "ABOUT ME") {
-                    initSlideshow();
-                }
-                
-            })
+       /* windows.js - Inside openNewWindow() fetch block */
+
+fetch(fileName)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Could not find ${fileName}`);
+        }
+        return response.text();
+    })
+    .then(html => {
+        // Inject the fetched HTML into the window
+        contentContainer.innerHTML = html;
+        
+        // ⭐ NEW: Trigger Slide-Up Animation for Project Content
+        // We check if it's a project folder and NOT the "About Me" window
+        if (isProjectFolder && title !== "ABOUT ME") {
+            const mainContent = contentContainer.querySelector('main');
+            if (mainContent) {
+                // We use a small timeout (50ms) to ensure the browser 
+                // recognizes the initial hidden state before animating.
+                setTimeout(() => {
+                    mainContent.classList.add('visible');
+                }, 50);
+            }
+        }
+        
+        if (title === "ABOUT ME") {
+            initSlideshow();
+        }
+    })
             .catch(err => {
                 console.error("Fetch error:", err);
                 contentContainer.innerHTML = `
@@ -1036,6 +1052,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 2. Handle Project Folder Clicks (Desktop - Bring to Front or Open New) (unchanged) ---
     projectFolders.forEach(folder => {
+        
         let isMoving = false; 
         let startX = 0;
         let startY = 0;
@@ -1069,6 +1086,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isMoving) {
                 isMoving = false; 
                 return;
+            } else if (folder.classList.contains('is-tooltip-only')){
+                return 
             }
             
             const projectTitleElement = folder.querySelector('.ProjectText');
@@ -1082,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // No windows found for this project, open a new one with the Genie effect
                 // IMPORTANT: Pass the folder element to trigger the Genie open animation
                 openNewWindow(windowTitle, {}, folder);
-            }
+            } 
         });
     });
     
@@ -1166,6 +1185,6 @@ if (stickyNote) {
     // Start observing the body element for attribute changes (specifically 'class')
     observer.observe(document.body, { attributes: true });
     // ⭐ END MutationObserver Setup ⭐
-
+    
     preloadHobbyImages();
 });
