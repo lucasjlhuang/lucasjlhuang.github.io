@@ -74,18 +74,34 @@ body.desktop {
 /* Add these styles to your general.css file */
 
 #rotation-message {
+    height: 4rem;
+    
     position: fixed; /* Keep it over everything */
+    left: 80%;
+    bottom: -1%;
+    
+    display: flex;
+    flex-direction: column; 
+    align-items: center; /* Centers both image and text horizontally */
+
     font-family: 'SFBold';
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Center perfectly */
-    padding: 15px 30px;
-    color: var(--text-color); /* Applied dynamic color */
-    font-size: 24px;
+    color:#215b12; /* Applied dynamic color */
+    font-size: 1rem;
     z-index: 30000; /* High z-index to be on top */
     opacity: 0; /* Initially hidden */
     pointer-events: none; /* Allows clicks through when hidden */
-    transition: opacity 0.4s ease-in-out; /* Smooth fade in/out */
+    transition: opacity 0.4s ease-in; /* Smooth fade in/out */
+}
+
+.rotation-image {
+    height: 100%;
+    width: auto;
+}
+
+#trashCounter {
+   height: 1rem;
+   margin-right: 5px;
+   padding-bottom: 5px;
 }
 
 div.wallpaper {

@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ⭐ NEW: Variable to track the rotation angle for the Trash icon ⭐
     let trashRotationAngle = 0; 
+    let trashCounter = 0;
     
     // ⭐ NEW: Genie Animation Constants ⭐
     const GENIE_EASING = 'cubic-bezier(0.7, -0.01, 0.4, 1)';
@@ -150,15 +151,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showRotationMessage() {
         const messageElement = document.getElementById('rotation-message');
-        if (!messageElement) return;
+      
+          if (!messageElement) return;
 
         // 1. Show the message (Fade in)
         messageElement.style.opacity = '1';
 
         // 2. Set a timeout to hide the message (Fade out) after 2 seconds (2000ms)
-        setTimeout(() => {
-            messageElement.style.opacity = '0';
-        }, 1500); 
+        // setTimeout(() => {
+        //     messageElement.style.opacity = '0';
+        // }, 1500); 
     }
 
 
@@ -1016,6 +1018,8 @@ fetch(fileName)
                     return; // Stop execution here
                 }
                 
+                
+                
                 // ⭐ NEW: Handle Trash Click Separately (Rotation Logic) ⭐
                 if (windowTitle === "Trash") {
                     // Increment the rotation angle by 45 degrees
@@ -1023,7 +1027,8 @@ fetch(fileName)
                     
                     // Select the <img> element inside the dock item
                     const trashImage = item.querySelector('img');
-                    
+                      const counterDisplay = document.getElementById('trashCounter');
+                      
                     if (trashImage) {
                         // Apply the rotation via CSS transform
                         trashImage.style.transition = 'transform 0.3s ease-out'; // Add a smooth transition
@@ -1031,6 +1036,8 @@ fetch(fileName)
                         
                         // --- NEW: Check for 360 degree completion ---
                         if (trashRotationAngle % 360 === 0) {
+                            trashCounter++;
+                            counterDisplay.innerText = trashCounter;
                             showRotationMessage();
                         }
                     }
