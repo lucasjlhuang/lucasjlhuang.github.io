@@ -22,6 +22,10 @@ main, section {
     background: none;
 }
 
+.prototype-row {
+    margin-bottom: 0;
+}
+
 /* Apply flex and gap to the container */
 .image-grid-gap {
     display: flex;
@@ -58,6 +62,21 @@ main, section {
     display: block;
     border-radius: 0.75rem;
     object-fit: contain;
+}
+
+.prototype-container {
+    width: 100%;       /* Or your desired width */
+    height: 500px;     /* Set this to your desired window height */
+    overflow: hidden;  /* This is the "guillotine" that cuts the bar */
+    position: relative;
+    border-radius: 8px; /* Optional: makes it look cleaner */
+}
+
+.interactive-prototype {
+    width: 100%;
+    height: calc(100% + 60px); /* Makes iframe taller than the container */
+    margin-bottom: -40px;      /* Pulls the bottom up to hide the footer */
+    border: none;
 }
 
 .no-bottom-image {
