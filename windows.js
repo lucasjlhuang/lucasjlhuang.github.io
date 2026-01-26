@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const hobbyImagePositions = new Map();
     
     
-    
             // ALL SPEECH BUBBLES
             const wallpaper = document.querySelector('.wallpaper');
             const allFolders = document.querySelectorAll('.projectfolder');
