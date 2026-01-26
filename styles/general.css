@@ -1093,3 +1093,7 @@ button:hover .theme-toggle-btn {
     opacity: 1;
     transform: translateX(-50%) translateY(0); /* Slide up to final position */
 }
+
+.bold {
+    font-family: 'SFBold';
+}
