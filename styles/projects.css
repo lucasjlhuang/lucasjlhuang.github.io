@@ -55,9 +55,11 @@ main, section {
 .col-10 { width: 83.33%; }
 .col-8 { width: 66%; }
 .col-6  { width: 50%; }
+.col-5 { width: 41.66%; }
 .col-4  { width: 33.33%; }
 .col-3  { width: 25%; }
 .col-2  { width: 16.66%; }
+.col-1 { width: 8.33%; }
 
 /* 3. Media Scaling (Images & Video) */
 /* This ensures media scales to the window and resizes dynamically */
@@ -115,7 +117,7 @@ main, section {
 
 .project-section-title {
     font-family: 'SFBold', sans-serif;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     margin-top: 2rem;
     padding-left: 1rem;
     margin-bottom: 0;
@@ -124,11 +126,16 @@ main, section {
 /* Requested Project Body Background */
 .project-body {
     font-family: 'SFRegular', sans-serif;
-    font-size: 1rem;
+    font-size: 1.1rem;
     line-height: 1.3;
     margin-bottom: 1rem;
     padding: 1rem; /* Added padding so text doesn't touch the edge of the background */
     margin-top: 0px;
+}
+
+.project-body-list {
+    font-size: 1.1rem;
+    font-family: 'SFMedium';
 }
 
 .project-body-small {
