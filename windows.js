@@ -15,7 +15,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // ⭐ NEW: Map to store the last known position of each hobby image
     // Key: Image alt text, Value: { left: 'Xpx', top: 'Ypx' }
     const hobbyImagePositions = new Map();
+    
+    
+    
+            // ALL SPEECH BUBBLES
+            const wallpaper = document.querySelector('.wallpaper');
+            const allFolders = document.querySelectorAll('.projectfolder');
 
+            // Filter the folders to exclude 'About Me'
+            const targetFolders = Array.from(allFolders).filter(folder => {
+                const projectText = folder.querySelector('.ProjectText');
+                // We check if the text exists and is NOT "ABOUT ME"
+                return projectText && projectText.innerText.replace(/\s+/g, ' ').trim() !== "ABOUT ME";
+            });
+
+            targetFolders.forEach(folder => {
+                folder.addEventListener('mouseenter', () => {
+                    // Apply the class to the wallpaper container
+                    wallpaper.classList.add('all-bubbles-active');
+                });
+
+                folder.addEventListener('mouseleave', () => {
+                    // Remove the class when leaving
+                    wallpaper.classList.remove('all-bubbles-active');
+                });
+            });
+            
+            
+    
     // ⭐ UPDATED: Configuration for the Hobbies Sprawl Images ⭐
     const HOBBIES_IMAGES = [
         // Source, dimensions (doubled), and upright rotation
