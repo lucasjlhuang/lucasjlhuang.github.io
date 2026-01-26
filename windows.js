@@ -1,3 +1,6 @@
+
+
+
 document.addEventListener('DOMContentLoaded', () => {
     
     
@@ -617,6 +620,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }, 20);
             
+            
+            
         } else {
             // Standard Open (from nav bar or non-project apps, or if geometry was provided)
             newWindow.style.left = targetX;
@@ -625,6 +630,8 @@ document.addEventListener('DOMContentLoaded', () => {
             newWindow.style.transform = 'scale(1)';
             newWindow.style.transition = 'none'; // Ensure no transition is active
         }
+        
+        
         
        // --- Content & Title Injection ---
     const displayTitle = DISPLAY_TITLE_MAP[title] || capitalizeTitle(title);
