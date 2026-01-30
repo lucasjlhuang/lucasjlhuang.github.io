@@ -253,3 +253,12 @@ main.visible {
 .vogro-specific-row {
     background: #f9f9f9;
 }
+
+.bettermind-unique {
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.bettermind-unique-image {
+    padding-bottom: 1rem;;
+}
