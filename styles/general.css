@@ -337,7 +337,7 @@ img.projectimage {
 }
 
 body.dark-mode {
-    --text-color: #ffffff; /* Dark Mode: Pure White */
+    --text-color: #535353; /* Dark Mode: Pure White */
 }
 
 
