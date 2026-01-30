@@ -245,3 +245,11 @@ main.visible {
     margin-left: 4rem;
     margin-right: 4rem;
 }
+
+.vogro-mini-stat {
+    text-align: center;
+}
+
+.vogro-specific-row {
+    background: #f9f9f9;
+}
