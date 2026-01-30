@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "ABOUT ME",
         "VOGRO",
         "BANK OF TAIWAN",
-        "CANADIAN HYPERLOOP CONFERENCE",
+        "MARCOPOLO",
         "BETTERMIND"
     ];
 
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "Figma": "Figma",
         "Hobbies": "Hobbies", 
         "BANK OF TAIWAN": "Bank of Taiwan",
-        "CANADIAN HYPERLOOP CONFERENCE": "Canadian Hyperloop Conference",
+        "MARCOPOLO": "MarcoPolo",
         "VOGRO": "Vogro",
         "HESS": "HESS Education",
         "ABOUT ME": "About Me",

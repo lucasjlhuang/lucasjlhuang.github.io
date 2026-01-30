@@ -13,7 +13,7 @@ main, section {
     flex-wrap: wrap;
     width: 100%;
     margin-bottom: 2rem;
-    background: rgba(240, 234, 234, 0.2);
+    background: #ffffff;
     border-radius: 0.75rem;
     margin-top: 2rem;
 }
@@ -121,16 +121,19 @@ main, section {
     margin-top: 2rem;
     padding-left: 1rem;
     margin-bottom: 0;
+    padding-top: 1.5rem;
 }
 
 /* Requested Project Body Background */
 .project-body {
     font-family: 'SFRegular', sans-serif;
-    font-size: 1.1rem;
-    line-height: 1.3;
+    font-size: 1.2rem;
+    line-height: 1.5;
     margin-bottom: 1rem;
     padding: 1rem; /* Added padding so text doesn't touch the edge of the background */
     margin-top: 0px;
+    padding-bottom: 1.5rem;
+    text-align: justify;
 }
 
 .project-body-list {
@@ -210,4 +213,35 @@ main.visible {
     margin-top: 3rem;
     margin-bottom: 0;
     padding-bottom: 10px;
+}
+
+.vogro-list{
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
+.marcopolo-analysis {
+    display: flex;
+    align-items: center; 
+    background: #ffffff;
+    border-radius: 0.75rem;
+    padding: 0.5rem;
+}
+
+.marcopolo-analysis-text {
+    font-size: 1.2rem;
+} 
+
+.marcopolo-quote {
+    width: auto;
+    text-align: center;
+    font-family: 'SFItalic';
+}
+
+.marcopolo-stats {
+    text-align: center;
+    font-size: 2rem;
+    font-family: "SFBold";
+    margin-left: 4rem;
+    margin-right: 4rem;
 }
