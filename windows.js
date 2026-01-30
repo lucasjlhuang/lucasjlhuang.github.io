@@ -64,7 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
         "VOGRO",
         "BANK OF TAIWAN",
         "MARCOPOLO",
-        "BETTERMIND"
+        "BETTERMIND",
+        "[REDACTED]"
     ];
 
     // ⭐ List of dock apps that should only have one instance (UNCHANGED) ⭐
@@ -95,7 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
         "VOGRO": "Vogro",
         "HESS": "HESS Education",
         "ABOUT ME": "About Me",
-        "BETTERMIND": "Bettermind"
+        "BETTERMIND": "Bettermind",
+        "[REDACTED]": "[redacted]"
     };
 
     // ⭐ Map for Custom Default Window Sizes (UNCHANGED) ⭐
