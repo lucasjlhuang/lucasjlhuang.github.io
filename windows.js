@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetFolders = Array.from(allFolders).filter(folder => {
                 const projectText = folder.querySelector('.ProjectText');
                 // We check if the text exists and is NOT "ABOUT ME"
-                return projectText && projectText.innerText.replace(/\s+/g, ' ').trim() !== "ABOUT ME";
+                return projectText && projectText.innerText.replace(/\s+/g, ' ').trim();
+                // return projectText && projectText.innerText.replace(/\s+/g, ' ').trim() !== "ABOUT ME";
             });
 
             targetFolders.forEach(folder => {
