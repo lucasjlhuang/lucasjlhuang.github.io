@@ -65,8 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "VOGRO",
         "BANK OF TAIWAN",
         "MARCOPOLO",
-        "BETTERMIND",
-        "[REDACTED]"
+        "BETTERMIND"
     ];
 
     // ⭐ List of dock apps that should only have one instance (UNCHANGED) ⭐
