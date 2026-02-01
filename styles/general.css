@@ -1277,3 +1277,7 @@ button:hover .theme-toggle-btn {
     overflow: visible !important;
 }
 /* EMAIL STICKY NOTE END */
+
+.disclaimer {
+    font-size: 0.7rem;
+}
