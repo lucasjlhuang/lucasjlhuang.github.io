@@ -1097,3 +1097,183 @@ button:hover .theme-toggle-btn {
 .bold {
     font-family: 'SFBold';
 }
+
+/* EMAIL STICKY NOTE BEGIN */
+/* Unique styles for the Email Sticky Note */
+.sticky-note-email {
+   position: fixed;   /* Keeps it in the corner during scroll */
+    bottom: 5rem;      /* Distance from the bottom */
+    right: 20px;       /* Distance from the right */
+    left: auto;        /* Overrides any left positioning from the general class */
+    top: auto;         /* Overrides any top positioning from the general class */
+    z-index: 9999;     /* Keeps it above other wallpaper icons */
+    
+    width: 12.5vw;
+    min-width: 175px;
+    background-color: #fef39c; /* Classic yellow sticky note */
+    padding: 1.5rem 1rem 1rem 1rem;
+    box-shadow: 2px 5px 15px rgba(0,0,0,0.2);
+    z-index: 1000; /* Stays below windows but above wallpaper */
+    transform: rotate(-359deg);
+    color: #333;
+    
+    display: flex;
+    flex-direction: column;
+    
+    padding-top: 2.5rem; /* Increased top padding to make room for the pin */
+}
+
+.sticky-note-email .email-input, 
+.sticky-note-email .email-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #333;
+    padding: 5px 0;
+}
+
+.sticky-note-email .email-input {
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.2);
+    margin-bottom: 10px;
+}
+
+.sticky-note-email .email-textarea {
+    height: 100px;
+    resize: none;
+}
+
+.sticky-note-email .email-input:focus, 
+.sticky-note-email .email-textarea:focus {
+    outline: none;
+}
+
+.sticky-note-email #submit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    height: 1.5rem;
+}
+
+.sticky-note-email #submit-btn:hover {
+    background: none;
+}
+
+.sticky-note-email #my-form-status {
+    font-size: 0.7rem;
+    margin-top: 5px;
+    font-weight: bold;
+}
+
+.status-overlay {
+    position: absolute;
+    top: -25px; /* Positions it just above the top edge of the note */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    background: transparent; 
+    color: var(--text-color); /* Matches theme */
+    font-family: 'SFRegular', sans-serif;
+    font-size: 0.85rem;
+    text-align: center;
+    z-index: 10001;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+}
+
+.status-overlay.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-5px); /* Slight lift animation */
+}
+
+/* --- Paper Airplane Hover Transition --- */
+.airplane-wrapper {
+    position: relative;
+    width: 24px;
+    height: 1.5rem;
+    display: inline-block;
+}
+
+.email-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: auto;
+    transition: opacity 0.3s ease;
+}
+
+.email-image.active {
+    opacity: 0;
+}
+
+/* Swap images on hover */
+#submit-btn:hover .email-image.default {
+    opacity: 0;
+}
+
+#submit-btn:hover .email-image.active {
+    opacity: 1;
+}
+
+.sticky-note-email::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 15px;
+    height: 15px;
+    background-color: #ff4d4d; /* Red pin color */
+    border-radius: 50%;
+    z-index: 10002;
+    
+    /* Give it a 3D look with shadows */
+    box-shadow: 
+        inset -3px -3px 5px rgba(0,0,0,0.2), 
+        2px 4px 5px rgba(0,0,0,0.3);
+}
+
+/* Create the Pin Point/Shine (Optional Detail) */
+.sticky-note-email::after {
+    content: '';
+    position: absolute;
+    top: 13px;
+    left: 52%;
+    width: 4px;
+    height: 4px;
+    background-color: rgba(255,255,255,0.6);
+    border-radius: 50%;
+    z-index: 10003;
+    pointer-events: none;
+}
+
+/* Animation for the airplane flying away */
+@keyframes flyAway {
+    0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    20% { transform: translate(-2px, 2px) rotate(-10deg); }
+    100% { transform: translate(100px, -100px) rotate(15deg); opacity: 0; }
+}
+
+/* Animation for the airplane flying back in */
+@keyframes flyBack {
+    0% { transform: translate(-50px, 50px) rotate(-15deg); opacity: 0; }
+    100% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+}
+
+.airplane-wrapper.flying {
+    animation: flyAway 0.6s forwards;
+}
+
+.airplane-wrapper.returning {
+    animation: flyBack 0.5s ease-out forwards;
+}
+
+/* Ensure the button doesn't clip the flying airplane */
+#submit-btn {
+    overflow: visible !important;
+}
+/* EMAIL STICKY NOTE END */

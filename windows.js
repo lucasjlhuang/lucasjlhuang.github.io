@@ -1222,7 +1222,7 @@ if (stickyNote) {
     content.addEventListener('mousedown', (e) => {
         e.stopPropagation(); // Prevents makeMovable from taking over when you want to edit
     });
-}
+};
 
     // Start observing the body element for attribute changes (specifically 'class')
     observer.observe(document.body, { attributes: true });

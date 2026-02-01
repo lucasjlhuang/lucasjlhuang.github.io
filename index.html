@@ -14,8 +14,29 @@
 <script src="/slideshow.js" defer></script>
 <script src="/windows.js" defer></script>
 
-
 <body class="desktop">
+
+    <!-- EMAIL STICKY NOTE BEGIN -->
+    <div id="email-sticky-container" class="sticky-note-email">
+        <div id="my-form-status" class="status-overlay"></div> 
+        <div class="sticky-note-content">
+            
+        <form id="my-form" action="https://formspree.io/f/maqbnnpw" method="POST" novalidate>
+        <input type="email" name="email" placeholder="your@email.com" class="email-input">
+        <textarea name="message" placeholder="Feedback, funny jokes, offers? Here please!" class="email-textarea"></textarea>
+        
+        <div class="form-footer">
+            <button type="submit" id="submit-btn">
+                <div class="airplane-wrapper">
+                    <img class="email-image default" src="/images/paper-airplane.png">
+                    <img class="email-image active" src="/images/paper-airplane-active.png">
+                </div>
+            </button>
+        </div>
+    </form>
+        </div>
+    </div>
+    <!-- EMAIL STICKY NOTE FINISH -->
     
     <div id="sticky-note" class="sticky-note">
     <div class="sticky-note-conten prevent-selectt">
@@ -163,7 +184,7 @@
       <span id="trashCounter">0</span>
       <img class="rotation-image" src="/images/Oscar.png">
     </div>
-
+     <script src="/email.js" defer></script>
 </body>
 
 </html>
