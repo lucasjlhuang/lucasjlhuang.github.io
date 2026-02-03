@@ -262,3 +262,8 @@ main.visible {
 .bettermind-unique-image {
     padding-bottom: 1rem;;
 }
+
+.hero-statement {
+    font-family: "SFBold";
+    font-size: 4rem;
+}

@@ -1098,29 +1098,28 @@ button:hover .theme-toggle-btn {
     font-family: 'SFBold';
 }
 
-/* EMAIL STICKY NOTE BEGIN */
-/* Unique styles for the Email Sticky Note */
+/* 
 .sticky-note-email {
-   position: fixed;   /* Keeps it in the corner during scroll */
-    bottom: 5rem;      /* Distance from the bottom */
-    right: 20px;       /* Distance from the right */
-    left: auto;        /* Overrides any left positioning from the general class */
-    top: auto;         /* Overrides any top positioning from the general class */
-    z-index: 9999;     /* Keeps it above other wallpaper icons */
+   position: fixed;   
+    bottom: 5rem;      
+    right: 20px;      
+    left: auto;      
+    top: auto;         
+    z-index: 9999;     
     
     width: 12.5vw;
     min-width: 175px;
-    background-color: #fef39c; /* Classic yellow sticky note */
+    background-color: #fef39c; 
     padding: 1.5rem 1rem 1rem 1rem;
     box-shadow: 2px 5px 15px rgba(0,0,0,0.2);
-    z-index: 1000; /* Stays below windows but above wallpaper */
+    z-index: 1000; 
     transform: rotate(-359deg);
     color: #333;
     
     display: flex;
     flex-direction: column;
     
-    padding-top: 2.5rem; /* Increased top padding to make room for the pin */
+    padding-top: 2.5rem; 
 }
 
 .sticky-note-email .email-input, 
@@ -1169,12 +1168,12 @@ button:hover .theme-toggle-btn {
 
 .status-overlay {
     position: absolute;
-    top: -25px; /* Positions it just above the top edge of the note */
+    top: -25px; 
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
     background: transparent; 
-    color: var(--text-color); /* Matches theme */
+    color: var(--text-color); 
     font-family: 'SFRegular', sans-serif;
     font-size: 0.85rem;
     text-align: center;
@@ -1186,10 +1185,10 @@ button:hover .theme-toggle-btn {
 
 .status-overlay.show {
     opacity: 1;
-    transform: translateX(-50%) translateY(-5px); /* Slight lift animation */
+    transform: translateX(-50%) translateY(-5px); 
 }
 
-/* --- Paper Airplane Hover Transition --- */
+
 .airplane-wrapper {
     position: relative;
     width: 24px;
@@ -1210,7 +1209,7 @@ button:hover .theme-toggle-btn {
     opacity: 0;
 }
 
-/* Swap images on hover */
+
 #submit-btn:hover .email-image.default {
     opacity: 0;
 }
@@ -1227,17 +1226,17 @@ button:hover .theme-toggle-btn {
     transform: translateX(-50%);
     width: 15px;
     height: 15px;
-    background-color: #ff4d4d; /* Red pin color */
+    background-color: #ff4d4d; 
     border-radius: 50%;
     z-index: 10002;
     
-    /* Give it a 3D look with shadows */
+    
     box-shadow: 
         inset -3px -3px 5px rgba(0,0,0,0.2), 
         2px 4px 5px rgba(0,0,0,0.3);
 }
 
-/* Create the Pin Point/Shine (Optional Detail) */
+
 .sticky-note-email::after {
     content: '';
     position: absolute;
@@ -1251,14 +1250,14 @@ button:hover .theme-toggle-btn {
     pointer-events: none;
 }
 
-/* Animation for the airplane flying away */
+
 @keyframes flyAway {
     0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
     20% { transform: translate(-2px, 2px) rotate(-10deg); }
     100% { transform: translate(100px, -100px) rotate(15deg); opacity: 0; }
 }
 
-/* Animation for the airplane flying back in */
+
 @keyframes flyBack {
     0% { transform: translate(-50px, 50px) rotate(-15deg); opacity: 0; }
     100% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
@@ -1272,11 +1271,11 @@ button:hover .theme-toggle-btn {
     animation: flyBack 0.5s ease-out forwards;
 }
 
-/* Ensure the button doesn't clip the flying airplane */
+
 #submit-btn {
     overflow: visible !important;
 }
-/* EMAIL STICKY NOTE END */
+*/
 
 .disclaimer {
     font-size: 0.7rem;
