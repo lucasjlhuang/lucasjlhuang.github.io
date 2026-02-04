@@ -117,7 +117,7 @@ main, section {
 
 .project-section-title {
     font-family: 'SFBold', sans-serif;
-    font-size: 1.3rem;
+    font-size: 1.6rem;
     margin-top: 2rem;
     padding-left: 1rem;
     margin-bottom: 0;
@@ -127,13 +127,14 @@ main, section {
 /* Requested Project Body Background */
 .project-body {
     font-family: 'SFRegular', sans-serif;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     line-height: 1.5;
     margin-bottom: 1rem;
     padding: 1rem; /* Added padding so text doesn't touch the edge of the background */
     margin-top: 0px;
     padding-bottom: 1.5rem;
-    text-align: justify;
+    color: color-mix(in srgb, var(--text-color), transparent 20%);
+    /* text-align: justify; */
 }
 
 .project-body-list {
@@ -195,8 +196,7 @@ main.visible {
 
 /* Ensure project-specific text also follows the theme */
 .project-title,
-.project-section-title,
-.project-body {
+.project-section-title{
     color: var(--text-color) !important;
 }
 
@@ -244,6 +244,8 @@ main.visible {
     font-family: "SFBold";
     margin-left: 4rem;
     margin-right: 4rem;
+    color: var(--text-color);
+    margin-bottom: 0;
 }
 
 .vogro-mini-stat {
@@ -266,4 +268,22 @@ main.visible {
 .hero-statement {
     font-family: "SFBold";
     font-size: 4rem;
+    padding-top: 2rem;
+    margin-top: 0;
+    text-align: center;
+    padding-bottom: 2rem;
+    margin-bottom: 0;
+}
+
+.context-list {
+    opacity: 80%;
+    font-size: 0.9rem;
+}
+
+.context-list-bold {
+    opacity: 95%;
+}
+
+.bold {
+    color: var(--text-color);
 }
