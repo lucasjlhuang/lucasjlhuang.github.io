@@ -783,6 +783,7 @@ button:hover .theme-toggle-btn {
     flex-direction: column;
     height: 100%;       /* Fill the window exactly */
     overflow: hidden;   /* DISALLOW any scrolling on the main container */
+    padding: 10px;
 }
 
 .window-about-me .about-me-text {
