@@ -113,6 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
         "PROJECT_DEFAULT": { width: '1000px', height: '600px' } 
     };
     
+    
+    
     // ⭐ NEW: Variable to track the rotation angle for the Trash icon ⭐
     let trashRotationAngle = 0; 
     let trashCounter = 0;
@@ -506,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ⭐ MODIFIED: openNewWindow now applies coloring and a color transition to title and content.
     function openNewWindow(title, geometry = {}, folderElement = null) {
+        
         const defaultTemplate = windowTemplate; 
 
         const styledApps = ["Photoshop", "Illustrator", "VS Code", "Figma"];
@@ -582,6 +585,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             targetX = `${randomX}vw`;
             targetY = `${randomY}vh`;
+            
+            
         }
 
         // 3. Apply Positioning: Genie Open vs. Standard
@@ -611,10 +616,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 newWindow.style.opacity = '1';
                 newWindow.style.transform = 'scale(1)';
                 
+                // WINDOW RESIZING
+              // Inside openNewWindow function in windows.js
+                const toggleBtn = newWindow.querySelector('.window-size-toggle-btn');
+
+                if (toggleBtn) {
+                    // Prevent dragging when clicking the button
+                    toggleBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+
+                    toggleBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        
+                        // Check if we are currently in small mode
+                        const isSmall = toggleBtn.classList.contains('small-mode');
+                        
+                        // Apply smooth transition for resizing
+                        newWindow.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+                        if (isSmall) {
+                            // Switch to LARGE
+                            newWindow.style.width = '1250px'; 
+                            newWindow.style.height = '800px';
+                            toggleBtn.classList.remove('small-mode');
+                            toggleBtn.classList.add('large-mode');
+                        } else {
+                            // Switch to SMALL
+                            newWindow.style.width = '1000px';
+                            newWindow.style.height = '600px';
+                            toggleBtn.classList.remove('large-mode');
+                            toggleBtn.classList.add('small-mode');
+                        }
+
+                        // Clean up transition after animation so manual resizing is still smooth
+                        setTimeout(() => { 
+                            newWindow.style.transition = 'none'; 
+                        }, 400);
+                    });
+                }
+                
                 // After the transition, remove overflow:hidden so content displays correctly
                 newWindow.addEventListener('transitionend', function removeOverflow(e) {
                     if (e.propertyName === 'opacity') {
-                        newWindow.style.overflow = 'hidden';
+                        newWindow.style.overflow = 
+                        'hidden';
                         newWindow.removeEventListener('transitionend', removeOverflow);
                         // Reset transition to 'none' so dragging/resizing isn.t sluggish.
                         newWindow.style.transition = 'none'; 
@@ -631,7 +675,37 @@ document.addEventListener('DOMContentLoaded', () => {
             newWindow.style.opacity = '1';
             newWindow.style.transform = 'scale(1)';
             newWindow.style.transition = 'none'; // Ensure no transition is active
+            // --- NEW RESIZE BUTTON LOGIC ---
+const toggleBtn = newWindow.querySelector('.window-size-toggle-btn');
+if (toggleBtn) {
+    // Prevent the button click from triggering window dragging
+    toggleBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+
+    toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isSmall = toggleBtn.classList.contains('small-mode');
+        
+        // Apply smooth transition for the resize
+        newWindow.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+        if (isSmall) {
+            // Change to Large
+            newWindow.style.width = '1250px'; 
+            newWindow.style.height = '800px';
+            toggleBtn.classList.replace('small-mode', 'large-mode');
+        } else {
+            // Change to Small
+            newWindow.style.width = '1000px';
+            newWindow.style.height = '600px';
+            toggleBtn.classList.replace('large-mode', 'small-mode');
         }
+
+        // Clean up transition so manual resizing remains snappy
+        setTimeout(() => { newWindow.style.transition = 'none'; }, 400);
+    });
+}
+        }
+        
         
         
         
@@ -700,8 +774,6 @@ fetch(fileName)
                     </div>`;
             });
     }
-    
-    
         
         // --- Static Navigation Bar (existing logic) ---
         const navContainer = newWindow.querySelector('.window-footer-nav');
@@ -864,6 +936,8 @@ fetch(fileName)
             desktop.appendChild(newWindow);
         }
     }
+    
+    
 
     // Window dragging logic (unchanged)
     function makeWindowDraggable(win) {

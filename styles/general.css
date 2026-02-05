@@ -1285,3 +1285,252 @@ button:hover .theme-toggle-btn {
 .case-study-wrapper {
     background: #ffffff;
 }
+
+/* WINDOW RESIZING */
+
+/* Container to align buttons in the header */
+.window-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-right: 5px;
+}
+
+/* Base style for the rectangle outlines */
+.window-size-btn {
+    background: transparent;
+    border: 1.5px solid var(--text-color); /* Matches your current theme color */
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.2s ease, opacity 0.2s;
+    border-radius: 2px; /* Slight rounding for a clean look */
+}
+
+/* Small Rectangle (Left Button) */
+.small-btn {
+    width: 14px;
+    height: 10px;
+}
+
+/* Bigger Rectangle (Right Button) */
+.large-btn {
+    width: 20px;
+    height: 14px;
+}
+
+.window-size-btn:hover {
+    transform: scale(1.1);
+    opacity: 0.7;
+}
+
+/* Container and base styles */
+.window-size-toggle-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 5px;
+}
+
+.icon-stack {
+    position: relative;
+    width: 22px;
+    height: 18px;
+}
+
+.rect-large, .rect-small {
+    position: absolute;
+    border: 1.5px solid var(--text-color);
+    border-radius: 1px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+/* Positioning */
+.rect-large {
+    width: 17px;
+    height: 13px;
+    top: 0;
+    right: 0;
+}
+
+.rect-small {
+    width: 11px;
+    height: 9px;
+    bottom: 5px;
+    left: 0;
+}
+
+/* --- TOGGLE LOGIC --- */
+
+/* 1. SMALL MODE: Small is filled, Large is an outline behind it */
+.small-mode .rect-small {
+    background-color: var(--text-color);
+    z-index: 2;
+}
+
+.small-mode .rect-large {
+    background-color: transparent;
+    z-index: 1;
+}
+
+/* 2. LARGE MODE: Large is filled, but MASKED by the small rectangle position */
+.large-mode .rect-large {
+    background-color: var(--text-color);
+    z-index: 1; /* Moves to back so small rect can sit on top as a 'hole' */
+    
+    /* The "Punch Out" Magic */
+    /* We create a mask that is solid everywhere EXCEPT where the small rectangle is */
+    -webkit-mask-image: radial-gradient(circle, black 100%, black 100%), 
+                        linear-gradient(black, black);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    
+    /* This specific mask defines the 'hole' area (bottom-left) */
+    /* Adjust these percentages if you change the size/position of the rectangles */
+    -webkit-mask-image: linear-gradient(black, black);
+    mask-image: linear-gradient(black, black);
+}
+
+.large-mode .rect-small {
+    background-color: transparent;
+    z-index: 2; /* Sits on top of the hole */
+}
+
+/* Alternative approach using Clip-Path (Easier to maintain) */
+.large-mode .rect-large {
+    background-color: var(--text-color);
+    /* This "clips" the large rectangle to remove the bottom-left corner where the small one sits */
+   /* Updated clip-path for bottom: 5px */
+    clip-path: polygon(
+        0% 0%,      /* Top Left */
+        100% 0%,    /* Top Right */
+        100% 100%,  /* Bottom Right */
+        35% 100%,   /* Bottom edge, moving left towards the small rect */
+        35% 35%,    /* Move UP to clear the top of the small rect */
+        0% 35%,     /* Move LEFT to the edge, above the small rect */
+        0% 0%       /* Back to start */
+    );
+}
+
+/* 1. Base Setup: Both rectangles must have these properties */
+.rect-large, .rect-small {
+    position: absolute;
+    border: 1.5px solid var(--text-color);
+    border-radius: 1px;
+    overflow: hidden; /* CRITICAL: Clips the fill so it can "swipe" in/out */
+    background-color: transparent !important; /* Ensure no static background interferes */
+    transition: clip-path 0.4s ease;
+}
+
+/* 2. The Fill Layer (Pseudo-elements) */
+.rect-large::after, .rect-small::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--text-color);
+    /* Ensure the transform is the only thing moving */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+/* --- SMALL MODE (Small is filled) --- */
+.small-mode .rect-small::after {
+    transform: translateX(0); /* Start filled */
+}
+.small-mode .rect-large::after {
+    transform: translateX(-105%); /* Start hidden on the left */
+}
+
+/* SMALL MODE HOVER (Flow: Small -> Large) */
+.window-size-toggle-btn.small-mode:hover .rect-small::after {
+    transform: translateX(105%); /* Swipe OUT to the right */
+    transition-delay: 0s;
+}
+.window-size-toggle-btn.small-mode:hover .rect-large::after {
+    transform: translateX(0);    /* Swipe IN from the left */
+    transition-delay: 0.1s;      /* Slight delay to create the "flow" effect */
+}
+
+/* --- LARGE MODE (Large is filled) --- */
+.large-mode .rect-large {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 35% 100%, 35% 35%, 0% 35%, 0% 0%);
+}
+.large-mode .rect-large::after {
+    transform: translateX(0); /* Start filled */
+}
+.large-mode .rect-small::after {
+    transform: translateX(105%); /* Start hidden on the right (for counter-swipe) */
+}
+
+/* LARGE MODE HOVER (Flow: Large -> Small) */
+.window-size-toggle-btn.large-mode:hover .rect-large::after {
+    transform: translateX(-105%); /* Swipe OUT to the left */
+    transition-delay: 0s;
+}
+.window-size-toggle-btn.large-mode:hover .rect-small::after {
+    transform: translateX(0);     /* Swipe IN from the right */
+    transition-delay: 0.1s;
+}
+
+/* Remove clip-path on hover so the unfilling of the large rect looks smooth */
+.window-size-toggle-btn.large-mode:hover .rect-large {
+    clip-path: none;
+}
+
+/* Base rectangle setup */
+.rect-large, .rect-small {
+    position: absolute;
+    border: 1.5px solid var(--text-color);
+    border-radius: 1px;
+    overflow: hidden; 
+    background-color: transparent;
+    /* Added opacity to the transition list */
+    transition: clip-path 0.4s ease, opacity 0.4s ease;
+}
+
+/* 1. SMALL MODE (Small is Active) */
+.small-mode .rect-small {
+    opacity: 1; /* Active */
+}
+.small-mode .rect-large {
+    opacity: 0.4; /* Inactive (60% transparent) */
+}
+
+/* HOVER: Swap Opacities during swipe */
+.window-size-toggle-btn.small-mode:hover .rect-small {
+    opacity: 0.4;
+}
+.window-size-toggle-btn.small-mode:hover .rect-large {
+    opacity: 1;
+}
+
+/* 2. LARGE MODE (Large is Active) */
+.large-mode .rect-large {
+    opacity: 1; /* Active */
+    z-index: 1;
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 35% 100%, 35% 35%, 0% 35%, 0% 0%);
+}
+.large-mode .rect-small {
+    opacity: 0.4; /* Inactive (60% transparent) */
+}
+
+/* HOVER: Swap Opacities during swipe */
+.window-size-toggle-btn.large-mode:hover .rect-large {
+    opacity: 0.4;
+    clip-path: none;
+}
+.window-size-toggle-btn.large-mode:hover .rect-small {
+    opacity: 1;
+}
+
+/* Ensure the Fill Layer (::after) remains fully opaque */
+.rect-large::after, .rect-small::after {
+    opacity: 1 !important;
+}
+
