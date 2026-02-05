@@ -1284,6 +1284,7 @@ button:hover .theme-toggle-btn {
 
 .case-study-wrapper {
     background: #ffffff;
+    border-radius: 30px;
 }
 
 /* WINDOW RESIZING */
