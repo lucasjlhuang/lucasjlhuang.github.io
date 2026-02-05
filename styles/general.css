@@ -526,7 +526,7 @@ button:hover .theme-toggle-btn {
     background: transparent;
 }
 .window-content {
-    padding: 10px;
+    /* padding: 10px; */
     overflow: auto;
     flex-grow: 1; /* Content takes remaining space */
     color: #333;
@@ -1279,4 +1279,8 @@ button:hover .theme-toggle-btn {
 
 .disclaimer {
     font-size: 0.7rem;
+}
+
+.case-study-wrapper {
+    background: #ffffff;
 }

@@ -52,6 +52,7 @@ main, section {
 
 /* Column logic - allows columns to scale inside the window */
 .col-12 { width: 100%; }
+.col-11 { width: 91.6%; }
 .col-10 { width: 83.33%; }
 .col-8 { width: 66%; }
 .col-6  { width: 50%; }
@@ -60,6 +61,7 @@ main, section {
 .col-3  { width: 25%; }
 .col-2  { width: 16.66%; }
 .col-1 { width: 8.33%; }
+.col-05 { width: 4.16%; }
 
 /* 3. Media Scaling (Images & Video) */
 /* This ensures media scales to the window and resizes dynamically */
@@ -71,7 +73,6 @@ main, section {
     width: 100%; 
     height: auto; /* Maintains aspect ratio */
     display: block;
-    border-radius: 0.75rem;
     object-fit: contain;
 }
 
@@ -118,10 +119,8 @@ main, section {
 .project-section-title {
     font-family: 'SFBold', sans-serif;
     font-size: 1.6rem;
-    margin-top: 2rem;
-    padding-left: 1rem;
-    margin-bottom: 0;
-    padding-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
 }
 
 /* Requested Project Body Background */
@@ -129,11 +128,10 @@ main, section {
     font-family: 'SFRegular', sans-serif;
     font-size: 1.1rem;
     line-height: 1.5;
-    margin-bottom: 1rem;
-    padding: 1rem; /* Added padding so text doesn't touch the edge of the background */
+    margin-bottom: 0rem;
     margin-top: 0px;
     padding-bottom: 1.5rem;
-    color: color-mix(in srgb, var(--text-color), transparent 20%);
+    color: color-mix(in srgb, var(--text-color), transparent 10%);
     /* text-align: justify; */
 }
 
@@ -270,7 +268,6 @@ main.visible {
     font-size: 4rem;
     padding-top: 2rem;
     margin-top: 0;
-    text-align: center;
     padding-bottom: 2rem;
     margin-bottom: 0;
 }
@@ -286,4 +283,75 @@ main.visible {
 
 .bold {
     color: var(--text-color);
+}
+
+#impact-summary {
+    padding-top: 2rem;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+#about-1 {
+    font-size: 8.4rem;
+    padding: 0;
+    margin: 0;
+    line-height: .8;
+}
+
+#about-2 {
+    text-align: right;
+    font-size: 8.3rem;
+    padding: 0;
+    margin: 0;
+     line-height: .8;
+     margin-bottom: 3rem;
+}
+
+.quick-summary {
+    position: relative
+}
+
+.about-sticker {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 1.5rem;
+}
+
+.mini-title {
+    font-size: 0.8rem;
+    opacity: 80%;
+}
+
+.mini {
+    font-size: 0.9rem;
+    padding-bottom: 0;
+}
+
+.row-divider {
+    width: 91.3%;          /* Controls how wide the line is */
+    margin: 2rem auto 0; /* Centers the line and adds top spacing */
+    border: 0;
+    border-top: 1px solid var(--text-color);
+    opacity: 0.2;        /* Makes the line subtle */
+}
+
+.divider-row {
+    margin-top: 2rem;
+    margin-bottom: 4rem;
+}
+
+#project-prototype {
+    padding: 0;
+    margin: 0;
+}
+
+.blurb-row {
+    padding-top: 0rem;
+    margin-top: 0;
+    padding-bottom: 3rem;
+}
+
+.big-image {
+    margin-bottom: 3rem;
 }
