@@ -636,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (isSmall) {
                             // Switch to LARGE
                             newWindow.style.width = '1250px'; 
-                            newWindow.style.height = '800px';
+                            newWindow.style.height = '700px';
                             toggleBtn.classList.remove('small-mode');
                             toggleBtn.classList.add('large-mode');
                         } else {
@@ -691,7 +691,7 @@ if (toggleBtn) {
         if (isSmall) {
             // Change to Large
             newWindow.style.width = '1250px'; 
-            newWindow.style.height = '800px';
+            newWindow.style.height = '700px';
             toggleBtn.classList.replace('small-mode', 'large-mode');
         } else {
             // Change to Small
