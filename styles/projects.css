@@ -355,3 +355,12 @@ main.visible {
 .big-image {
     margin-bottom: 3rem;
 }
+
+.bettermind-cover {
+    border-radius: 20px;
+}
+
+.small-statistic {
+    font-size: 1rem;
+    color: #2e2bfb;
+}
