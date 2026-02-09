@@ -364,3 +364,10 @@ main.visible {
     font-size: 1rem;
     color: #2e2bfb;
 }
+
+/* REMOVE WHEN UPDATES */
+.temporary-bot {
+    text-align: center;
+    opacity: 20%;
+    font-size: 1rem;
+}
