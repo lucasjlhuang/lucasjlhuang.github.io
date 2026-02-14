@@ -888,8 +888,8 @@ fetch(fileName)
             if (appContentContainer) {
                 appContentContainer.style.backgroundImage = `url('${imageURL}')`;
                 appContentContainer.style.backgroundRepeat = 'no-repeat'; 
-                appContentContainer.style.backgroundPosition = '1vw 1vw'; 
-                appContentContainer.style.backgroundSize = '2vw 2vw';      
+                appContentContainer.style.backgroundPosition = '1rem 1rem'; 
+                appContentContainer.style.backgroundSize = '30px 30px';      
             }
         }
 

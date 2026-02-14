@@ -641,10 +641,10 @@ button:hover .theme-toggle-btn {
 }
 
 .other-tabs-text {
-    padding: 0.4vh 3vw ;
+    padding: 10px 55px ;
     color: #ffffff70;
     font-family: 'SFMedium';
-    font-size: 1.2vh;
+    font-size: 0.6rem;
 }
 
 /* general.css */
