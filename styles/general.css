@@ -33,6 +33,14 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: 'Suntage';
+    src: url('/fonts/Suntage.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* 1. Base State */
 .projectfolder {
     opacity: 0;
@@ -743,9 +751,9 @@ button:hover .theme-toggle-btn {
     position: fixed;
     left: 3rem; /* 3rem from left as requested */
     top: 3rem;  /* 3rem from top as requested */
-    width: 200px;
+    width: 500px;
     min-height: 200px;
-    background-color: #fef39c; /* Classic yellow sticky note */
+    background-color: #ffffff; /* Classic yellow sticky note */
     padding: 1.5rem 1rem 1rem 1rem;
     box-shadow: 2px 5px 15px rgba(0,0,0,0.2);
     z-index: 1000; /* Stays below windows but above wallpaper */
@@ -1277,10 +1285,6 @@ button:hover .theme-toggle-btn {
 }
 */
 
-.disclaimer {
-    font-size: 0.7rem;
-}
-
 .case-study-wrapper {
     background: #ffffff;
     border-radius: 30px;
@@ -1532,4 +1536,30 @@ button:hover .theme-toggle-btn {
 /* Ensure the Fill Layer (::after) remains fully opaque */
 .rect-large::after, .rect-small::after {
     opacity: 1 !important;
+}
+
+.name {
+    font-family: 'Suntage';
+    font-size: 1.2rem;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    color: var(--text-color); /* Applied dynamic color */
+}
+
+.roles {
+    font-family: 'Suntage';
+    font-size: 0.7rem;
+    margin: 0;
+    padding: 0;
+    color: var(--text-color); /* Applied dynamic color */
+}
+
+.my-info {
+    position: fixed;
+    left: 3rem; /* 3rem from left as requested */
+    top: 1vh;  /* 3rem from top as requested */
+}
+
+.sticky-logo {
+    max-height: 1rem;
 }
