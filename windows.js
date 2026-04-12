@@ -32,17 +32,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 // return projectText && projectText.innerText.replace(/\s+/g, ' ').trim() !== "ABOUT ME";
             });
 
-            targetFolders.forEach(folder => {
-                folder.addEventListener('mouseenter', () => {
-                    // Apply the class to the wallpaper container
-                    wallpaper.classList.add('all-bubbles-active');
-                });
+           // Locate this section in windows.js
+targetFolders.forEach(folder => {
+    folder.addEventListener('mouseenter', () => {
+        // ⭐ NEW CHECK: If this folder is isolated, don't trigger other bubbles
+        if (folder.classList.contains('isolate-bubble')) {
+            return;
+        }
+        
+        // Apply the class to the wallpaper container
+        wallpaper.classList.add('all-bubbles-active');
+    });
 
-                folder.addEventListener('mouseleave', () => {
-                    // Remove the class when leaving
-                    wallpaper.classList.remove('all-bubbles-active');
-                });
-            });
+    folder.addEventListener('mouseleave', () => {
+        // Remove the class when leaving
+        wallpaper.classList.remove('all-bubbles-active');
+    });
+});
             
             
     
