@@ -1563,3 +1563,45 @@ button:hover .theme-toggle-btn {
 .sticky-logo {
     max-height: 1rem;
 }
+
+img.infoimg {
+    height: 5vh;
+    width: 5vh;
+    object-fit: cover;  
+    display: block;
+    border: 0px solid #ffffff;
+    background-color: #ffffff00;
+    border-radius: 5px;
+}
+
+.infoimg:hover{
+  padding: 5px;
+  background-color: #00000015;
+  border: 1px solid #e4e4e450;
+}
+
+.infoimg:hover {
+  cursor: pointer;
+}
+
+.currentprojectsbubble {
+    background-color: #3363ff;
+    font-family: 'Suntage';
+    position: sticky;
+    width: 80px;
+    height: 22px;
+    border-radius: 2rem;
+    color: white;
+    font-size: 7.5pt;
+    text-align: center;
+    transform: rotate(-4deg);
+}
+
+.currently-building {
+    padding: 5px;
+    margin: 0;
+}
+
+.clickable {
+    pointer-events: auto;
+}
