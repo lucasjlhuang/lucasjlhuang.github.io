@@ -41,6 +41,10 @@
     font-display: swap;
 }
 
+html {
+    cursor: url('/images/cursor.svg') 0 0, auto;
+}
+
 /* 1. Base State */
 .projectfolder {
     opacity: 0;
@@ -1634,4 +1638,297 @@ img.infoimg {
     visibility: visible !important;
     opacity: 1 !important;
     transform: translateX(-50%) translateY(0) !important;
+}
+
+
+
+/* In Progress */
+/* Header/Toggle Label */
+.in-progress-header {
+    cursor: pointer;
+    color: white;
+    font-size: 12px;
+    display: flex;
+    gap: 10px;
+    border-bottom: none;
+    transition: background 0.3s ease;
+     pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+}
+
+.incomplete {
+    opacity: 0.5; /* Requirement for incomplete projects */
+    cursor: default;
+}
+
+#progress-arrow {
+    display: block;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Snappier flip */
+    transform-origin: center;
+    cursor: pointer;
+}
+
+/* When the dock is NOT hidden, flip the vector */
+.arrow-flipped {
+    transform: rotate(180deg);
+}
+
+.in-progress-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding-bottom: 5px; /* Creates a small clickable hit-area around the arrow */
+    background: none !important;
+    border: none !important;
+}
+
+/* Ensure icons maintain your 50% opacity requirement */
+.incomplete {
+    opacity: 0.5;
+    filter: grayscale(0.5); /* Optional: makes incomplete icons look more "in-dev" */
+}
+
+/* Inactive state (When the dock is hidden) */
+/* We target the label within the container when the dock has the hidden class */
+.in-progress-container:has(.progress-dock-hidden) .playground-label {
+    opacity: 0.5;
+}
+
+/* Container remains the anchor */
+.in-progress-container {
+    position: fixed;
+    bottom: 14vh;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 9999;
+    pointer-events: none;
+    font-family: 'SFMedium', sans-serif;
+}
+
+/* The Hop Animation */
+@keyframes titleHop {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0); }
+}
+
+.title-hopping {
+    animation: titleHop 0.3s ease-out;
+}
+
+/* The Final Position (Slide Up) */
+.title-up {
+    opacity: 1 !important;
+    transform: translateY(-10px); /* Adjust based on your preferred gap */
+}
+
+#progress-dock {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 2px;
+    background: none;
+    border: none;
+    transform-origin: bottom center;
+    /* 1s Genie Duration */
+    transition: transform 0.5s cubic-bezier(0.7, -0.01, 0.4, 1), 
+                opacity 0.8s ease-in-out;
+    transform-origin: bottom center;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.progress-dock-hidden {
+    /* Genie effect: Scale down to a point and sink slightly toward the arrow */
+   transform: scale(0) translateY(40px) !important;
+    opacity: 0 !important;
+    pointer-events: none;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.playground-label {
+    color: white;
+    font-size: 11px;
+    margin-bottom: 1.5vh;
+    opacity: 0.5;
+    
+    position: absolute;
+    bottom: 0.5vh;
+    
+    /* Ensure transform is transitioned smoothly after the animation ends */
+    transition: transform 0.3s ease, opacity 0.3s ease; 
+    opacity: 0.5;
+    transform: translateY(0);
+    will-change: transform; /* Optimization for smoother movement */
+}
+
+.title-vanished {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+/* --- Updated Progress Item --- */
+.progress-item {
+    /* Fixed 30px by 30px size */
+    width: 35px;
+    height: 35px;
+    
+    /* Center the image inside the container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Matches macOS icon rounding logic */
+    border-radius: 7px; 
+    overflow: hidden; 
+    
+    /* Maintain hover transition */
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.progress-item img {
+    /* Ensures the image fills the 30px square without distorting */
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+    
+    /* Inherit the rounded corners from the parent */
+    border-radius: inherit; 
+}
+
+.progress-item:hover {
+    transform: scale(1.15);
+}
+
+/* Incomplete state remains at 50% opacity per your requirement */
+.incomplete {
+    opacity: 0.5;
+    filter: grayscale(0.5);
+    cursor: default;
+}
+
+/* --- Progress Item Container --- */
+.progress-item {
+    position: relative;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible; /* Important: Allows text to float above */
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+/* --- Simple Text Title --- */
+.progress-item .bubble-label {
+    position: absolute;
+    bottom: 35px; /* Adjust height above the icon */
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    
+    /* Clean Text Styling */
+    color: #FFFFFF;
+    font-family: 'SFMedium', -apple-system, sans-serif;
+    font-size: 8px;
+    white-space: nowrap;
+    pointer-events: none;
+    
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 10000;
+}
+
+/* Remove the arrow (::after) from previous version */
+.progress-item .bubble-label::after {
+    display: none;
+}
+
+/* --- Show on Hover --- */
+.progress-item:hover .bubble-label {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0px);
+}
+
+.progress-item:hover {
+    transform: scale(1.1);
+}
+
+
+
+
+/* --- Progress Item Container --- */
+.progress-item {
+    position: relative;
+    /* Base Inactive size */
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    cursor: pointer;
+    
+    /* Smooth scaling transition */
+    transition: transform 0.2s ease, width 0.3s ease, height 0.3s ease;
+}
+
+/* --- Active Icon Style (5px Larger) --- */
+.progress-item:not(.incomplete) {
+    width: 32px;
+    height: 32px;
+}
+
+.progress-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 7px; /* Matches your macOS dock radius */
+}
+
+/* --- Simple Hover Title --- */
+.progress-item .bubble-label {
+    position: absolute;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    
+    color: #FFFFFF;
+    font-family: 'SFMedium', -apple-system, sans-serif;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 10000;
+}
+
+.progress-item:hover .bubble-label {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0px);
+}
+
+.progress-item:hover {
+    transform: scale(1.1);
+}
+
+/* --- The Selector Block to Remove --- */
+/* 
+   The .progress-item + .progress-item::before block 
+   has been removed to eliminate the horizontal lines. 
+*/
+
+.progress-item:not(.incomplete):hover .bubble-label {
+    /* Moves the label slightly higher for the bigger icons */
+    bottom: 40px; 
 }

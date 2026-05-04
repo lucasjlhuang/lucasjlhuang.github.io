@@ -1308,5 +1308,45 @@ if (stickyNote) {
     observer.observe(document.body, { attributes: true });
     // ⭐ END MutationObserver Setup ⭐
     
+   // windows.js
+
+window.toggleInProgress = function() {
+    const dock = document.getElementById('progress-dock');
+    const arrow = document.getElementById('progress-arrow');
+    const label = document.querySelector('.playground-label');
+
+    if (!dock || !arrow || !label) return;
+
+    const isOpening = dock.classList.contains('progress-dock-hidden');
+
+    if (isOpening) {
+        // STEP 1: THE HOP
+        label.classList.add('title-hopping');
+
+        // STEP 2: THE VANISH
+        setTimeout(() => {
+            label.classList.remove('title-hopping');
+            label.classList.add('title-vanished');
+
+            // STEP 3: THE GENIE REVEAL
+            // Triggered shortly after the title vanishes
+            setTimeout(() => {
+                dock.classList.remove('progress-dock-hidden');
+                arrow.classList.add('arrow-flipped');
+            }, 210); 
+
+        }, 325); // Wait for hop duration
+
+    } else {
+        // REVERSE: Close Dock then show Title
+        dock.classList.add('progress-dock-hidden');
+        arrow.classList.remove('arrow-flipped');
+
+        setTimeout(() => {
+            label.classList.remove('title-vanished');
+        }, 500); // Title reappears as dock is halfway "sucked in"
+    }
+};
+
     preloadHobbyImages();
 });
