@@ -1348,5 +1348,129 @@ window.toggleInProgress = function() {
     }
 };
 
+
+
+// DRAWING AND COLOR PICKER LOGIC (WORK IN PROGRESS)
+// const hueSlider = document.getElementById('hue-slider');
+// const huePicker = document.getElementById('hue-picker');
+// const spectrumSquare = document.getElementById('spectrum-square');
+// const spectrumPicker = document.getElementById('spectrum-picker');
+
+// // Utility to clamp and calculate percentage
+// function getClampedPercents(e, element) {
+//     const rect = element.getBoundingClientRect();
+//     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+//     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+//     return { x, y };
+// }
+
+// // --- Hue Handling ---
+// const handleHue = (e) => {
+//     const { y } = getClampedPercents(e, hueSlider);
+//     const hue = y * 360;
+    
+//     // Update CSS Variable and Picker position
+//     document.documentElement.style.setProperty('--current-hue', hue);
+//     huePicker.style.top = `${y * 100}%`;
+// };
+
+// hueSlider.addEventListener('pointerdown', (e) => {
+//     hueSlider.setPointerCapture(e.pointerId);
+//     handleHue(e);
+    
+//     const onPointerMove = (ev) => handleHue(ev);
+//     const onPointerUp = () => {
+//         hueSlider.removeEventListener('pointermove', onPointerMove);
+//         window.removeEventListener('pointerup', onPointerUp);
+//     };
+
+//     hueSlider.addEventListener('pointermove', onPointerMove);
+//     window.addEventListener('pointerup', onPointerUp);
+// });
+
+// // --- Spectrum Handling ---
+// const handleSpectrum = (e) => {
+//     const { x, y } = getClampedPercents(e, spectrumSquare);
+    
+//     spectrumPicker.style.left = `${x * 100}%`;
+//     spectrumPicker.style.top = `${y * 100}%`;
+    
+//     // x = Saturation (0-1), y = Value (invert for brightness)
+//     console.log(`Saturation: ${Math.round(x * 100)}%, Value: ${Math.round((1 - y) * 100)}%`);
+// };
+
+// spectrumSquare.addEventListener('pointerdown', (e) => {
+//     spectrumSquare.setPointerCapture(e.pointerId);
+//     handleSpectrum(e);
+
+//     const onPointerMove = (ev) => handleSpectrum(ev);
+//     const onPointerUp = () => {
+//         spectrumSquare.removeEventListener('pointermove', onPointerMove);
+//         window.removeEventListener('pointerup', onPointerUp);
+//     };
+
+//     spectrumSquare.addEventListener('pointermove', onPointerMove);
+//     window.addEventListener('pointerup', onPointerUp);
+// });
+
+
+
+
+// const canvas = document.getElementById('drawing-canvas');
+// const ctx = canvas.getContext('2d');
+
+// // Resize canvas to fill the screen
+// function resizeCanvas() {
+//     canvas.width = window.innerWidth;
+//     canvas.height = window.innerHeight;
+// }
+// window.addEventListener('resize', resizeCanvas);
+// resizeCanvas();
+
+// let drawing = false;
+
+// function getPenColor() {
+//     // Replace '.spectrum-square' with the actual class or ID of your main color area
+//     const spectrumSquare = document.querySelector('.spectrum-square'); 
+    
+//     if (spectrumSquare) {
+//         // This gets the final computed RGB value from the element
+//         return window.getComputedStyle(spectrumSquare).backgroundColor;
+//     }
+    
+//     return '#000000'; // Fallback to black if element isn't found
+// }
+
+// function startDrawing(e) {
+//     drawing = true;
+//     draw(e);
+// }
+
+// function stopDrawing() {
+//     drawing = false;
+//     ctx.beginPath(); // Resets the path so lines don't connect weirdly
+// }
+
+// function draw(e) {
+//     if (!drawing) return;
+
+//     ctx.lineWidth = 5;
+//     ctx.lineCap = 'round';
+//     ctx.strokeStyle = getPenColor(); // Dynamically gets color from your picker
+
+//     ctx.lineTo(e.clientX, e.clientY);
+//     ctx.stroke();
+//     ctx.beginPath();
+//     ctx.moveTo(e.clientX, e.clientY);
+// }
+
+// // Event Listeners
+// canvas.addEventListener('mousedown', startDrawing);
+// canvas.addEventListener('mousemove', draw);
+// window.addEventListener('mouseup', stopDrawing);
+
+// If your palette JS updates the --current-hue variable on the root or container, 
+// the CSS 'hsl(var(--current-hue), 100%, 50%)' will update the cursor color automatically.
+
     preloadHobbyImages();
 });
