@@ -49,6 +49,7 @@ targetFolders.forEach(folder => {
         wallpaper.classList.remove('all-bubbles-active');
     });
 });
+
             
             
     
@@ -67,11 +68,11 @@ targetFolders.forEach(folder => {
 
     // ⭐ List of all 5 project keys for static navigation (unchanged) ⭐
     const PROJECT_TITLES = [
-        "ABOUT ME",
-        "VOGRO",
-        "BANK OF TAIWAN",
-        "MARCOPOLO",
-        "BETTERMIND"
+        "About me",
+        "VoGro",
+        "Bank of Taiwan",
+        "Marcopolo",
+        "Bettermind"
     ];
 
     // ⭐ List of dock apps that should only have one instance (UNCHANGED) ⭐
@@ -101,7 +102,7 @@ targetFolders.forEach(folder => {
         "MARCOPOLO": "MarcoPolo",
         "VOGRO": "Vogro",
         "HESS": "HESS Education",
-        "ABOUT ME": "About Me",
+        "ABOUT ME": "About me",
         "BETTERMIND": "Bettermind",
         "[REDACTED]": "[redacted]"
     };
@@ -113,7 +114,7 @@ targetFolders.forEach(folder => {
         "VS Code": { width: '375px', height: '150px' },
         "Figma": { width: '375px', height: '150px' },
         
-        "ABOUT ME:": { width: '600px', height: '400px' },
+        "About me:": { width: '600px', height: '400px' },
         
         // Add a default size for project folders for use in the Genie animation
         "PROJECT_DEFAULT": { width: '1000px', height: '600px' } 
@@ -439,26 +440,70 @@ targetFolders.forEach(folder => {
         });
     }
     
-        // Start the random growth sequence
-        // 1. Grab all folders and convert to an Array
-        const folders = Array.from(document.querySelectorAll('.projectfolder'));
+       // --- Updated System Boot Sequence ---
+const folders = Array.from(document.querySelectorAll('.projectfolder'));
+const staticFolders = folders.filter(f => f.classList.contains('system-static'));
+const randomFolders = folders.filter(f => !f.classList.contains('system-static'));
 
-        // 2. Fisher-Yates Shuffle Algorithm (shuffles the order of the array)
-        for (let i = folders.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [folders[i], folders[j]] = [folders[j], folders[i]];
-        }
+// 2. Extract "Bettermind" to ensure it loads last
+let bettermindFolder = null;
+const otherRandomFolders = randomFolders.filter(folder => {
+    const text = folder.querySelector('.ProjectText').innerText.trim().toUpperCase();
+    if (text === "BETTERMIND") {
+        bettermindFolder = folder;
+        return false;
+    }
+    return true;
+});
 
-        // 3. Trigger the growth with a consistent rhythm
-        // Even though the timing is 200ms every time, the ORDER is random
+// 3. Shuffle the remaining random folders
+for (let i = otherRandomFolders.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [otherRandomFolders[i], otherRandomFolders[j]] = [otherRandomFolders[j], otherRandomFolders[i]];
+}
+
+// 4. Reconstruct the queue: Randoms first, Bettermind last
+const finalLoadingQueue = [...otherRandomFolders];
+if (bettermindFolder) finalLoadingQueue.push(bettermindFolder);
+
+
+// Then, trigger the sequential growth for the random queue
+const growthPromises = finalLoadingQueue.map((folder, index) => {
+    return new Promise(resolve => {
         setTimeout(() => {
-            folders.forEach((folder, index) => {
-                setTimeout(() => {
-                    folder.classList.add('appear');
-                }, index * 200); // Change 200 to 100 for faster or 300 for slower rhythm
-            });
-        }, 200); // Initial 0.5s delay before the first one pops
+            folder.classList.add('appear');
+            setTimeout(resolve, 500); 
+        }, index * 175);
+    });
+});
+
+// 6. Chain Reaction (UI Load)
+Promise.all(growthPromises).then(() => {
+    const lastFolder = finalLoadingQueue[finalLoadingQueue.length - 1];
     
+    lastFolder.classList.add('system-trigger');
+    
+    setTimeout(() => {
+        triggerSystemRipple(lastFolder);
+        document.body.classList.add('system-ready');
+    }, 600);
+});
+
+function triggerSystemRipple(element) {
+    const ripple = document.createElement('div');
+    ripple.className = 'system-ripple';
+    const rect = element.getBoundingClientRect();
+    ripple.style.left = `${rect.left + rect.width/2}px`;
+    ripple.style.top = `${rect.top + rect.height/2}px`;
+    document.body.appendChild(ripple);
+    
+    // Clean up
+    setTimeout(() => ripple.remove(), 1000);
+    
+    // 5. Execution: Static folders load with System UI, others cycle
+    // First, make static folders appear immediately when system is ready
+    staticFolders.forEach(folder => folder.classList.add('appear'));
+}
     
     // UPDATED: Movable logic for the new images (now saves position)
     function makeMovable(element, key) {
@@ -755,7 +800,7 @@ fetch(fileName)
         
         // ⭐ NEW: Trigger Slide-Up Animation for Project Content
         // We check if it's a project folder and NOT the "About Me" window
-        if (isProjectFolder && title !== "ABOUT ME") {
+        if (isProjectFolder && title !== "About me") {
             const mainContent = contentContainer.querySelector('main');
             if (mainContent) {
                 // We use a small timeout (50ms) to ensure the browser 
@@ -766,7 +811,7 @@ fetch(fileName)
             }
         }
         
-        if (title === "ABOUT ME") {
+        if (title === "About me") {
             initSlideshow();
         }
     })
@@ -1350,6 +1395,7 @@ window.toggleInProgress = function() {
 
 
 
+
 // DRAWING AND COLOR PICKER LOGIC (WORK IN PROGRESS)
 // const hueSlider = document.getElementById('hue-slider');
 // const huePicker = document.getElementById('hue-picker');
@@ -1412,8 +1458,6 @@ window.toggleInProgress = function() {
 //     spectrumSquare.addEventListener('pointermove', onPointerMove);
 //     window.addEventListener('pointerup', onPointerUp);
 // });
-
-
 
 
 // const canvas = document.getElementById('drawing-canvas');
