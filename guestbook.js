@@ -269,12 +269,6 @@
         } catch { return null; }
     }
 
-    function ordinal(n) {
-        const s = ['th','st','nd','rd'];
-        const v = n % 100;
-        return n + (s[(v - 20) % 10] || s[v] || s[0]);
-    }
-
     function buildVisitorBadge(number) {
         if (!number) return;
         const existing = document.getElementById('gb-visitor-badge');
@@ -282,7 +276,7 @@
 
         const badge = document.createElement('div');
         badge.id = 'gb-visitor-badge';
-        badge.textContent = `${ordinal(number)} visitor`;
+        badge.textContent = `${number.toLocaleString()} employees`;
         document.body.appendChild(badge);
 
         function positionBadge() {

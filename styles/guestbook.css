@@ -11,6 +11,7 @@
     background: none;
     border: none;
     padding: 0;
+    padding-right: 3px;
     cursor: pointer;
     font-family: 'SFMedium', sans-serif;
     font-size: 10px;
@@ -59,7 +60,7 @@
     white-space: nowrap;
     line-height: 1;
     pointer-events: none;
-    display: none;
+    padding-left: 3px;
 }
 #gb-visitor-badge.gb-visible {
     opacity: 1;
