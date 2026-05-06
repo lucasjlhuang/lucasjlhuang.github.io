@@ -32,7 +32,6 @@
 }
 #gb-open-btn.gb-btn-loading {
     opacity: 0.35;
-    cursor: wait;
 }
 
 /* Text hop — peaks at -15px (matching playground), text swaps at the top */
