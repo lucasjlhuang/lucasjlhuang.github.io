@@ -9,10 +9,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-image: url('/images/lightmode.jpg');
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
+    background: #FCFCFC;
     overflow: hidden;
 }
 

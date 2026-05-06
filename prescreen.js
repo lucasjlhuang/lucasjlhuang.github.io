@@ -394,20 +394,45 @@
     // ─── Genie-out ───────────────────────────────────────────────────────────
     function genieOutAndBoot(prescreen, cardData) {
         saveCard(cardData);
-        saveCardToSupabase(cardData); // fire-and-forget — doesn't block animation
+        saveCardToSupabase(cardData);
+
+        // Step 1: Reverse genie — card collapses to a point
         const mask = prescreen.querySelector('.id-card-mask');
         mask.classList.add('genie-out');
 
+        // Step 2: After genie completes (~560ms), fade the wallpaper in over the prescreen
         setTimeout(() => {
-            prescreen.style.transition = 'opacity 0.3s ease';
-            prescreen.style.opacity    = '0';
+            // Overlay must be ABOVE the prescreen (z-index > 99999)
+            const wallpaperOverlay = document.createElement('div');
+            wallpaperOverlay.style.cssText = `
+                position: fixed;
+                inset: 0;
+                z-index: 100000;
+                background-image: url('/images/lightmode.jpg');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                opacity: 0;
+                pointer-events: none;
+            `;
+            document.body.appendChild(wallpaperOverlay);
+
+            // Force a paint before starting the transition
+            wallpaperOverlay.getBoundingClientRect();
+
+            wallpaperOverlay.style.transition = 'opacity 0.8s ease';
+            wallpaperOverlay.style.opacity = '1';
+
+            // Step 3: Once fully faded in, hide prescreen and start system UI
             setTimeout(() => {
                 prescreen.style.display = 'none';
+                wallpaperOverlay.remove();
+
                 signalBoot();
                 document.addEventListener('system:ready', () => {
                     buildDesktopWidget(cardData);
                 }, { once: true });
-            }, 320);
+            }, 850);
         }, 560);
     }
 

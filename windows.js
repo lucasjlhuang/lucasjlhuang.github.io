@@ -484,7 +484,6 @@ targetFolders.forEach(folder => {
             setTimeout(() => {
                 triggerSystemRipple(lastFolder, staticFolders);
                 document.body.classList.add('system-ready');
-                // Notify any listeners (e.g. prescreen widget) that system UI is live
                 document.dispatchEvent(new CustomEvent('system:ready'));
             }, 500);
         });

@@ -137,8 +137,7 @@ div.projectfolder {
   text-align: center;
   font-family: 'SFMedium', sans-serif;
   color: #ffffff;
-  text-shadow: 0px 1px 6px rgba(0, 0, 0, 0.6);
-  
+    text-shadow: 0px 1px 6px rgba(0, 0, 0, 0.4);
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, z-index 0s, background-color 0.6s ease-in-out;
 }
 
