@@ -5,14 +5,24 @@
     <meta name="author" content="Lucas Huang">
     <meta name="viewport" content="width=device-width" , initial-scale="1.0">
     <link rel="stylesheet" href="/styles/general.css">
+    <!-- PRESCREEN STYLES — load before anything paints -->
+    <link rel="stylesheet" href="/styles/prescreen.css">
+    <link rel="stylesheet" href="/styles/guestbook.css">
+    <link rel="stylesheet" href="/styles/character.css">
     <link rel="icon" type="image/png" href="/images/web-icon.png">
     <title>Lucas Lee Huang</title>
 </head>
+
+<!-- PRESCREEN — runs first, before main UI boots -->
+<!-- Character system must load before prescreen.js -->
+<script src="/character.js" defer></script>
+<script src="/prescreen.js" defer></script>
 
 <script src="/folders.js" defer></script>
 <!-- <script src="/daynightoggle.js" defer></script> -->
 <script src="/slideshow.js" defer></script>
 <script src="/windows.js" defer></script>
+<script src="/guestbook.js" defer></script>
 
 <body class="desktop">
 <!-- 

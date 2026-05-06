@@ -440,70 +440,75 @@ targetFolders.forEach(folder => {
         });
     }
     
-       // --- Updated System Boot Sequence ---
-const folders = Array.from(document.querySelectorAll('.projectfolder'));
-const staticFolders = folders.filter(f => f.classList.contains('system-static'));
-const randomFolders = folders.filter(f => !f.classList.contains('system-static'));
+    // --- System Boot Sequence ---
+    // Wrapped in a function so it only fires after the prescreen signals ready.
+    // prescreen.js dispatches "prescreen:done" (or sets window.__prescreenDone)
+    // before this should ever run.
 
-// 2. Extract "Bettermind" to ensure it loads last
-let bettermindFolder = null;
-const otherRandomFolders = randomFolders.filter(folder => {
-    const text = folder.querySelector('.ProjectText').innerText.trim().toUpperCase();
-    if (text === "BETTERMIND") {
-        bettermindFolder = folder;
-        return false;
+    function runBootSequence() {
+        const folders = Array.from(document.querySelectorAll('.projectfolder'));
+        const staticFolders = folders.filter(f => f.classList.contains('system-static'));
+        const randomFolders  = folders.filter(f => !f.classList.contains('system-static'));
+
+        // Extract Bettermind to load last
+        let bettermindFolder = null;
+        const otherRandomFolders = randomFolders.filter(folder => {
+            const text = folder.querySelector('.ProjectText').innerText.trim().toUpperCase();
+            if (text === 'BETTERMIND') { bettermindFolder = folder; return false; }
+            return true;
+        });
+
+        // Shuffle the rest
+        for (let i = otherRandomFolders.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [otherRandomFolders[i], otherRandomFolders[j]] = [otherRandomFolders[j], otherRandomFolders[i]];
+        }
+
+        const finalLoadingQueue = [...otherRandomFolders];
+        if (bettermindFolder) finalLoadingQueue.push(bettermindFolder);
+
+        // Sequential folder growth
+        const growthPromises = finalLoadingQueue.map((folder, index) => {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    folder.classList.add('appear');
+                    setTimeout(resolve, 500);
+                }, index * 175);
+            });
+        });
+
+        // Chain reaction — UI load after all folders appear
+        Promise.all(growthPromises).then(() => {
+            const lastFolder = finalLoadingQueue[finalLoadingQueue.length - 1];
+            lastFolder.classList.add('system-trigger');
+            setTimeout(() => {
+                triggerSystemRipple(lastFolder, staticFolders);
+                document.body.classList.add('system-ready');
+                // Notify any listeners (e.g. prescreen widget) that system UI is live
+                document.dispatchEvent(new CustomEvent('system:ready'));
+            }, 500);
+        });
     }
-    return true;
-});
 
-// 3. Shuffle the remaining random folders
-for (let i = otherRandomFolders.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [otherRandomFolders[i], otherRandomFolders[j]] = [otherRandomFolders[j], otherRandomFolders[i]];
-}
+    function triggerSystemRipple(element, staticFolders) {
+        const ripple = document.createElement('div');
+        ripple.className = 'system-ripple';
+        const rect = element.getBoundingClientRect();
+        ripple.style.left = `${rect.left + rect.width / 2}px`;
+        ripple.style.top  = `${rect.top  + rect.height / 2}px`;
+        document.body.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 1000);
+        // Static folders (NSL, PMC) appear with the system UI
+        staticFolders.forEach(folder => folder.classList.add('appear'));
+    }
 
-// 4. Reconstruct the queue: Randoms first, Bettermind last
-const finalLoadingQueue = [...otherRandomFolders];
-if (bettermindFolder) finalLoadingQueue.push(bettermindFolder);
-
-
-// Then, trigger the sequential growth for the random queue
-const growthPromises = finalLoadingQueue.map((folder, index) => {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            folder.classList.add('appear');
-            setTimeout(resolve, 500); 
-        }, index * 175);
-    });
-});
-
-// 6. Chain Reaction (UI Load)
-Promise.all(growthPromises).then(() => {
-    const lastFolder = finalLoadingQueue[finalLoadingQueue.length - 1];
-    
-    lastFolder.classList.add('system-trigger');
-    
-    setTimeout(() => {
-        triggerSystemRipple(lastFolder);
-        document.body.classList.add('system-ready');
-    }, 600);
-});
-
-function triggerSystemRipple(element) {
-    const ripple = document.createElement('div');
-    ripple.className = 'system-ripple';
-    const rect = element.getBoundingClientRect();
-    ripple.style.left = `${rect.left + rect.width/2}px`;
-    ripple.style.top = `${rect.top + rect.height/2}px`;
-    document.body.appendChild(ripple);
-    
-    // Clean up
-    setTimeout(() => ripple.remove(), 1000);
-    
-    // 5. Execution: Static folders load with System UI, others cycle
-    // First, make static folders appear immediately when system is ready
-    staticFolders.forEach(folder => folder.classList.add('appear'));
-}
+    // Listen for prescreen to finish. If prescreen.js already fired before
+    // windows.js was ready (shouldn't happen with defer, but safety net):
+    if (window.__prescreenDone) {
+        runBootSequence();
+    } else {
+        document.addEventListener('prescreen:done', runBootSequence, { once: true });
+    }
     
     // UPDATED: Movable logic for the new images (now saves position)
     function makeMovable(element, key) {
