@@ -698,7 +698,7 @@
     // When svgCount > 0, a random SVG from that folder will be used in the stamp border instead
     // of the CSS-generated tile. Add files as /images/patterns/{id}/1.svg, 2.svg, …
     const PATTERNS = [
-        { id: 'dots',      swatch: '/images/swatch/Dots.png',       svgCount: 0 },
+        { id: 'dots',      swatch: '/images/swatch/dots.png',       svgCount: 0 },
         { id: 'v-stripes', swatch: '/images/swatch/verticle.png',   svgCount: 0 },
         { id: 'h-stripes', swatch: '/images/swatch/horizontal.png', svgCount: 0 },
         { id: 'topo',      swatch: '/images/swatch/topo.png',       svgCount: 0 },
