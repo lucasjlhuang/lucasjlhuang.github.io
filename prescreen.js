@@ -379,69 +379,55 @@
         let dragging = false;
         let ox = 0, oy = 0;
 
-        icon.addEventListener('mousedown', e => {
-            if (e.button !== 0) return;
-            e.preventDefault();
+        function startDrag(clientX, clientY) {
             dragging = true;
-
             const r = icon.getBoundingClientRect();
-            ox = e.clientX - r.left;
-            oy = e.clientY - r.top;
-
-            icon.style.zIndex   = '9000';
-            icon.style.cursor   = 'grabbing';
+            ox = clientX - r.left;
+            oy = clientY - r.top;
+            icon.style.zIndex    = '9000';
+            icon.style.cursor    = 'grabbing';
             icon.style.transform = 'scale(1.12)';
             icon.style.boxShadow = '0 8px 24px rgba(0,0,0,0.22)';
-            icon.style.opacity = '1';
-            // Hide bubble while dragging
+            icon.style.opacity   = '1';
             const bub = icon.querySelector('.icon-bubble');
             if (bub) bub.style.display = 'none';
-
             document.body.style.cursor = 'grabbing';
-        });
+        }
 
-        function onMove(e) {
+        function moveDrag(clientX, clientY) {
             if (!dragging) return;
-            icon.style.left = (e.clientX - ox) + 'px';
-            icon.style.top  = (e.clientY - oy) + 'px';
-
+            icon.style.left = (clientX - ox) + 'px';
+            icon.style.top  = (clientY - oy) + 'px';
             const dropTarget = document.getElementById('stamp-inner-area');
             if (dropTarget) {
                 const dr = dropTarget.getBoundingClientRect();
-                const over = e.clientX >= dr.left && e.clientX <= dr.right &&
-                             e.clientY >= dr.top  && e.clientY <= dr.bottom;
+                const over = clientX >= dr.left && clientX <= dr.right &&
+                             clientY >= dr.top  && clientY <= dr.bottom;
                 dropTarget.classList.toggle('drop-hover', over);
             }
         }
 
-        function onUp(e) {
+        function endDrag(clientX, clientY) {
             if (!dragging) return;
             dragging = false;
             document.body.style.cursor = '';
-
             icon.style.zIndex    = '50';
             icon.style.cursor    = 'grab';
             icon.style.transform = 'scale(1)';
             icon.style.boxShadow = '';
             const bub = icon.querySelector('.icon-bubble');
             if (bub) bub.style.display = '';
-
             const dropTarget = document.getElementById('stamp-inner-area');
             if (dropTarget) {
                 const dr = dropTarget.getBoundingClientRect();
-                const over = e.clientX >= dr.left && e.clientX <= dr.right &&
-                             e.clientY >= dr.top  && e.clientY <= dr.bottom;
-
+                const over = clientX >= dr.left && clientX <= dr.right &&
+                             clientY >= dr.top  && clientY <= dr.bottom;
                 if (over) {
-                    // Re-show the previously active icon at a random spot
                     if (activeIconEl && activeIconEl !== icon) {
                         respawnIcon(prescreen, activeIconEl);
                     }
-
-                    // Hide this icon (it's now "in" the stamp)
-                    icon.style.opacity    = '0';
+                    icon.style.opacity       = '0';
                     icon.style.pointerEvents = 'none';
-
                     activeIconEl = icon;
                     activeImgDef = imgDef;
                     applyImageToStamp(imgDef);
@@ -450,8 +436,38 @@
             }
         }
 
+        // Mouse
+        icon.addEventListener('mousedown', e => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            startDrag(e.clientX, e.clientY);
+        });
+
+        function onMove(e) { moveDrag(e.clientX, e.clientY); }
+        function onUp(e)   { endDrag(e.clientX, e.clientY); }
+
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup',   onUp);
+
+        // Touch
+        icon.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const t = e.touches[0];
+            startDrag(t.clientX, t.clientY);
+        }, { passive: false });
+
+        document.addEventListener('touchmove', e => {
+            if (!dragging) return;
+            e.preventDefault();
+            const t = e.touches[0];
+            moveDrag(t.clientX, t.clientY);
+        }, { passive: false });
+
+        document.addEventListener('touchend', e => {
+            if (!dragging) return;
+            const t = e.changedTouches[0];
+            endDrag(t.clientX, t.clientY);
+        });
     }
 
     function respawnIcon(prescreen, icon) {

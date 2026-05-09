@@ -463,49 +463,38 @@ targetFolders.forEach(folder => {
 
     function runBootSequence() {
         const folders = Array.from(document.querySelectorAll('.projectfolder'));
-        const staticFolders = folders.filter(f => f.classList.contains('system-static'));
+        const staticFolders  = folders.filter(f =>  f.classList.contains('system-static'));
         const randomFolders  = folders.filter(f => !f.classList.contains('system-static'));
 
-        // Extract Gilbert to load last
+        // Separate Gilbert — it animates in alone, then its ripple reveals everything else
         let gilbertFolder = null;
-        const otherRandomFolders = randomFolders.filter(folder => {
+        const otherFolders = randomFolders.filter(folder => {
             const text = folder.querySelector('.ProjectText').innerText.trim().toUpperCase();
             if (text === 'GILBERT') { gilbertFolder = folder; return false; }
             return true;
         });
 
-        // Shuffle the rest
-        for (let i = otherRandomFolders.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [otherRandomFolders[i], otherRandomFolders[j]] = [otherRandomFolders[j], otherRandomFolders[i]];
-        }
-
-        const finalLoadingQueue = [...otherRandomFolders];
-        if (gilbertFolder) finalLoadingQueue.push(gilbertFolder);
-
-        // Sequential folder growth
-        const growthPromises = finalLoadingQueue.map((folder, index) => {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    folder.classList.add('appear');
-                    setTimeout(resolve, 500);
-                }, index * 175);
-            });
+        // Gilbert does its solo grow animation
+        const gilbertPromise = new Promise(resolve => {
+            setTimeout(() => {
+                if (gilbertFolder) gilbertFolder.classList.add('appear');
+                setTimeout(resolve, 500);
+            }, 0);
         });
 
-        // Chain reaction — UI load after all folders appear
-        Promise.all(growthPromises).then(() => {
-            const lastFolder = finalLoadingQueue[finalLoadingQueue.length - 1];
-            lastFolder.classList.add('system-trigger');
+        // Gilbert's ripple reveals everything simultaneously
+        gilbertPromise.then(() => {
+            if (gilbertFolder) gilbertFolder.classList.add('system-trigger');
+            // Wait for the full 0.6s systemPop hop before firing the ripple
             setTimeout(() => {
-                triggerSystemRipple(lastFolder, staticFolders);
+                triggerSystemRipple(gilbertFolder, staticFolders, otherFolders);
                 document.body.classList.add('system-ready');
                 document.dispatchEvent(new CustomEvent('system:ready'));
-            }, 365);
+            }, 650);
         });
     }
 
-    function triggerSystemRipple(element, staticFolders) {
+    function triggerSystemRipple(element, staticFolders, otherFolders = []) {
         const ripple = document.createElement('div');
         ripple.className = 'system-ripple';
         const rect = element.getBoundingClientRect();
@@ -513,8 +502,9 @@ targetFolders.forEach(folder => {
         ripple.style.top  = `${rect.top  + rect.height / 2}px`;
         document.body.appendChild(ripple);
         setTimeout(() => ripple.remove(), 1000);
-        // Static folders (NSL, PMC) appear with the system UI
+        // All folders appear simultaneously with the ripple
         staticFolders.forEach(folder => folder.classList.add('appear'));
+        otherFolders.forEach(folder  => folder.classList.add('appear'));
     }
 
     // Listen for prescreen to finish. If prescreen.js already fired before

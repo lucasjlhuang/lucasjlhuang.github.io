@@ -1,0 +1,242 @@
+/* =============================================
+   MOBILE STYLES — max-width: 768px
+   All rules are scoped to this breakpoint so
+   the desktop layout is completely unaffected.
+   ============================================= */
+
+@media (max-width: 768px) {
+
+    /* ─── Prevent page scroll everywhere ─── */
+    html, body.desktop {
+        overflow: hidden;
+        height: 100%;
+        touch-action: none;
+    }
+
+    /* Allow scroll inside project windows and stamp gallery only */
+    .window-content {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+    .gb-grid-scroll {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+
+    /* ─── Prescreen: lock to screen, no scroll ─── */
+    #prescreen {
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    /* ─── Name + role: white with subtle shadow, top-left at 10px ─── */
+    .my-info {
+        position: fixed !important;
+        top: 10px !important;
+        left: 10px !important;
+        z-index: 10002 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .name {
+        color: #fff !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        line-height: 1 !important;
+        text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45) !important;
+    }
+    .roles {
+        color: #fff !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    /* ─── Desktop stamp: 0.65 scale, top-right ─── */
+    #desktop-id-card {
+        top: 10px !important;
+        right: 10px !important;
+        transform: scale(0.65) !important;
+        transform-origin: top right !important;
+        transition: opacity 1s ease !important;
+    }
+    #desktop-id-card.visible {
+        opacity: 1 !important;
+        transform: scale(0.65) !important;
+        transform-origin: top right !important;
+    }
+
+    /* ─── Wallpaper: absolute scatter layout ─── */
+    .wallpaper {
+        position: relative !important;
+        display: block !important;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    .projectfolder {
+        position: absolute !important;
+        width: 22vw !important;
+    }
+
+    /* Hide Marcopolo (6th child) and HESS (8th child) */
+    .wallpaper > .projectfolder:nth-child(6),
+    .wallpaper > .projectfolder:nth-child(8) {
+        display: none !important;
+    }
+
+    /* Scattered organic positions
+       DOM: NSL=3, PMC=4, BOT=5, Marcopolo=6(hidden),
+            VoGro=7, HESS=8(hidden), About me=9, Gilbert=10 */
+    .wallpaper > .projectfolder:nth-child(3)  { top: calc(28vh + 15px) !important; left: 6vw  !important; } /* NSL */
+    .wallpaper > .projectfolder:nth-child(4)  { top: 48vh !important; left: 74vw !important; } /* PMC */
+    .wallpaper > .projectfolder:nth-child(5)  { top: 32vh !important; left: 62vw !important; } /* Bank of Taiwan */
+    .wallpaper > .projectfolder:nth-child(7)  { top: calc(68vh - 20px) !important; left: calc(58vw - 10px) !important; } /* VoGro */
+    .wallpaper > .projectfolder:nth-child(9)  { top: 55vh !important; left: 8vw  !important; } /* About me */
+
+    /* Gilbert: calc-based centering so hop animation transform works cleanly */
+    .wallpaper > .projectfolder:nth-child(10) {
+        top:  calc(50% - 14vw) !important;
+        left: calc(50% - 11vw) !important;
+        transform: scale(0) !important;
+    }
+    .wallpaper > .projectfolder.appear:nth-child(10) {
+        transform: scale(1) !important;
+    }
+
+    @keyframes gilbertMobileHop {
+        0%   { transform: scale(1)          translateY(0);     }
+        15%  { transform: scale(1.08, 0.88) translateY(4px);   }
+        45%  { transform: scale(0.95, 1.05) translateY(-60px); }
+        65%  { transform: scale(1.25, 0.78) translateY(0);     }
+        80%  { transform: scale(0.95, 1.05) translateY(-14px); }
+        100% { transform: scale(1)          translateY(0);     }
+    }
+
+    .system-trigger {
+        animation: gilbertMobileHop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    }
+
+    .currentprojectsbubble {
+        display: none !important;
+    }
+
+    /* ─── Dock ─── */
+    .dock li[data-label="Photoshop"],
+    .dock li[data-label="Illustrator"],
+    .dock li[data-label="Figma"],
+    .dock li[data-label="VS Code"],
+    .dock li[data-label="Spotify"],
+    .dock li[data-label="Hobbies"],
+    .dock li[data-label="Trash"],
+    .dock li.divider {
+        display: none !important;
+    }
+
+    .dock {
+        padding: 1.2vh 2.5px; /* 2.5px + 12.5px item margin = 15px at each end */
+    }
+    .dock li {
+        margin: 0 12.5px;
+        width: 36px;
+    }
+    .dock li img {
+        width: 7.5vw;
+        height: 7.5vw;
+        max-width: 38px;
+        max-height: 38px;
+    }
+
+    /* ─── Crate button: right-aligned, vertically centred with dock icons ─── */
+    #gb-crate-btn {
+        right: 18px !important;
+        left: auto !important;
+        bottom: calc(5vh + 1.2vh) !important;
+        transform-origin: bottom right !important;
+        transform: scale(0.18) translateY(30px) !important;
+    }
+    #gb-crate-btn.gb-crate-visible {
+        transform: scale(0.18) translateY(0) !important;
+    }
+    #gb-crate-btn:active {
+        transform: scale(0.17) !important;
+    }
+
+    /* ─── Playground CTA ─── */
+    .in-progress-container {
+        bottom: calc(7.4vh + 40.5px) !important; /* 2.5px above dock top edge */
+    }
+
+    #progress-arrow {
+        width: 10px !important;
+        height: 10px !important;
+    }
+
+    /* ─── Stamp gallery close button: same spot as crate button ─── */
+    .gb-close-btn {
+        top: auto !important;
+        bottom: calc(5vh + 1.2vh) !important;
+        right: 18px !important;
+        font-size: 30px !important;
+        padding: 10px 14px !important;
+    }
+
+    /* ─── Stamp gallery: 3 per row, 12.5px gap, 5px side padding ─── */
+    .gb-grid-scroll {
+        padding: 20px 5px 80px !important; /* 80px bottom clears the close button */
+    }
+
+    .gb-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 12.5px !important;
+        justify-content: unset !important;
+    }
+
+    /* Stamp cell fills its column */
+    .gb-stamp-cell {
+        width: 100% !important;
+        overflow: visible !important;
+    }
+
+    /* Stamp body: fluid width, locked aspect ratio */
+    .gb-stamp-body {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 149 / 200 !important;
+        position: relative !important;
+    }
+
+    /* Outline SVG: fill the fluid stamp body */
+    .gb-stamp-body > div:nth-child(2) svg {
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+    }
+
+    /* Inner image area: pixel positions → percentages of stamp body */
+    .gb-stamp-body > div:nth-child(1) {
+        left:   8.72% !important;  /* 13 / 149 */
+        top:    6.5%  !important;  /* 13 / 200 */
+        width:  81.88% !important; /* 122 / 149 */
+        height: 61%   !important;  /* 122 / 200 */
+    }
+
+    /* Number: percentage-based bottom/right, fluid font */
+    .gb-stamp-body > div:nth-child(3) {
+        bottom: 11%  !important; /* 22 / 200 */
+        right:  9.4% !important; /* 14 / 149 */
+        font-size: 3.3vw !important;
+    }
+
+    /* Name: percentage-based bottom/right, fluid font */
+    .gb-stamp-body > div:nth-child(4) {
+        bottom:    6%    !important; /* 12 / 200 */
+        right:     9.4%  !important; /* 14 / 149 */
+        font-size: 2.2vw !important;
+        max-width: 78%   !important; /* 116 / 149 */
+    }
+}
