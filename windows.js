@@ -13,7 +13,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Map to track currently open windows (used by 'closeWindow' and for initial offset calculations)
     // IMPORTANT: openWindowsMap now stores { windowElement, folderRect } for project windows
-    const openWindowsMap = new Map(); 
+    const openWindowsMap = new Map();
+
+    // Preloaded project HTML cache — populated after system:ready
+    const projectHTMLCache = new Map();
+
+    function preloadProjectHTML() {
+        PROJECT_TITLES.forEach(title => {
+            if (title === 'About me') return; // About me uses initSlideshow, skip
+            const fileName = `projects/${title.toLowerCase().replace(/\s+/g, '-')}.html`;
+            fetch(fileName)
+                .then(r => r.ok ? r.text() : null)
+                .then(html => { if (html) projectHTMLCache.set(title, html); })
+                .catch(() => {});
+        });
+    }
+
+    document.addEventListener('system:ready', preloadProjectHTML, { once: true });
 
     // ⭐ NEW: Map to store the last known position of each hobby image
     // Key: Image alt text, Value: { left: 'Xpx', top: 'Ypx' }
@@ -72,7 +88,7 @@ targetFolders.forEach(folder => {
         "VoGro",
         "Bank of Taiwan",
         "Marcopolo",
-        "Bettermind"
+        "Gilbert"
     ];
 
     // ⭐ List of dock apps that should only have one instance (UNCHANGED) ⭐
@@ -103,7 +119,7 @@ targetFolders.forEach(folder => {
         "VOGRO": "Vogro",
         "HESS": "HESS Education",
         "ABOUT ME": "About me",
-        "BETTERMIND": "Bettermind",
+        "GILBERT": "Gilbert",
         "[REDACTED]": "[redacted]"
     };
 
@@ -450,11 +466,11 @@ targetFolders.forEach(folder => {
         const staticFolders = folders.filter(f => f.classList.contains('system-static'));
         const randomFolders  = folders.filter(f => !f.classList.contains('system-static'));
 
-        // Extract Bettermind to load last
-        let bettermindFolder = null;
+        // Extract Gilbert to load last
+        let gilbertFolder = null;
         const otherRandomFolders = randomFolders.filter(folder => {
             const text = folder.querySelector('.ProjectText').innerText.trim().toUpperCase();
-            if (text === 'BETTERMIND') { bettermindFolder = folder; return false; }
+            if (text === 'GILBERT') { gilbertFolder = folder; return false; }
             return true;
         });
 
@@ -465,7 +481,7 @@ targetFolders.forEach(folder => {
         }
 
         const finalLoadingQueue = [...otherRandomFolders];
-        if (bettermindFolder) finalLoadingQueue.push(bettermindFolder);
+        if (gilbertFolder) finalLoadingQueue.push(gilbertFolder);
 
         // Sequential folder growth
         const growthPromises = finalLoadingQueue.map((folder, index) => {
@@ -485,7 +501,7 @@ targetFolders.forEach(folder => {
                 triggerSystemRipple(lastFolder, staticFolders);
                 document.body.classList.add('system-ready');
                 document.dispatchEvent(new CustomEvent('system:ready'));
-            }, 500);
+            }, 365);
         });
     }
 
@@ -786,48 +802,45 @@ if (toggleBtn) {
 
     // 2. Fetch external content if it's NOT a styled app (like Photoshop)
     if (!useStyledTemplate) {
-        // Show a temporary loading state
-        contentContainer.innerHTML = `<div class="loading-state" style="padding: 20px; opacity: 0.5;">Loading ${displayTitle}...</div>`;
+        contentContainer.innerHTML = '';
 
-       /* windows.js - Inside openNewWindow() fetch block */
-
-fetch(fileName)
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Could not find ${fileName}`);
-        }
-        return response.text();
-    })
-    .then(html => {
-        // Inject the fetched HTML into the window
-        contentContainer.innerHTML = html;
-        
-        // ⭐ NEW: Trigger Slide-Up Animation for Project Content
-        // We check if it's a project folder and NOT the "About Me" window
-        if (isProjectFolder && title !== "About me") {
-            const mainContent = contentContainer.querySelector('main');
-            if (mainContent) {
-                // We use a small timeout (50ms) to ensure the browser 
-                // recognizes the initial hidden state before animating.
-                setTimeout(() => {
+        function injectHTML(html) {
+            contentContainer.innerHTML = html;
+            if (isProjectFolder && title !== 'About me') {
+                const mainContent = contentContainer.querySelector('main');
+                if (mainContent) {
+                    void contentContainer.getBoundingClientRect();
                     mainContent.classList.add('visible');
-                }, 50);
+                }
+            }
+            if (title === 'About me') {
+                initSlideshow();
             }
         }
-        
-        if (title === "About me") {
-            initSlideshow();
+
+        const cached = projectHTMLCache.get(title);
+        if (cached) {
+            injectHTML(cached);
+        } else {
+            fetch(fileName)
+                .then(response => {
+                    if (!response.ok) throw new Error(`Could not find ${fileName}`);
+                    return response.text();
+                })
+                .then(html => {
+                    projectHTMLCache.set(title, html);
+                    injectHTML(html);
+                })
+                .catch(err => {
+                    console.error('Fetch error:', err);
+                    contentContainer.innerHTML = `
+                        <div style="padding: 20px; color: #ff3b30;">
+                            <h3 style="margin-top: 0;">Update Needed</h3>
+                            <p>Unable to load <strong>${fileName}</strong>.</p>
+                            <p><small>Error: ${err.message}</small></p>
+                        </div>`;
+                });
         }
-    })
-            .catch(err => {
-                console.error("Fetch error:", err);
-                contentContainer.innerHTML = `
-                    <div style="padding: 20px; color: #ff3b30;">
-                        <h3 style="margin-top: 0;">Update Needed</h3>
-                        <p>Unable to load <strong>${fileName}</strong>.</p>
-                        <p><small>Error: ${err.message}</small></p>
-                    </div>`;
-            });
     }
         
         // --- Static Navigation Bar (existing logic) ---

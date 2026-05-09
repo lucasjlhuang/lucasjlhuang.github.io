@@ -1,77 +1,73 @@
 function makeMovable(folder, header) {
     let isDragging = false;
+    let hasDragged  = false; // true only if the mouse actually moved during drag
     let offset = { x: 0, y: 0 };
-    
-    header.style.cursor = 'move';
+
+    // External-link folders (NSL, PMC) use alias cursor instead of move
+    const isExternal = folder.classList.contains('system-static');
+    const restCursor = isExternal ? 'alias' : 'move';
+    header.style.cursor = restCursor;
 
     function startDrag(e) {
-        // ⭐ CRITICAL CHECK: Ignore mousedown events that originate inside a window.
-        // This prevents the folder drag logic from interfering with the movable/resizable windows.
-        if (e.target.closest('.window')) {
-            return;
-        }
-
-        // Prevent text selection and default touch actions (like scrolling)
-        e.preventDefault(); 
+        if (e.target.closest('.window')) return;
+        e.preventDefault();
         isDragging = true;
-        
-        folder.classList.add('is-dragging'); 
-        
-        // CRITICAL: Switch position to absolute when dragging starts
+        hasDragged  = false;
+
+        folder.classList.add('is-dragging');
+
         if (folder.style.position !== 'absolute') {
             const rect = folder.getBoundingClientRect();
             folder.style.position = 'absolute';
             folder.style.left = rect.left + 'px';
-            folder.style.top = rect.top + 'px';
-            // Remove auto-margins set by body alignment
-            folder.style.margin = '0'; 
+            folder.style.top  = rect.top  + 'px';
+            folder.style.margin = '0';
         }
 
-        // Get client coordinates (supports both mouse and touch)
         const clientX = e.clientX || (e.touches?.[0]?.clientX || 0);
         const clientY = e.clientY || (e.touches?.[0]?.clientY || 0);
 
-        // Calculate the offset from the click/touch point to the top-left of the element
         offset = {
             x: clientX - folder.getBoundingClientRect().left,
-            y: clientY - folder.getBoundingClientRect().top
+            y: clientY - folder.getBoundingClientRect().top,
         };
         header.style.cursor = 'grabbing';
     }
 
     function onDrag(e) {
         if (!isDragging) return;
-        
-        // Get client coordinates (supports both mouse and touch)
+        hasDragged = true;
+
         const clientX = e.clientX || (e.touches?.[0]?.clientX || null);
         const clientY = e.clientY || (e.touches?.[0]?.clientY || null);
 
         if (clientX !== null && clientY !== null) {
-            // Update the element's position
             folder.style.left = (clientX - offset.x) + 'px';
-            folder.style.top = (clientY - offset.y) + 'px';
+            folder.style.top  = (clientY - offset.y) + 'px';
         }
     }
 
     function endDrag() {
-        if (isDragging) {
-            isDragging = false;
-            
-            folder.classList.remove('is-dragging'); 
-            
-            header.style.cursor = 'move'; // Reset cursor
+        if (!isDragging) return;
+        isDragging = false;
+        folder.classList.remove('is-dragging');
+        header.style.cursor = restCursor;
+
+        // If the mouse actually moved, swallow the next click so external
+        // links don't open after a drag on system-static folders (or any folder)
+        if (hasDragged) {
+            folder.addEventListener('click', e => e.preventDefault(), { once: true, capture: true });
         }
+        hasDragged = false;
     }
 
-    // Attach listeners to the specific header and global document
     header.addEventListener('mousedown', startDrag);
     document.addEventListener('mousemove', onDrag);
-    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('mouseup',   endDrag);
 
-    // Touch support for mobile devices
     header.addEventListener('touchstart', startDrag, { passive: false });
-    document.addEventListener('touchmove', onDrag, { passive: false });
-    document.addEventListener('touchend', endDrag);
+    document.addEventListener('touchmove', onDrag,   { passive: false });
+    document.addEventListener('touchend',  endDrag);
 }
 
 

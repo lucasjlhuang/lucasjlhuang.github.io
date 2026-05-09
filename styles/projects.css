@@ -167,19 +167,19 @@ center {
 
 /* projects.css */
 
-/* Initial state for project content */
-/* projects.css */
-main {
-    opacity: 0;
-    transform: translateY(20px);
-    /* Add a delay (e.g., 0.5s) to match your TRANSITION_DURATION in JS */
-    transition: opacity 0.55s ease-out 0.35s, transform 0.65s ease-out 0.35s;
+@keyframes content-slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Animation trigger */
+/* Initial state for project content */
+main {
+    opacity: 0;
+}
+
+/* Adding .visible unconditionally plays the animation from scratch */
 main.visible {
-    opacity: 1;
-    transform: translateY(0);
+    animation: content-slide-up 0.55s ease-out 0.35s both;
 }
 
 /* general.css */

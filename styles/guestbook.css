@@ -1,224 +1,141 @@
 /* =============================================
-   GUEST BOOK — Stack
+   GUEST BOOK — Crate + Stamp Grid
    ============================================= */
 
-/* ─── CTA button ─── */
-#gb-open-btn {
+/* ─── Crate button — 18% of natural SVG size, anchored bottom-right with dock ─── */
+#gb-crate-btn {
     position: fixed;
-    top: 160px;
+    bottom: 5vh;
     right: 18px;
     z-index: 10001;
+    cursor: pointer;
+    user-select: none;
+    isolation: isolate;
+    transform-origin: bottom right;
+    opacity: 0;
+    transform: scale(0.18) translateY(30px);
+    transition: opacity 1s ease, transform 1s ease;
+}
+#gb-crate-btn.gb-crate-visible {
+    opacity: 1;
+    transform: scale(0.18) translateY(0);
+}
+#gb-crate-btn:active { transform: scale(0.17); }
+
+/* All three SVGs are the same frame — stack as layers at natural size */
+.gb-crate-back {
+    display: block;
+    position: relative;
+    z-index: 1;
+}
+.gb-crate-front,
+.gb-crate-stamps {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+.gb-crate-front  { z-index: 3; }
+.gb-crate-stamps {
+    z-index: 2;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* On hover, stamps rise out of the crate */
+#gb-crate-btn:hover .gb-crate-stamps {
+    transform: translateY(-6px);
+}
+
+/* ─── Full-screen white overlay ─── */
+#gb-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100010;
+    background: #FCFCFC;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    overflow: hidden;
+}
+#gb-overlay.gb-overlay-in  { opacity: 1; }
+#gb-overlay.gb-overlay-out { opacity: 0; pointer-events: none; }
+
+/* ─── Close button ─── */
+.gb-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    z-index: 2;
     background: none;
     border: none;
-    padding: 0;
-    padding-right: 3px;
+    font-size: 22px;
+    color: rgba(0,0,0,0.3);
     cursor: pointer;
-    font-family: 'SFMedium', sans-serif;
-    font-size: 10px;
-    letter-spacing: normal;
-    text-transform: lowercase;
-    color: rgba(0, 0, 0, 0.5);
-    /* Match system UI hidden state */
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 1s ease, transform 1s ease, color 0.2s ease;
-}
-#gb-open-btn.gb-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-#gb-open-btn:hover {
-    color: rgba(0, 0, 0, 1);
-}
-#gb-open-btn.gb-btn-loading {
-    opacity: 0.35;
-}
-
-/* Text hop — peaks at -15px (matching playground), text swaps at the top */
-@keyframes gb-btn-hop {
-    0%   { transform: translateY(0); }
-    50%  { transform: translateY(-15px); }
-    100% { transform: translateY(0); }
-}
-#gb-open-btn.gb-btn-hop {
-    animation: gb-btn-hop 0.32s ease-out forwards;
-}
-
-/* ─── Visitor number badge ─── */
-#gb-visitor-badge {
-    position: fixed;
-    z-index: 10001;
-    font-family: 'SFMedium', sans-serif;
-    font-size: 10px;
-    letter-spacing: normal;
-    color: rgba(0, 0, 0, 0.5);
-    /* Match system UI hidden state */
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 1s ease 0.15s, transform 1s ease 0.15s;
-    white-space: nowrap;
     line-height: 1;
-    pointer-events: none;
-    padding-left: 3px;
+    padding: 4px 8px;
+    transition: color 0.15s ease;
 }
-#gb-visitor-badge.gb-visible {
+.gb-close-btn:hover { color: rgba(0,0,0,0.75); }
+
+/* ─── Scrollable grid area ─── */
+.gb-grid-scroll {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,0.12) transparent;
+    padding: 48px 0 60px;
+    box-sizing: border-box;
+}
+.gb-grid-scroll::-webkit-scrollbar       { width: 4px; }
+.gb-grid-scroll::-webkit-scrollbar-track { background: transparent; }
+.gb-grid-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 2px; }
+
+/* ─── 8 stamps per row, spread evenly across the full viewport width ─── */
+.gb-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 149px);
+    justify-content: space-evenly;
+    row-gap: 32px;
+}
+
+/* ─── Each stamp cell ─── */
+.gb-stamp-cell {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    cursor: default;
+    filter:
+        drop-shadow(0 3px 10px rgba(0,0,0,0.13))
+        drop-shadow(0 0 0 0.5px rgba(0,0,0,0.07));
+}
+.gb-stamp-cell.gb-cell-in {
     opacity: 1;
     transform: translateY(0);
 }
-
-/* ─── Stack panel — genie from/to CTA ─── */
-#gb-stack-panel {
-    position: fixed;
-    right: 18px;
-    z-index: 10000;
-    overflow: hidden;
-    pointer-events: auto;
-    transform-origin: top right;
-    opacity: 0;
-    transform: scaleY(0) scaleX(0.3);
-    transition:
-        transform 0.42s cubic-bezier(0.7, -0.01, 0.4, 1),
-        opacity   0.28s ease;
-}
-#gb-stack-panel.gb-stack-open {
-    opacity: 1;
-    transform: scaleY(1) scaleX(1);
-}
-#gb-stack-panel.gb-stack-close {
-    opacity: 0;
-    transform: scaleY(0) scaleX(0.3);
-    transition:
-        transform 0.32s cubic-bezier(0.7, -0.01, 0.4, 1),
-        opacity   0.2s ease;
+.gb-stamp-cell:hover {
+    filter:
+        drop-shadow(0 6px 20px rgba(0,0,0,0.18))
+        drop-shadow(0 0 0 0.5px rgba(0,0,0,0.07));
+    transform: translateY(-4px);
+    transition: opacity 0.6s ease, transform 0.2s ease, filter 0.2s ease;
 }
 
-/* Gradient fade — top only, panel extends to screen bottom */
-#gb-stack-panel::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: 72px;
-    pointer-events: none;
-    z-index: 2;
-    background: linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 100%);
-}
-
-/* ─── Scrollable list — height:100% works because the panel has an explicit height ─── */
-.gb-card-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    scrollbar-width: none;
-    height: 100%;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 4px 0;
-}
-.gb-card-list::-webkit-scrollbar { display: none; }
-
-/* No fade masks — list clips seamlessly at panel edges */
-
-/* ─── Stack cards — 220px, matches desktop widget ─── */
-.gb-stack-card {
-    width: 220px;
+/* ─── Stamp body — exact prescreen size ─── */
+.gb-stamp-body {
+    position: relative;
+    width: 149px;
+    height: 200px;
     flex-shrink: 0;
-    border-radius: 14px;
-    box-shadow: none;
-    overflow: hidden;
-    font-family: 'SFRegular', sans-serif;
-    cursor: default;
-    user-select: none;
-}
-.gb-stack-card:hover {
-    box-shadow: none;
-}
-
-/* ─── Card internals ─── */
-.gb-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 9px 12px 7px;
-}
-.gb-logo { height: 14px; width: auto; }
-.gb-card-label {
-    font-family: 'SFMedium', sans-serif;
-    font-size: 7px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-.gb-card-body {
-    display: flex;
-    padding: 10px 12px 10px 10px;
-    align-items: flex-start;
-    gap: 6px;
-}
-.gb-photo {
-    width: 52px;
-    height: 52px;
-    border-radius: 7px;
-    border: 1.5px solid transparent;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-/* Fields: relative so sig can be bg watermark */
-.gb-fields {
-    flex: 1;
-    min-width: 0;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-}
-/* Signature: full-width watermark behind text */
-.gb-sig-bg {
-    position: absolute;
-    inset: -4px -4px -4px -4px;
-    z-index: 0;
-    pointer-events: none;
-}
-.gb-sig-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    opacity: 0.5;
-}
-.gb-label {
-    font-size: 6.5px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    font-family: 'SFMedium', sans-serif;
-    position: relative;
-    z-index: 1;
-}
-.gb-value {
-    font-size: 12px;
-    font-family: 'SFMedium', sans-serif;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    position: relative;
-    z-index: 1;
-}
-.gb-name, .gb-date {
-    font-family: 'Handwriting', cursive;
-    font-size: 13px;
 }
 
 /* ─── Empty state ─── */
-.gb-empty-msg {
-    font-family: 'SFMedium', sans-serif;
-    font-size: 11px;
-    color: rgba(255,255,255,0.6);
+.gb-empty {
+    grid-column: 1 / -1;
     text-align: center;
-    padding: 18px 0;
-    background: rgba(0,0,0,0.22);
-    border-radius: 10px;
-    backdrop-filter: blur(8px);
+    font-family: 'SFMedium', sans-serif;
+    font-size: 13px;
+    color: rgba(0,0,0,0.35);
+    padding: 80px 0;
 }

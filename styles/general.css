@@ -185,8 +185,19 @@ img.projectimage {
     transition: background-color 0.7s ease-in, 0.2s ease-out;
 }
 .projectfolder:hover {
-    z-index: 100; 
+    z-index: 100;
     cursor: pointer;
+}
+
+/* PMC and NSL open in a new tab — alias cursor throughout the folder on hover.
+   High-specificity selectors needed to beat .projectimage:hover { cursor: pointer }
+   and the JS inline cursor on .projectfolderheader (handled in folders.js). */
+.projectfolder.system-static:hover,
+.projectfolder.system-static:hover .clickable,
+.projectfolder.system-static:hover .projectfolderheader,
+.projectfolder.system-static:hover .projectimage,
+.projectfolder.system-static:hover .ProjectText {
+    cursor: alias !important;
 }
 
 .projectimage:hover {

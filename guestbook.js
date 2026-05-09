@@ -1,361 +1,204 @@
-/* guestbook.js — Guest Book Stack */
+/* guestbook.js — Crate guest book */
 
 (function () {
     'use strict';
 
-    let isOpen    = false;
-    let isLoading = false;
-    let stackEl   = null;
-    let btnEl     = null;
-    let allCards  = [];
+    const SB_URL  = 'https://szzuffjmcrckyipgsquq.supabase.co';
+    const SB_ANON = 'sb_publishable_aIS1KXvtPNOimEnzsQ84PQ_2uYvA-Qz';
 
-    let scrollOffset = 0; // px scrolled within the stack
-    const CARD_W = 220;   // matches desktop widget width
-    const CARD_GAP = 12;  // gap between stacked cards
+    // Exact same pixel dimensions as the prescreen stamp (prescreen.js STAMP_W/H)
+    const STAMP_W = 149, STAMP_H = 200;
+    const INNER_L = 13, INNER_T = 13, INNER_W = 122, INNER_H = 122;
+
+    let overlayEl = null;
+    let isOpen    = false;
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
     function escHtml(s) {
-        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
     function isLightColor(hex) {
-        const c = (hex || '#D9EDF8').replace('#','');
+        const c = (hex || '#FDFCFC').replace('#','');
         const r = parseInt(c.slice(0,2),16);
         const g = parseInt(c.slice(2,4),16);
         const b = parseInt(c.slice(4,6),16);
         return (r*299 + g*587 + b*114) / 1000 > 155;
     }
 
-    function drawSig(canvas) {
-        const src = canvas.dataset.src;
-        if (!src) return;
-        const dpr = window.devicePixelRatio || 1;
-        const w = canvas.offsetWidth, h = canvas.offsetHeight;
-        if (!w || !h) return;
-        canvas.width  = Math.round(w * dpr);
-        canvas.height = Math.round(h * dpr);
-        const ctx = canvas.getContext('2d');
-        ctx.scale(dpr, dpr);
-        const img = new Image();
-        img.onload = () => {
-            const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
-            const dw = img.naturalWidth  * scale;
-            const dh = img.naturalHeight * scale;
-            ctx.clearRect(0, 0, w, h);
-            ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    function stampTextColors(card) {
+        const outlineLight = isLightColor(card.border_color);
+        const onLight = card.pattern_id === 'v-stripes' ? !outlineLight : outlineLight;
+        return {
+            num:  onLight ? '#000'             : '#fff',
+            name: onLight ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.85)',
         };
-        img.src = src;
     }
 
-    // ─── Shuffle array ────────────────────────────────────────────────────────
-    function shuffle(arr) {
-        const a = [...arr];
-        for (let i = a.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [a[i], a[j]] = [a[j], a[i]];
+    // ─── Render a single stamp — exact prescreen dimensions & pixel values ──────
+    function renderStampHTML(card) {
+        const renderer    = window.__stampRenderer;
+        const borderColor = card.border_color || '#FDFCFC';
+        const innerColor  = card.card_color   || '#FFFFFF';
+
+        let outlineSVG = '';
+        if (renderer) {
+            const pat = card.pattern_id
+                ? renderer.PATTERNS.find(p => p.id === card.pattern_id) || null
+                : null;
+            outlineSVG = renderer.makeOutlineSVG(STAMP_W, STAMP_H, borderColor, pat);
         }
-        return a;
-    }
 
-    // ─── Build one card element ───────────────────────────────────────────────
-    function buildCardEl(card) {
-        const el = document.createElement('div');
-        el.className = 'gb-stack-card';
-        el.style.background = card.card_color || '#D9EDF8';
-
-        const light = isLightColor(card.card_color);
-        const textMain  = light ? '#222'                   : '#fff';
-        const textSub   = light ? 'rgba(0,0,0,0.35)'      : 'rgba(255,255,255,0.45)';
-        const logoF     = 'brightness(0) invert(1)'; // always white
-        const photoBg   = light ? 'rgba(0,0,0,0.08)'      : 'rgba(0,0,0,0.18)';
-        const photoBdr  = light ? 'rgba(0,0,0,0.1)'       : 'rgba(255,255,255,0.18)';
-        const hdrBdr    = light ? 'rgba(0,0,0,0.07)'      : 'rgba(255,255,255,0.12)';
-        const hdrBg     = light ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)';
-
-        const sigHTML = card.signature_url
-            ? `<div class="gb-sig-bg"><canvas class="gb-sig-canvas" data-src="${escHtml(card.signature_url)}"></canvas></div>`
+        const txt = stampTextColors(card);
+        const imgHTML = card.character_svg
+            ? `<img src="${escHtml(card.character_svg)}" loading="lazy"
+                    style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;">`
             : '';
 
-        const hasChar = !!card.character_svg;
-
-        el.innerHTML = `
-            <div class="gb-card-header" style="border-bottom:1px solid ${hdrBdr};background:${hdrBg}">
-                <img class="gb-logo" src="/images/wordlogo.png" alt="Lucas Huang"
-                     style="filter:${logoF};opacity:0.8">
-                <span class="gb-card-label" style="color:${textSub}">ID Card</span>
+        return `
+            <div class="gb-stamp-body">
+                <div style="position:absolute;
+                     left:${INNER_L}px;top:${INNER_T}px;
+                     width:${INNER_W}px;height:${INNER_H}px;overflow:hidden;">
+                    <div style="position:absolute;inset:0;background:${escHtml(innerColor)};"></div>
+                    ${imgHTML}
+                </div>
+                <div style="position:absolute;inset:0;pointer-events:none;">
+                    ${outlineSVG}
+                </div>
+                <div style="position:absolute;bottom:22px;right:14px;
+                     font-family:'SFMedium',sans-serif;font-size:15px;font-weight:700;
+                     color:${txt.num};line-height:1;pointer-events:none;">
+                    ${escHtml(String(card.stamp_number || '?'))}
+                </div>
+                <div style="position:absolute;bottom:12px;right:14px;
+                     font-family:'SFMedium',sans-serif;font-size:10px;
+                     color:${txt.name};line-height:1;
+                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+                     max-width:116px;pointer-events:none;">
+                    ${escHtml(card.name || '')}
+                </div>
             </div>
-            <div class="gb-card-body">
-                <div class="gb-photo" style="background:${photoBg};border-color:${photoBdr};position:relative;overflow:hidden">
-                    ${!hasChar ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="${light?'#000':'#fff'}" stroke-width="1.5" opacity="0.3">
-                        <circle cx="12" cy="8" r="4"/>
-                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                    </svg>` : ''}
-                </div>
-                <div class="gb-fields">
-                    ${sigHTML}
-                    <div class="gb-label" style="color:${textSub}">Name</div>
-                    <div class="gb-value gb-name" style="color:${textMain}">${escHtml(card.name||'—')}</div>
-                    <div class="gb-label" style="color:${textSub};margin-top:4px">Date</div>
-                    <div class="gb-value gb-date" style="color:${textMain}">${escHtml(card.visit_date||'—')}</div>
-                </div>
-            </div>`;
-
-        // Render character image layers after element is built
-        if (hasChar && window.CharacterSystem) {
-            const photoEl = el.querySelector('.gb-photo');
-            if (photoEl) window.CharacterSystem.renderInto(photoEl, card.character_svg);
-        }
-
-        // No drag — sticker feature removed for now
-        return el;
+        `;
     }
 
-    // ─── Build the stack panel ────────────────────────────────────────────────
-    function buildStack(cards) {
-        const btn = document.getElementById('gb-open-btn');
-        const btnBottom = btn ? btn.getBoundingClientRect().bottom : 200;
-        const stackTop    = btnBottom + 10;
-        const stackHeight = window.innerHeight - stackTop; // extend to screen bottom
-
-        const panel = document.createElement('div');
-        panel.id = 'gb-stack-panel';
-        panel.style.top    = stackTop + 'px';
-        panel.style.right  = '18px';
-        panel.style.width  = CARD_W + 'px';
-        panel.style.height = stackHeight + 'px';
-
-        // No fade masks — seamless clip at edges
-        const list = document.createElement('div');
-        list.className = 'gb-card-list';
-        panel.appendChild(list);
-
-        if (!cards || cards.length === 0) {
-            const empty = document.createElement('div');
-            empty.className = 'gb-empty-msg';
-            empty.textContent = 'No guests yet';
-            list.appendChild(empty);
-        } else {
-            // For infinite scroll: triplicate the shuffled list so we always
-            // have content above and below the initial scroll position.
-            const shuffled = shuffle(cards);
-            const copies = cards.length < 4 ? 5 : 3; // more copies for tiny lists
-            for (let c = 0; c < copies; c++) {
-                shuffled.forEach(card => list.appendChild(buildCardEl(card)));
-            }
+    // ─── Organize: stamp_number=1 pinned first, rest shuffled ────────────────
+    function organizeCards(cards) {
+        if (!cards || !cards.length) return [];
+        const first = cards.find(c => c.stamp_number === 1)
+                   || [...cards].sort((a,b) => (a.id||0)-(b.id||0))[0];
+        const rest  = cards.filter(c => c !== first);
+        for (let i = rest.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [rest[i], rest[j]] = [rest[j], rest[i]];
         }
-
-        document.body.appendChild(panel);
-
-        // ── Infinite scroll: centre the list so there's content both ways ──
-        if (cards && cards.length > 0) {
-            // Jump to the middle copy so user can scroll up or down indefinitely
-            requestAnimationFrame(() => {
-                const cardCount    = cards.length;
-                const copies       = cards.length < 4 ? 5 : 3;
-                const totalCards   = cardCount * copies;
-                const middleCopy   = Math.floor(copies / 2);
-                // Approximate height of one card + gap
-                const cardH = list.scrollHeight / totalCards;
-                list.scrollTop = middleCopy * cardCount * cardH;
-
-                // When approaching either end, teleport to the equivalent
-                // position in the middle copy (seamless loop)
-                list.addEventListener('scroll', () => {
-                    const max     = list.scrollHeight - list.clientHeight;
-                    const oneSet  = list.scrollHeight / copies;
-
-                    if (list.scrollTop < oneSet * 0.15) {
-                        // Near top — jump down by one set
-                        list.scrollTop += oneSet;
-                    } else if (list.scrollTop > max - oneSet * 0.15) {
-                        // Near bottom — jump up by one set
-                        list.scrollTop -= oneSet;
-                    }
-                }, { passive: true });
-            });
-        }
-
-        // Draw signatures after layout
-        setTimeout(() => panel.querySelectorAll('.gb-sig-canvas').forEach(drawSig), 120);
-
-        // Wheel scroll — attach to the LIST so it gets native overflow-y scrolling
-        list.addEventListener('wheel', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            list.scrollTop += e.deltaY * 0.8;
-        }, { passive: false });
-
-        requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add('gb-stack-open')));
-        return panel;
+        return first ? [first, ...rest] : rest;
     }
 
-    // ─── Open / close ─────────────────────────────────────────────────────────
-    async function openStack() {
-        if (isLoading || isOpen) return;
-        isLoading = true;
-        if (btnEl) btnEl.classList.add('gb-btn-loading');
-
+    // ─── Fetch from Supabase ──────────────────────────────────────────────────
+    async function fetchCards() {
         try {
-            if (typeof window.fetchAllGuestCards === 'function') {
-                allCards = await window.fetchAllGuestCards();
-            }
-        } catch (err) {
-            console.warn('Guest book fetch failed:', err);
-            allCards = [];
-        }
-
-        isLoading = false;
-        if (btnEl) btnEl.classList.remove('gb-btn-loading');
-
-        const panel = buildStack(allCards);
-        if (!panel) {
-            // buildStack failed (e.g. widget not in DOM yet) — reset state cleanly
-            console.warn('Guest book: could not build panel');
-            return;
-        }
-
-        stackEl = panel;
-        isOpen  = true;
-        if (btnEl) btnEl.classList.add('active');
-    }
-
-    function closeStack() {
-        if (!isOpen) return;
-        isOpen = false;
-        if (btnEl) btnEl.classList.remove('active');
-        if (!stackEl) return;
-        stackEl.classList.remove('gb-stack-open');
-        stackEl.classList.add('gb-stack-close');
-        const el = stackEl;
-        stackEl = null;
-        setTimeout(() => el.remove(), 340); // matches the 0.32s CSS transition
-    }
-
-    // ─── Visitor number ───────────────────────────────────────────────────────
-
-    function loadSavedCard() {
-        try {
-            const raw = localStorage.getItem('lh_id_card_v1');
-            return raw ? JSON.parse(raw) : null;
-        } catch { return null; }
-    }
-
-    // Credentials — copied directly here so guestbook.js never depends on
-    // prescreen.js having run first (defer order isn't guaranteed)
-    const SB_URL  = 'https://szzuffjmcrckyipgsquq.supabase.co';
-    const SB_ANON = 'sb_publishable_aIS1KXvtPNOimEnzsQ84PQ_2uYvA-Qz';
-
-    async function fetchVisitorNumber() {
-        if (!loadSavedCard()) return null;
-        try {
-            // Use exact count via Prefer header — Supabase returns it in Content-Range
             const res = await fetch(
-                `${SB_URL}/rest/v1/guest_cards?select=id&limit=1`,
-                {
-                    headers: {
-                        'apikey':        SB_ANON,
-                        'Authorization': `Bearer ${SB_ANON}`,
-                        'Prefer':        'count=exact',
-                    }
-                }
+                `${SB_URL}/rest/v1/guest_cards?select=*&order=submitted_at.desc`,
+                { headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` } }
             );
-            if (!res.ok) return null;
-            // Content-Range: 0-0/TOTAL  or  */TOTAL
-            const range = res.headers.get('Content-Range') || res.headers.get('content-range');
-            if (!range) return null;
-            const total = parseInt(range.split('/')[1], 10);
-            return isNaN(total) ? null : total;
-        } catch { return null; }
+            return res.ok ? res.json() : [];
+        } catch { return []; }
     }
 
-    function buildVisitorBadge(number) {
-        if (!number) return;
-        const existing = document.getElementById('gb-visitor-badge');
-        if (existing) existing.remove();
+    // ─── Open ─────────────────────────────────────────────────────────────────
+    async function openGuestBook() {
+        if (isOpen) return;
+        isOpen = true;
 
-        const badge = document.createElement('div');
-        badge.id = 'gb-visitor-badge';
-        badge.textContent = `${number.toLocaleString()} employees`;
-        document.body.appendChild(badge);
+        // White overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'gb-overlay';
+        overlayEl = overlay;
+        document.body.appendChild(overlay);
 
-        function positionBadge() {
-            const widget = document.getElementById('desktop-id-card');
-            const btn    = document.getElementById('gb-open-btn');
-            if (!widget || !btn) return;
-            const wRect = widget.getBoundingClientRect();
-            const bRect = btn.getBoundingClientRect();
-            const bh    = badge.offsetHeight || 12;
-            // Vertically centred on the CTA button row
-            badge.style.top  = Math.round(bRect.top + (bRect.height - bh) / 2) + 'px';
-            // Left-aligned with the widget's left edge
-            badge.style.left = Math.round(wRect.left) + 'px';
-        }
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                positionBadge();
-                badge.classList.add('gb-visible');
-                setTimeout(positionBadge, 900);
-            });
+        // Close on background click
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay) closeGuestBook();
         });
-    }
-    const TEXT_OPEN  = 'see em all!';
-    const TEXT_CLOSE = 'put em away';
 
-    function swapText(el, target) {
-        // Hop up — text swaps at the peak (halfway through), new text comes down
-        el.classList.add('gb-btn-hop');
-        setTimeout(() => {
-            el.textContent = target;
-        }, 150); // peak of the hop
-        setTimeout(() => {
-            el.classList.remove('gb-btn-hop');
-        }, 320);
-    }
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'gb-close-btn';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', closeGuestBook);
+        overlay.appendChild(closeBtn);
 
-    function buildButton() {
-        if (document.getElementById('gb-open-btn')) return;
-        btnEl = document.createElement('button');
-        btnEl.id          = 'gb-open-btn';
-        btnEl.textContent = TEXT_OPEN;
-        btnEl.addEventListener('click', () => {
-            if (isOpen) {
-                closeStack();
-                swapText(btnEl, TEXT_OPEN);
-            } else {
-                openStack();
-                swapText(btnEl, TEXT_CLOSE);
-            }
-        });
-        document.body.appendChild(btnEl);
+        // Grid scroll area
+        const scroll = document.createElement('div');
+        scroll.className = 'gb-grid-scroll';
+        overlay.appendChild(scroll);
 
-        function positionBtn() {
-            const widget = document.getElementById('desktop-id-card');
-            if (widget) {
-                const rect = widget.getBoundingClientRect();
-                btnEl.style.top   = (rect.bottom + 4) + 'px'; // tighter gap
-                btnEl.style.right = '18px';
-            }
-        }
+        const grid = document.createElement('div');
+        grid.className = 'gb-grid';
+        scroll.appendChild(grid);
 
-        positionBtn();
-        setTimeout(positionBtn, 800);
+        // Fade overlay in
+        requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('gb-overlay-in')));
 
-        if (document.body.classList.contains('system-ready')) {
-            requestAnimationFrame(() => { btnEl.classList.add('gb-visible'); });
-            fetchVisitorNumber().then(buildVisitorBadge);
+        // Fetch + render stamps
+        const cards    = await fetchCards();
+        const ordered  = organizeCards(cards);
+
+        if (ordered.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'gb-empty';
+            empty.textContent = 'No stamps yet';
+            grid.appendChild(empty);
         } else {
-            document.addEventListener('system:ready', () => {
-                setTimeout(() => {
-                    positionBtn();
-                    btnEl.classList.add('gb-visible');
-                    fetchVisitorNumber().then(buildVisitorBadge);
-                }, 400);
-            }, { once: true });
+            ordered.forEach((card, i) => {
+                const cell = document.createElement('div');
+                cell.className = 'gb-stamp-cell';
+                cell.innerHTML = renderStampHTML(card);
+                grid.appendChild(cell);
+                // Staggered gentle-load appearance (same timing as system UI)
+                setTimeout(() => cell.classList.add('gb-cell-in'), 80 + i * 35);
+            });
         }
     }
 
-    document.addEventListener('DOMContentLoaded', buildButton);
+    // ─── Close ────────────────────────────────────────────────────────────────
+    function closeGuestBook() {
+        if (!isOpen || !overlayEl) return;
+        isOpen = false;
+        overlayEl.classList.remove('gb-overlay-in');
+        overlayEl.classList.add('gb-overlay-out');
+        const el = overlayEl;
+        overlayEl = null;
+        setTimeout(() => el.remove(), 400);
+    }
 
+    // ─── Crate button ─────────────────────────────────────────────────────────
+    function buildCrateButton() {
+        if (document.getElementById('gb-crate-btn')) return;
+
+        const btn = document.createElement('div');
+        btn.id = 'gb-crate-btn';
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('tabindex', '0');
+        btn.innerHTML = `
+            <img class="gb-crate-back"   src="/images/crate/crate-back.svg"   alt="">
+            <img class="gb-crate-stamps" src="/images/crate/crate-stamps.svg" alt="">
+            <img class="gb-crate-front"  src="/images/crate/crate-front.svg"  alt="">
+        `;
+        btn.addEventListener('click', () => isOpen ? closeGuestBook() : openGuestBook());
+        btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') btn.click(); });
+        document.body.appendChild(btn);
+
+        function show() {
+            requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.add('gb-crate-visible')));
+        }
+        if (document.body.classList.contains('system-ready')) {
+            show();
+        } else {
+            document.addEventListener('system:ready', show, { once: true });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', buildCrateButton);
 })();
