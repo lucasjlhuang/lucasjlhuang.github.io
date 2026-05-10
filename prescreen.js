@@ -1139,36 +1139,57 @@
         let dragging = false;
         let ox = 0, oy = 0;
 
-        el.addEventListener('mousedown', e => {
-            if (e.button !== 0) return;
-            e.preventDefault();
+        function startDrag(clientX, clientY) {
             dragging = true;
             const r = el.getBoundingClientRect();
-            // Switch from right/top CSS to left/top so we can position freely
-            el.style.right      = 'auto';
-            el.style.left       = r.left + 'px';
-            el.style.top        = r.top  + 'px';
-            el.style.transition = 'none';
-            el.style.cursor     = 'grabbing';
-            ox = e.clientX - r.left;
-            oy = e.clientY - r.top;
-        });
+            // Switch transform-origin to top-left BEFORE changing to left-based positioning,
+            // otherwise the scale anchor jumps and the element visually shifts.
+            el.style.setProperty('transform-origin', 'top left',  'important');
+            el.style.setProperty('right',            'auto',      'important');
+            el.style.setProperty('left',             r.left + 'px', 'important');
+            el.style.setProperty('top',              r.top  + 'px', 'important');
+            el.style.setProperty('transition',       'none',      'important');
+            el.style.cursor = 'grabbing';
+            ox = clientX - r.left;
+            oy = clientY - r.top;
+        }
 
-        document.addEventListener('mousemove', e => {
+        function moveDrag(clientX, clientY) {
             if (!dragging) return;
-            const x   = e.clientX - ox;
-            const y   = e.clientY - oy;
             const maxX = window.innerWidth  - el.offsetWidth;
             const maxY = window.innerHeight - el.offsetHeight;
-            el.style.left = Math.max(0, Math.min(maxX, x)) + 'px';
-            el.style.top  = Math.max(0, Math.min(maxY, y)) + 'px';
-        });
+            el.style.setProperty('left', Math.max(0, Math.min(maxX, clientX - ox)) + 'px', 'important');
+            el.style.setProperty('top',  Math.max(0, Math.min(maxY, clientY - oy)) + 'px', 'important');
+        }
 
-        document.addEventListener('mouseup', () => {
+        function endDrag() {
             if (!dragging) return;
             dragging = false;
             el.style.cursor = 'grab';
+        }
+
+        // Mouse
+        el.addEventListener('mousedown', e => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            startDrag(e.clientX, e.clientY);
         });
+        document.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+        document.addEventListener('mouseup',   endDrag);
+
+        // Touch
+        el.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const t = e.touches[0];
+            startDrag(t.clientX, t.clientY);
+        }, { passive: false });
+        document.addEventListener('touchmove', e => {
+            if (!dragging) return;
+            e.preventDefault();
+            const t = e.touches[0];
+            moveDrag(t.clientX, t.clientY);
+        }, { passive: false });
+        document.addEventListener('touchend', endDrag);
     }
 
     // ─── Init ─────────────────────────────────────────────────────────────────

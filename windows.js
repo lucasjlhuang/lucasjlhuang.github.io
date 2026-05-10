@@ -491,7 +491,7 @@ targetFolders.forEach(folder => {
                     triggerSystemRipple(gilbertFolder, staticFolders, otherFolders);
                     document.body.classList.add('system-ready');
                     document.dispatchEvent(new CustomEvent('system:ready'));
-                }, 650);
+                }, 375);
             });
 
         } else {

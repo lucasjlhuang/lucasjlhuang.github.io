@@ -16,13 +16,12 @@ function makeMovable(folder, header) {
 
         folder.classList.add('is-dragging');
 
-        if (folder.style.position !== 'absolute') {
-            const rect = folder.getBoundingClientRect();
-            folder.style.position = 'absolute';
-            folder.style.left = rect.left + 'px';
-            folder.style.top  = rect.top  + 'px';
-            folder.style.margin = '0';
-        }
+        const rect = folder.getBoundingClientRect();
+        // Use setProperty('important') so drag positions beat any CSS !important rules
+        folder.style.setProperty('position', 'absolute', 'important');
+        folder.style.setProperty('left', rect.left + 'px', 'important');
+        folder.style.setProperty('top',  rect.top  + 'px', 'important');
+        folder.style.margin = '0';
 
         const clientX = e.clientX || (e.touches?.[0]?.clientX || 0);
         const clientY = e.clientY || (e.touches?.[0]?.clientY || 0);
@@ -42,8 +41,8 @@ function makeMovable(folder, header) {
         const clientY = e.clientY || (e.touches?.[0]?.clientY || null);
 
         if (clientX !== null && clientY !== null) {
-            folder.style.left = (clientX - offset.x) + 'px';
-            folder.style.top  = (clientY - offset.y) + 'px';
+            folder.style.setProperty('left', (clientX - offset.x) + 'px', 'important');
+            folder.style.setProperty('top',  (clientY - offset.y) + 'px', 'important');
         }
     }
 

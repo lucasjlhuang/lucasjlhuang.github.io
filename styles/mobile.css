@@ -95,30 +95,22 @@
     .wallpaper > .projectfolder:nth-child(3)  { top: calc(28vh + 15px) !important; left: 6vw  !important; } /* NSL */
     .wallpaper > .projectfolder:nth-child(4)  { top: 48vh !important; left: 74vw !important; } /* PMC */
     .wallpaper > .projectfolder:nth-child(5)  { top: 32vh !important; left: 62vw !important; } /* Bank of Taiwan */
-    .wallpaper > .projectfolder:nth-child(7)  { top: calc(68vh - 20px) !important; left: calc(58vw - 10px) !important; } /* VoGro */
+    .wallpaper > .projectfolder:nth-child(7)  { top: calc(68vh - 50px) !important; left: calc(58vw - 10px) !important; } /* VoGro */
     .wallpaper > .projectfolder:nth-child(9)  { top: 55vh !important; left: 8vw  !important; } /* About me */
 
     /* Gilbert: calc-based centering so hop animation transform works cleanly */
     .wallpaper > .projectfolder:nth-child(10) {
         top:  calc(50% - 14vw) !important;
         left: calc(50% - 11vw) !important;
-        transform: scale(0) !important;
+        transform: scale(0); /* no !important — animation must override this */
     }
     .wallpaper > .projectfolder.appear:nth-child(10) {
-        transform: scale(1) !important;
+        transform: scale(1); /* no !important — animation keyframes sit above normal styles */
     }
 
-    @keyframes gilbertMobileHop {
-        0%   { transform: scale(1)          translateY(0);     }
-        15%  { transform: scale(1.08, 0.88) translateY(4px);   }
-        45%  { transform: scale(0.95, 1.05) translateY(-60px); }
-        65%  { transform: scale(1.25, 0.78) translateY(0);     }
-        80%  { transform: scale(0.95, 1.05) translateY(-14px); }
-        100% { transform: scale(1)          translateY(0);     }
-    }
-
+    /* Use the same systemPop as desktop — scales toward the camera */
     .system-trigger {
-        animation: gilbertMobileHop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        animation: systemPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .currentprojectsbubble {
@@ -167,6 +159,10 @@
     }
 
     /* ─── Playground CTA ─── */
+    .playground-label {
+        transform: translateY(-5px) !important;
+    }
+
     .in-progress-container {
         bottom: calc(7.4vh + 40.5px) !important; /* 2.5px above dock top edge */
     }
