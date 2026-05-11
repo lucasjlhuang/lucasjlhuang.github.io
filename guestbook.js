@@ -122,11 +122,17 @@
             if (e.target === overlay) closeGuestBook();
         });
 
-        // Close button
-        const closeBtn = document.createElement('button');
+        // Close button — empty crate at the same position as the open button
+        const closeBtn = document.createElement('div');
         closeBtn.className = 'gb-close-btn';
-        closeBtn.textContent = '×';
+        closeBtn.setAttribute('role', 'button');
+        closeBtn.setAttribute('tabindex', '0');
+        closeBtn.innerHTML = `
+            <img class="gb-crate-back"  src="/images/crate/crate-back.svg"  alt="">
+            <img class="gb-crate-front" src="/images/crate/crate-front.svg" alt="">
+        `;
         closeBtn.addEventListener('click', closeGuestBook);
+        closeBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') closeGuestBook(); });
         overlay.appendChild(closeBtn);
 
         // Grid scroll area

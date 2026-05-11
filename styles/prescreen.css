@@ -269,6 +269,17 @@
 }
 #desktop-id-card.visible { opacity: 1; transform: translateY(0); }
 
+.widget-stamp-counter {
+    text-align: center;
+    font-family: 'SFMedium', sans-serif;
+    font-size: 7px;
+    color: rgba(0, 0, 0, 0.4);
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    pointer-events: none;
+    user-select: none;
+}
+
 .widget-stamp-wrap {
     position: relative;
     width: 86px;

@@ -1125,9 +1125,18 @@
                     <div class="widget-stamp-name" style="color:${nameColor}">${cardData.name || '—'}</div>
                 </div>
             </div>
+            <div class="widget-stamp-counter" id="widget-stamp-counter">${cardData.stampNumber || '?'}/…</div>
         `;
 
         document.body.appendChild(el);
+
+        // Fetch total stamp count and update the counter
+        fetchStampNumber().then(nextNum => {
+            const total = nextNum - 1;
+            const counter = document.getElementById('widget-stamp-counter');
+            if (counter) counter.textContent = `${cardData.stampNumber || '?'}/${total}`;
+        });
+
         requestAnimationFrame(() => requestAnimationFrame(() => {
             el.classList.add('visible');
             makeDraggable(el);

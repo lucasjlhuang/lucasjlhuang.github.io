@@ -60,22 +60,21 @@
 #gb-overlay.gb-overlay-in  { opacity: 1; }
 #gb-overlay.gb-overlay-out { opacity: 0; pointer-events: none; }
 
-/* ─── Close button ─── */
+/* ─── Close button — empty crate, identical size and position to the open button ─── */
 .gb-close-btn {
-    position: absolute;
-    top: 20px;
-    right: 24px;
-    z-index: 2;
-    background: none;
-    border: none;
-    font-size: 22px;
-    color: rgba(0,0,0,0.3);
+    position: fixed;
+    bottom: 5vh;
+    right: 18px;
+    z-index: 100011;
     cursor: pointer;
-    line-height: 1;
-    padding: 4px 8px;
-    transition: color 0.15s ease;
+    user-select: none;
+    isolation: isolate;
+    transform-origin: bottom right;
+    transform: scale(0.18) translateY(0);
+    transition: transform 0.15s ease;
 }
-.gb-close-btn:hover { color: rgba(0,0,0,0.75); }
+.gb-close-btn:hover  { transform: scale(0.19) translateY(0); }
+.gb-close-btn:active { transform: scale(0.17) translateY(0); }
 
 /* ─── Scrollable grid area ─── */
 .gb-grid-scroll {

@@ -655,18 +655,15 @@ targetFolders.forEach(folder => {
             targetX = geometry.left;
             targetY = geometry.top;
         } else if (CENTERED_APPS.includes(title)) {
-            // Case B: Center and dynamically offset the window for specified apps
-            const windowWidth = newWindow.offsetWidth;
+            // Case B: Random position near centre of screen
+            const windowWidth  = newWindow.offsetWidth;
             const windowHeight = newWindow.offsetHeight;
-            const centerX = (window.innerWidth / 2) - (windowWidth / 2);
+            const centerX = (window.innerWidth  / 2) - (windowWidth  / 2);
             const centerY = (window.innerHeight / 2) - (windowHeight / 2);
-            let offsetCount = getCenteredAppCount() - 1;
-            offsetCount = Math.max(0, offsetCount); 
-            // Corrected offset to use pixels consistently
-            const offset = offsetCount * 20; 
-
-            targetX = `calc(${centerX}px + ${offset}px)`;
-            targetY = `calc(${centerY}px + ${offset}px)`;
+            const randX = (Math.random() - 0.5) * 300; // ±150px from centre
+            const randY = (Math.random() - 0.5) * 200; // ±100px from centre
+            targetX = Math.max(0, centerX + randX) + 'px';
+            targetY = Math.max(0, centerY + randY) + 'px';
         } else {
             // ⭐ Case C: New Random Default Position (for Genie Final Destination & Standard Opens) ⭐
             // X: 30% to 50%
