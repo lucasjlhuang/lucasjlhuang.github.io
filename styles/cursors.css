@@ -1,0 +1,29 @@
+/* =============================================
+   WII CUSTOM CURSORS
+   Files are 32x32 px.
+   ============================================= */
+
+/* ─── Kill scrollbars so cursor rules reach the viewport edges ─── */
+html, body {
+    overflow: hidden;
+}
+
+/* ─── Preload all cursor images to prevent system cursor flash ─── */
+body::before {
+    content: url('/images/wii-pointer-set/WiiPointer.png')
+             url('/images/wii-pointer-set/WiiPointerBlue.png')
+             url('/images/wii-pointer-set/WiiPointerGrab.png')
+             url('/images/wii-pointer-set/WiiPointerHelp.png')
+             url('/images/wii-pointer-set/WiiPointerLink.png')
+             url('/images/wii-pointer-set/WiiPointerOpenHand.png')
+             url('/images/wii-pointer-set/Resize.png')
+             url('/images/wii-pointer-set/Person.png')
+             url('/images/wii-pointer-set/Typing.png');
+    display: none;
+}
+
+
+/* ─── Hide the real cursor everywhere — JS cursor div takes over ─── */
+*, *::before, *::after {
+    cursor: none !important;
+}

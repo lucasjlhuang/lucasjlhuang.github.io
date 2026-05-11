@@ -71,6 +71,7 @@ body.desktop {
     width: 100%;
     margin: 0;
     padding: 0;
+    overflow: hidden;
     font-family: 'SFRegular', sans-serif; /* <-- New Default Font */
 }
 
@@ -187,17 +188,6 @@ img.projectimage {
 .projectfolder:hover {
     z-index: 100;
     cursor: pointer;
-}
-
-/* PMC and NSL open in a new tab — alias cursor throughout the folder on hover.
-   High-specificity selectors needed to beat .projectimage:hover { cursor: pointer }
-   and the JS inline cursor on .projectfolderheader (handled in folders.js). */
-.projectfolder.system-static:hover,
-.projectfolder.system-static:hover .clickable,
-.projectfolder.system-static:hover .projectfolderheader,
-.projectfolder.system-static:hover .projectimage,
-.projectfolder.system-static:hover .ProjectText {
-    cursor: alias !important;
 }
 
 .projectimage:hover {

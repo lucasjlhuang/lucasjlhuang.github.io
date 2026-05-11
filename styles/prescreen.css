@@ -246,7 +246,7 @@
     transform: scale(1.12) !important;
     box-shadow: 0 8px 24px rgba(0,0,0,0.22) !important;
     transition: none !important;
-    cursor: grabbing !important;
+    cursor: url('/images/wii-pointer-set/WiiPointerGrab.png') 0 0, grabbing !important;
 }
 
 /* =============================================

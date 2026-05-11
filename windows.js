@@ -408,7 +408,7 @@ targetFolders.forEach(folder => {
             img.style.position = 'absolute';
             img.style.zIndex = getNextZIndex(); 
             img.style.boxShadow = '0 5px 10px rgba(154,160,185,.05), 0 15px 40px rgba(166,173,201,.2)';
-            img.style.cursor = 'grab';
+            img.style.cursor = '';
             
             // Set initial state (from icon) - NO TRANSITION applied yet
             img.style.left = `${iconRect.left}px`;
@@ -544,6 +544,10 @@ targetFolders.forEach(folder => {
     } else {
         document.addEventListener('prescreen:done', runBootSequence, { once: true });
     }
+
+    // Global click cursor — adds body class on mousedown, removes on mouseup
+    document.addEventListener('mousedown', () => document.body.classList.add('is-clicking'));
+    document.addEventListener('mouseup',   () => document.body.classList.remove('is-clicking'));
     
     // UPDATED: Movable logic for the new images (now saves position)
     function makeMovable(element, key) {
@@ -554,7 +558,7 @@ targetFolders.forEach(folder => {
             e.preventDefault(); 
             isDragging = true;
             element.style.zIndex = getNextZIndex();
-            element.style.cursor = 'grabbing';
+            document.body.classList.add('is-dragging');
             element.style.boxShadow = '0 5px 10px rgba(0, 0, 0, 0.1), 0 15px 40px rgba(0, 0, 0, 0.3)';
             // Disable the animation transition while dragging
             element.style.transition = 'none';
@@ -580,7 +584,7 @@ targetFolders.forEach(folder => {
 
         const onStopDrag = () => {
             isDragging = false;
-            element.style.cursor = 'grab'; 
+            document.body.classList.remove('is-dragging');
             element.style.boxShadow = '0 5px 10px rgba(154,160,185,.05), 0 15px 40px rgba(166,173,201,.2)';
             
             // ⭐ CRITICAL: Save the new position back to the map ⭐
@@ -1052,7 +1056,7 @@ if (toggleBtn) {
             win.style.zIndex = getNextZIndex();
             offset.x = e.clientX - win.offsetLeft;
             offset.y = e.clientY - win.offsetTop;
-            win.style.cursor = 'grabbing';
+            document.body.classList.add('is-dragging');
             document.addEventListener('mousemove', onDrag);
             document.addEventListener('mouseup', onStopDrag);
         });
@@ -1071,14 +1075,14 @@ if (toggleBtn) {
 
         const onStopDrag = () => {
             isDragging = false;
-            win.style.cursor = 'move'; 
+            document.body.classList.remove('is-dragging');
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', onStopDrag);
         };
         
         const content = win.querySelector('.window-content');
         if (content) {
-            content.style.cursor = 'move';
+            content.style.cursor = '';
         }
     }
 

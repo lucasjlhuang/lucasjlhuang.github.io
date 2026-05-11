@@ -8,7 +8,6 @@
     bottom: 5vh;
     right: 18px;
     z-index: 10001;
-    cursor: pointer;
     user-select: none;
     isolation: isolate;
     transform-origin: bottom right;
@@ -66,7 +65,6 @@
     bottom: 5vh;
     right: 18px;
     z-index: 100011;
-    cursor: pointer;
     user-select: none;
     isolation: isolate;
     transform-origin: bottom right;
@@ -104,7 +102,6 @@
     opacity: 0;
     transform: translateY(10px);
     transition: opacity 0.6s ease, transform 0.6s ease;
-    cursor: default;
     filter:
         drop-shadow(0 3px 10px rgba(0,0,0,0.13))
         drop-shadow(0 0 0 0.5px rgba(0,0,0,0.07));

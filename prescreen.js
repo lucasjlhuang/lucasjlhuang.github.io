@@ -385,13 +385,12 @@
             ox = clientX - r.left;
             oy = clientY - r.top;
             icon.style.zIndex    = '9000';
-            icon.style.cursor    = 'grabbing';
             icon.style.transform = 'scale(1.12)';
             icon.style.boxShadow = '0 8px 24px rgba(0,0,0,0.22)';
             icon.style.opacity   = '1';
             const bub = icon.querySelector('.icon-bubble');
             if (bub) bub.style.display = 'none';
-            document.body.style.cursor = 'grabbing';
+            document.body.classList.add('is-dragging');
         }
 
         function moveDrag(clientX, clientY) {
@@ -410,9 +409,8 @@
         function endDrag(clientX, clientY) {
             if (!dragging) return;
             dragging = false;
-            document.body.style.cursor = '';
+            document.body.classList.remove('is-dragging');
             icon.style.zIndex    = '50';
-            icon.style.cursor    = 'grab';
             icon.style.transform = 'scale(1)';
             icon.style.boxShadow = '';
             const bub = icon.querySelector('.icon-bubble');
@@ -1158,7 +1156,7 @@
             el.style.setProperty('left',             r.left + 'px', 'important');
             el.style.setProperty('top',              r.top  + 'px', 'important');
             el.style.setProperty('transition',       'none',      'important');
-            el.style.cursor = 'grabbing';
+            document.body.classList.add('is-dragging');
             ox = clientX - r.left;
             oy = clientY - r.top;
         }
@@ -1174,7 +1172,7 @@
         function endDrag() {
             if (!dragging) return;
             dragging = false;
-            el.style.cursor = 'grab';
+            document.body.classList.remove('is-dragging');
         }
 
         // Mouse

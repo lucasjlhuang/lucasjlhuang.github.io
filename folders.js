@@ -3,10 +3,7 @@ function makeMovable(folder, header) {
     let hasDragged  = false; // true only if the mouse actually moved during drag
     let offset = { x: 0, y: 0 };
 
-    // External-link folders (NSL, PMC) use alias cursor instead of move
-    const isExternal = folder.classList.contains('system-static');
-    const restCursor = isExternal ? 'alias' : 'move';
-    header.style.cursor = restCursor;
+    // Cursor is handled entirely by cursors.css
 
     function startDrag(e) {
         if (e.target.closest('.window')) return;
@@ -30,7 +27,7 @@ function makeMovable(folder, header) {
             x: clientX - folder.getBoundingClientRect().left,
             y: clientY - folder.getBoundingClientRect().top,
         };
-        header.style.cursor = 'grabbing';
+        document.body.classList.add('is-dragging');
     }
 
     function onDrag(e) {
@@ -50,7 +47,7 @@ function makeMovable(folder, header) {
         if (!isDragging) return;
         isDragging = false;
         folder.classList.remove('is-dragging');
-        header.style.cursor = restCursor;
+        document.body.classList.remove('is-dragging');
 
         // If the mouse actually moved, swallow the next click so external
         // links don't open after a drag on system-static folders (or any folder)

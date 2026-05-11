@@ -128,8 +128,8 @@
         closeBtn.setAttribute('role', 'button');
         closeBtn.setAttribute('tabindex', '0');
         closeBtn.innerHTML = `
-            <img class="gb-crate-back"  src="/images/crate/crate-back.svg"  alt="">
-            <img class="gb-crate-front" src="/images/crate/crate-front.svg" alt="">
+            <img class="gb-crate-back"  src="/images/crate/crate-back.svg"  alt="" draggable="false">
+            <img class="gb-crate-front" src="/images/crate/crate-front.svg" alt="" draggable="false">
         `;
         closeBtn.addEventListener('click', closeGuestBook);
         closeBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') closeGuestBook(); });
@@ -188,9 +188,9 @@
         btn.setAttribute('role', 'button');
         btn.setAttribute('tabindex', '0');
         btn.innerHTML = `
-            <img class="gb-crate-back"   src="/images/crate/crate-back.svg"   alt="">
-            <img class="gb-crate-stamps" src="/images/crate/crate-stamps.svg" alt="">
-            <img class="gb-crate-front"  src="/images/crate/crate-front.svg"  alt="">
+            <img class="gb-crate-back"   src="/images/crate/crate-back.svg"   alt="" draggable="false">
+            <img class="gb-crate-stamps" src="/images/crate/crate-stamps.svg" alt="" draggable="false">
+            <img class="gb-crate-front"  src="/images/crate/crate-front.svg"  alt="" draggable="false">
         `;
         btn.addEventListener('click', () => isOpen ? closeGuestBook() : openGuestBook());
         btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') btn.click(); });
