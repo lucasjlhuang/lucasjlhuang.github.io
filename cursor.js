@@ -1,4 +1,7 @@
 (() => {
+    // No custom cursor on touch/mobile devices
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
     const BASE = '/images/wii-pointer-set/';
     const IMG  = {
         default:   BASE + 'WiiPointer.png',

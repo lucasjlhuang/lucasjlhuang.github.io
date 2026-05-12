@@ -23,7 +23,9 @@ body::before {
 }
 
 
-/* ─── Hide the real cursor everywhere — JS cursor div takes over ─── */
-*, *::before, *::after {
-    cursor: none !important;
+/* ─── Hide the real cursor everywhere — JS cursor div takes over (non-touch only) ─── */
+@media (hover: hover) and (pointer: fine) {
+    *, *::before, *::after {
+        cursor: none !important;
+    }
 }
