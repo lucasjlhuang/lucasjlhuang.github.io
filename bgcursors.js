@@ -279,7 +279,7 @@
             this.timer      = 0;
 
             this.el = document.createElement('img');
-            this.el.src = `/images/${player}/pointer.png`;
+            this.el.src = `/images/${player}/Pointer.png`;
             this.el.draggable = false;
             this.el.style.cssText = `position:absolute;width:${CURSOR_SZ}px;height:${CURSOR_SZ}px;
                 pointer-events:none;will-change:transform;opacity:0;transition:opacity .35s ease;z-index:6;`;
@@ -316,7 +316,7 @@
             this.el.style.opacity   = '1';
             this.visitCount = 0;
             this.visitGoal  = randInt(2, 5);
-            this.img('pointer');
+            this.img('Pointer');
             this.pickBlock();
         }
 
@@ -336,7 +336,7 @@
         }
 
         doGrab() {
-            this.img('closed');
+            this.img('Closed');
             this.held    = this.claimed;
             this.claimed = null;
             const i = scattered.indexOf(this.held);
@@ -344,13 +344,13 @@
             setTimeout(spawnBlock, rand(1200, 3200));
 
             const pos = nextShapePos();
-            if (!pos) { this.img('pointer'); this.retreat(); return; }
+            if (!pos) { this.img('Pointer'); this.retreat(); return; }
             this.journey(pos.x - HOLD_OX, pos.y - HOLD_OY, 'atPile');
         }
 
         drop() {
             fillIndex++;
-            this.img('open');
+            this.img('Open');
             addToPile(this.held.el);
             this.held = null;
             this.visitCount++;
@@ -359,7 +359,7 @@
         }
 
         retreat() {
-            this.img('pointer');
+            this.img('Pointer');
             this.journey(rand(50, window.innerWidth - 50), window.innerHeight + CURSOR_SZ + 30, 'offscreen');
         }
 
@@ -386,10 +386,10 @@
                         this.held.el.style.transform  = `translate(${this.x + HOLD_OX}px,${this.y + HOLD_OY}px)`;
                     }
                     if (this.nextState === 'atBlock' && dist(this.x, this.y, this.tx, this.ty) < OPEN_RADIUS) {
-                        this.img('open');
+                        this.img('Open');
                     }
                     if (t >= 1) {
-                        if      (this.nextState === 'atBlock')   { this.img('open'); this.state = 'hovering'; this.timer = now + rand(120, 350); }
+                        if      (this.nextState === 'atBlock')   { this.img('Open'); this.state = 'hovering'; this.timer = now + rand(120, 350); }
                         else if (this.nextState === 'atPile')    { this.drop(); }
                         else if (this.nextState === 'offscreen') { this.el.style.opacity = '0'; this.state = 'resting'; this.restUntil = now + rand(800, 2500); }
                     }

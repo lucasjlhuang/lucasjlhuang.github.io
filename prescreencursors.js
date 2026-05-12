@@ -64,7 +64,7 @@
             this.dropY      = 0;
 
             this.el = document.createElement('img');
-            this.el.src = `/images/${player}/pointer.png`;
+            this.el.src = `/images/${player}/Pointer.png`;
             this.el.draggable = false;
             this.el.style.cssText = `
                 position:fixed; top:0; left:0;
@@ -86,11 +86,11 @@
             this.dur = Math.max(250, (dist(this.x, this.y, tx, ty) / SPEED) * 1000);
             this.nextState = next;
             this.state = 'moving';
-            this.img('pointer');
+            this.img('Pointer');
         }
 
-        showBubble(icon) { if (icon) icon.classList.add('npc-hover');    this.img('open'); }
-        hideBubble(icon) { if (icon) icon.classList.remove('npc-hover'); this.img('pointer'); }
+        showBubble(icon) { if (icon) icon.classList.add('npc-hover');    this.img('Open'); }
+        hideBubble(icon) { if (icon) icon.classList.remove('npc-hover'); this.img('Pointer'); }
 
         /* ── Cycle: think over 2–4 icons, then drag 1–2 of them ─────────────── */
         startCycle() {
@@ -140,7 +140,7 @@
             const icon = this.targetIcon;
             this.targetIcon = null;
             this.heldIcon   = icon;
-            this.img('closed');
+            this.img('Closed');
 
             icon.style.zIndex    = '9000';
             icon.style.transform = 'scale(1.12)';
@@ -156,7 +156,7 @@
 
             // Cursor tip moves to drop position; icon follows at top-left of cursor
             this.journey(this.dropX, this.dropY, 'arrivedDrop');
-            this.img('closed'); // override pointer reset from journey()
+            this.img('Closed'); // override pointer reset from journey()
         }
 
         releaseIcon() {
@@ -170,7 +170,7 @@
             icon.style.boxShadow = '';
             const bub = icon.querySelector('.icon-bubble');
             if (bub) bub.style.display = '';
-            this.img('open');
+            this.img('Open');
         }
 
         /* ── Back off from user cursor ───────────────────────────────────────── */
@@ -262,7 +262,7 @@
                                 this.timer = now + rand(1000, 2500);
                                 break;
                             case 'arrivedForDrag':
-                                this.img('open');
+                                this.img('Open');
                                 this.state = 'preGrab';
                                 this.timer = now + rand(200, 450);
                                 break;
