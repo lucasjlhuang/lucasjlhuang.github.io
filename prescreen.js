@@ -21,8 +21,36 @@
 
     async function saveCardToSupabase(cardData) {
         try {
-            await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type':  'application/json',
+                    'apikey':        SUPABASE_ANON,
+                    'Authorization': `Bearer ${SUPABASE_ANON}`,
+                    'Prefer':        'return=representation',
+                },
+                body: JSON.stringify({
+                    name:          cardData.name        || null,
+                    visit_date:    cardData.date        || null,
+                    card_color:    cardData.innerColor  || null,
+                    border_color:  cardData.outlineColor|| null,
+                    character_svg: cardData.selectedImg || null,
+                    stamp_number:  cardData.stampNumber || null,
+                    pattern_id:    cardData.patternId   || null,
+                }),
+            });
+            if (res.ok) {
+                const rows = await res.json();
+                return rows[0]?.id ?? null;
+            }
+        } catch (err) { console.warn('Stamp upload failed:', err); }
+        return null;
+    }
+
+    async function updateCardInSupabase(rowId, cardData) {
+        try {
+            await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${rowId}`, {
+                method: 'PATCH',
                 headers: {
                     'Content-Type':  'application/json',
                     'apikey':        SUPABASE_ANON,
@@ -35,12 +63,10 @@
                     card_color:    cardData.innerColor  || null,
                     border_color:  cardData.outlineColor|| null,
                     character_svg: cardData.selectedImg || null,
-                    stamp_number:  cardData.stampNumber || null,
                     pattern_id:    cardData.patternId   || null,
-                    // NOTE: add a `pattern_id` text column to the guest_cards table in Supabase
                 }),
             });
-        } catch (err) { console.warn('Stamp upload failed:', err); }
+        } catch (err) { console.warn('Stamp update failed:', err); }
     }
 
     window.fetchAllGuestCards = async function () {
@@ -1039,9 +1065,17 @@
     }
 
     // ─── Exit ─────────────────────────────────────────────────────────────────
-    function stampGenieOut(prescreen, cardData) {
-        saveCard(cardData);
-        saveCardToSupabase(cardData);
+    function stampGenieOut(prescreen, cardData, editMode = false) {
+        if (editMode) {
+            const rowId = loadSavedCard()?.rowId;
+            saveCard({ ...cardData, rowId });
+            if (rowId) updateCardInSupabase(rowId, cardData);
+        } else {
+            saveCard(cardData);
+            saveCardToSupabase(cardData).then(id => {
+                if (id != null) saveCard({ ...cardData, rowId: id });
+            });
+        }
 
         const wrapper   = document.getElementById('stamp-wrapper');
         const enterWrap = document.getElementById('stamp-enter-wrap');
@@ -1068,28 +1102,38 @@
             wrapper.style.opacity    = '0';
         }
 
-        // Wallpaper fades in after elements are gone
-        setTimeout(() => {
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position:fixed;inset:0;z-index:100000;
-                background-image:url('/images/lightmode.jpg');
-                background-size:cover;background-position:center;
-                opacity:0;pointer-events:none;
-            `;
-            document.body.appendChild(overlay);
-            overlay.getBoundingClientRect();
-            overlay.style.transition = 'opacity 0.8s ease';
-            overlay.style.opacity    = '1';
+        if (editMode) {
+            // Desktop already running — just close the prescreen and refresh widget
             setTimeout(() => {
-                prescreen.style.display = 'none';
-                overlay.remove();
-                signalBoot();
-                document.addEventListener('system:ready', () => {
-                    buildDesktopWidget(cardData);
-                }, { once: true });
-            }, 850);
-        }, 500);
+                prescreen.remove();
+                const old = document.getElementById('desktop-id-card');
+                if (old) old.remove();
+                buildDesktopWidget(cardData);
+            }, 500);
+        } else {
+            // First visit — wallpaper fade-in + boot sequence
+            setTimeout(() => {
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                    position:fixed;inset:0;z-index:100000;
+                    background-image:url('/images/lightmode.jpg');
+                    background-size:cover;background-position:center;
+                    opacity:0;pointer-events:none;
+                `;
+                document.body.appendChild(overlay);
+                overlay.getBoundingClientRect();
+                overlay.style.transition = 'opacity 0.8s ease';
+                overlay.style.opacity    = '1';
+                setTimeout(() => {
+                    prescreen.style.display = 'none';
+                    overlay.remove();
+                    signalBoot();
+                    document.addEventListener('system:ready', () => {
+                        buildDesktopWidget(cardData);
+                    }, { once: true });
+                }, 850);
+            }, 500);
+        }
     }
 
     // ─── Desktop widget ───────────────────────────────────────────────────────
@@ -1200,7 +1244,7 @@
     }
 
     // ─── Init ─────────────────────────────────────────────────────────────────
-    function initPrescreen(number) {
+    function initPrescreen(number, editData = null) {
         const prescreen = buildPrescreen(number);
 
         // Stamp image speech bubble on hover
@@ -1229,6 +1273,16 @@
             if (paletteOpen) closePalette();
         });
 
+        // Pre-populate all fields in edit mode
+        if (editData) {
+            const nameInput = document.getElementById('stamp-name-input');
+            if (nameInput) nameInput.value = editData.name || '';
+            const stampImg = document.getElementById('stamp-selected-img');
+            if (stampImg) { stampImg.src = activeImgDef.full; stampImg.style.display = 'block'; }
+            const enterBtn = document.getElementById('prescreen-enter');
+            if (enterBtn) enterBtn.textContent = 'update';
+        }
+
         document.getElementById('prescreen-enter').addEventListener('click', () => {
             stampGenieOut(prescreen, {
                 name:         document.getElementById('stamp-name-input').value.trim(),
@@ -1238,12 +1292,30 @@
                 selectedImg:  activeImgDef.full,
                 stampNumber,
                 patternId:    activePattern?.id || null,
-            });
+            }, !!editData);
         });
 
         initEnterButton();
         requestAnimationFrame(() => setTimeout(revealPrescreen, 80));
     }
+
+    // ─── Edit mode entry point (called from guestbook gallery) ────────────────
+    window.__openEditPrescreen = function () {
+        const saved = loadSavedCard();
+        if (!saved) return;
+
+        // Pre-set all active state variables from saved card
+        activeInnerColor   = saved.innerColor   || '#FFFFFF';
+        activeOutlineColor = saved.outlineColor || OUTLINE_COLORS[0];
+        activePattern      = saved.patternId
+            ? PATTERNS.find(p => p.id === saved.patternId) || null
+            : null;
+        const foundImg = STAMP_IMAGES.find(img => img.full === saved.selectedImg);
+        activeImgDef   = foundImg || DEFAULT_IMG;
+        selectedImgDef = activeImgDef;
+
+        initPrescreen(saved.stampNumber, saved);
+    };
 
     // ─── Entry point ─────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {

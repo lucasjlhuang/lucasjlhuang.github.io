@@ -13,6 +13,48 @@
     let overlayEl = null;
     let isOpen    = false;
 
+    // ─── Edit button SVG tracing (mirrors prescreen enter button animation) ──────
+    function initEditButton(btn) {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            const r  = btn.getBoundingClientRect();
+            const w  = r.width, h = r.height, rx = 3, m = 0.75;
+            const PL = 100, hw = w / 2;
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.classList.add('stamp-enter-svg');
+            svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.classList.add('stamp-enter-rect');
+            path.setAttribute('d',
+                `M ${hw} ${m}` +
+                ` H ${w-rx-m} A ${rx} ${rx} 0 0 1 ${w-m} ${rx+m}` +
+                ` V ${h-rx-m} A ${rx} ${rx} 0 0 1 ${w-rx-m} ${h-m}` +
+                ` H ${rx+m} A ${rx} ${rx} 0 0 1 ${m} ${h-rx-m}` +
+                ` V ${rx+m} A ${rx} ${rx} 0 0 1 ${rx+m} ${m}` +
+                ` H ${hw}`
+            );
+            path.setAttribute('pathLength', String(PL));
+            path.style.strokeWidth      = '1';
+            path.style.stroke           = 'rgba(0,0,0,0.75)';
+            path.style.strokeDasharray  = `${PL} ${PL}`;
+            path.style.strokeDashoffset = String(PL);
+            path.style.transition       = 'none';
+
+            svg.appendChild(path);
+            btn.appendChild(svg);
+
+            btn.addEventListener('mouseenter', () => {
+                path.style.transition       = 'stroke-dashoffset 0.32s linear';
+                path.style.strokeDashoffset = '0';
+            });
+            btn.addEventListener('mouseleave', () => {
+                path.style.transition       = 'stroke-dashoffset 0.22s linear';
+                path.style.strokeDashoffset = String(PL);
+            });
+        }));
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
     function escHtml(s) {
         return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -82,17 +124,29 @@
         `;
     }
 
-    // ─── Organize: stamp_number=1 pinned first, rest shuffled ────────────────
+    // ─── Organize: #1 pinned first, user's stamp second, rest shuffled ──────────
     function organizeCards(cards) {
         if (!cards || !cards.length) return [];
-        const first = cards.find(c => c.stamp_number === 1)
-                   || [...cards].sort((a,b) => (a.id||0)-(b.id||0))[0];
-        const rest  = cards.filter(c => c !== first);
+
+        let userStampNumber = null;
+        try {
+            const saved = localStorage.getItem('lh_id_card_v1');
+            if (saved) userStampNumber = JSON.parse(saved)?.stampNumber ?? null;
+        } catch {}
+
+        const first  = cards.find(c => c.stamp_number === 1)
+                    || [...cards].sort((a,b) => (a.id||0)-(b.id||0))[0];
+        const second = userStampNumber && userStampNumber !== 1
+                    ? cards.find(c => c.stamp_number === userStampNumber)
+                    : null;
+        const rest   = cards.filter(c => c !== first && c !== second);
+
         for (let i = rest.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [rest[i], rest[j]] = [rest[j], rest[i]];
         }
-        return first ? [first, ...rest] : rest;
+
+        return [first, second, ...rest].filter(Boolean);
     }
 
     // ─── Fetch from Supabase ──────────────────────────────────────────────────
@@ -157,12 +211,38 @@
             empty.textContent = 'No stamps yet';
             grid.appendChild(empty);
         } else {
+            // Check if the user has their own stamp in the gallery
+            let userStampNumber = null;
+            try {
+                const saved = localStorage.getItem('lh_id_card_v1');
+                if (saved) userStampNumber = JSON.parse(saved)?.stampNumber ?? null;
+            } catch {}
+
             ordered.forEach((card, i) => {
                 const cell = document.createElement('div');
                 cell.className = 'gb-stamp-cell';
                 cell.innerHTML = renderStampHTML(card);
+
+                // Add edit button to the user's own stamp
+                if (userStampNumber && card.stamp_number === userStampNumber) {
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'gb-edit-btn';
+                    editBtn.textContent = 'edit';
+                    editBtn.addEventListener('click', e => {
+                        e.stopPropagation();
+                        closeGuestBook();
+                        setTimeout(() => {
+                            if (window.__openEditPrescreen) window.__openEditPrescreen();
+                        }, 450);
+                    });
+                    const body = cell.querySelector('.gb-stamp-body');
+                    if (body) {
+                        body.appendChild(editBtn);
+                        initEditButton(editBtn);
+                    }
+                }
+
                 grid.appendChild(cell);
-                // Staggered gentle-load appearance (same timing as system UI)
                 setTimeout(() => cell.classList.add('gb-cell-in'), 80 + i * 35);
             });
         }

@@ -21,13 +21,12 @@
     /* ── Shapes — [col, row], row 0 = bottom, builds in array order ─────────── */
     const SHAPES = {
 
+        // Smiley — curved mouth + eyes, no top arc
         smiley: [
-            [1,0],[2,0],[3,0],
-            [0,1],[4,1],
-            [1,2],[3,2],
-            [0,4],[4,4],
-            [1,5],[3,5],
-            [1,6],[2,6],[3,6],
+            [1,0],[2,0],[3,0],           // bottom arc of mouth
+            [0,1],[4,1],                 // mouth sides
+            [1,2],[3,2],                 // mouth corners
+            [1,4],[3,4],                 // eyes
         ],
 
         // "hi!" — H, i, and exclamation mark
@@ -65,28 +64,20 @@
             [2,4],                            // peak
         ],
 
-        // Triangle — filled pyramid, builds bottom → peak
-        triangle: [
+        // Heart — two top bumps, filled middle, bottom point
+        heart: [
+            [2,0],                           // bottom point
+            [1,1],[2,1],[3,1],               // lower
+            [0,2],[1,2],[2,2],[3,2],[4,2],   // wide middle
+            [0,3],[1,3],[2,3],[3,3],[4,3],   // upper fill
+            [1,4],[3,4],                     // two bumps
+        ],
+
+        // Crown — three peaks over two solid band rows
+        crown: [
             [0,0],[1,0],[2,0],[3,0],[4,0],   // base
-            [1,1],[2,1],[3,1],               // middle
-            [2,2],                           // peak
-        ],
-
-        // Square — hollow outline
-        square: [
-            [0,0],[1,0],[2,0],[3,0],         // bottom edge
-            [0,1],[3,1],                     // sides
-            [0,2],[3,2],
-            [0,3],[1,3],[2,3],[3,3],         // top edge
-        ],
-
-        // Circle — block approximation of a circle outline
-        circle: [
-            [1,0],[2,0],[3,0],               // bottom arc
-            [0,1],[4,1],                     // sides
-            [0,2],[4,2],
-            [0,3],[4,3],
-            [1,4],[2,4],[3,4],               // top arc
+            [0,1],[1,1],[2,1],[3,1],[4,1],   // band
+            [0,2],[2,2],[4,2],               // three peaks
         ],
     };
 
@@ -413,8 +404,11 @@
             font-family: 'SFMedium', sans-serif; font-size: 11px;
             color: rgba(0,0,0,0.35); letter-spacing: 0.3px;
             cursor: pointer; user-select: none; white-space: nowrap;
-            transition: opacity 0.2s ease; opacity: 0.5;
+            transition: opacity 0.6s ease; opacity: 0;
         `;
+
+        // Fade in after the system UI boot animation fully settles
+        setTimeout(() => { btn.style.opacity = '0.5'; }, 1400);
 
         btn.addEventListener('mouseenter', () => { btn.style.opacity = '1'; });
         btn.addEventListener('mouseleave', () => { btn.style.opacity = running ? '0.7' : '0.5'; });
