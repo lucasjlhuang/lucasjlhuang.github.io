@@ -54,14 +54,15 @@
             this.nextState  = '';
             this.state      = 'waiting';
             this.timer      = performance.now() + rand(1500 + index * 800, 2800 + index * 800);
-            this.targetIcon = null;
-            this.heldIcon   = null;
-            this.thinkQueue = [];
-            this.dragQueue  = [];
-            this.thinkIndex = 0;
-            this.dragIndex  = 0;
-            this.dropX      = 0;
-            this.dropY      = 0;
+            this.targetIcon  = null;
+            this.heldIcon    = null;
+            this.hoveredIcon = null;  // icon currently under cursor tip
+            this.thinkQueue  = [];
+            this.dragQueue   = [];
+            this.thinkIndex  = 0;
+            this.dragIndex   = 0;
+            this.dropX       = 0;
+            this.dropY       = 0;
 
             this.el = document.createElement('img');
             this.el.src = `/images/${player}/Pointer.png`;
@@ -87,6 +88,17 @@
             this.nextState = next;
             this.state = 'moving';
             this.img('Pointer');
+        }
+
+        /* ── Real-time tip hover — fires every frame from cursor tip position ── */
+        updateTipHover() {
+            if (this.heldIcon) return; // don't trigger hover while dragging
+            const el   = document.elementFromPoint(this.x, this.y);
+            const icon = el ? el.closest('.scatter-icon') : null;
+            if (icon === this.hoveredIcon) return;
+            if (this.hoveredIcon) this.hoveredIcon.classList.remove('npc-hover');
+            this.hoveredIcon = icon;
+            if (this.hoveredIcon) this.hoveredIcon.classList.add('npc-hover');
         }
 
         showBubble(icon) { if (icon) icon.classList.add('npc-hover');    this.img('Open'); }
@@ -121,7 +133,7 @@
             const icon = this.thinkQueue[this.thinkIndex];
             this.targetIcon = icon;
             const { x, y } = iconCenter(icon);
-            this.journey(x - 4, y - 4, 'arrivedThink');
+            this.journey(x, y, 'arrivedThink');
         }
 
         /* ── Drag ────────────────────────────────────────────────────────────── */
@@ -133,7 +145,7 @@
             const icon = this.dragQueue[this.dragIndex];
             this.targetIcon = icon;
             const { x, y } = iconCenter(icon);
-            this.journey(x - 4, y - 4, 'arrivedForDrag');
+            this.journey(x, y, 'arrivedForDrag');
         }
 
         beginDrag() {
@@ -197,6 +209,7 @@
         }
 
         fadeOut() {
+            if (this.hoveredIcon) { this.hoveredIcon.classList.remove('npc-hover'); this.hoveredIcon = null; }
             this.hideBubble(this.targetIcon);
             if (this.heldIcon) {
                 const r = this.heldIcon.getBoundingClientRect();
@@ -209,6 +222,8 @@
         destroy() { this.el.remove(); }
 
         update(now) {
+            this.updateTipHover();
+
             // Back off if user is too close (not already doing so)
             if (this.state !== 'moving' || this.nextState !== 'backedOff') {
                 if (dist(this.x, this.y, userX, userY) < USER_AVOID_R) {

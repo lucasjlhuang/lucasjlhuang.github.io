@@ -230,7 +230,8 @@
     pointer-events: none;
     border-radius: 7px;
 }
-.scatter-icon:hover {
+.scatter-icon:hover,
+.scatter-icon.npc-hover {
     border-color: rgba(0,0,0,0.22);
     transform: scale(1.08) !important;
     z-index: 55;
