@@ -486,7 +486,8 @@
 }
 
 /* Show on hover — only when not dragging */
-.scatter-icon:hover .icon-bubble {
+.scatter-icon:hover .icon-bubble,
+.scatter-icon.npc-hover .icon-bubble {
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) translateY(0);
