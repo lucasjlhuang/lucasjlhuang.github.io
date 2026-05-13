@@ -71,14 +71,13 @@ targetFolders.forEach(folder => {
     
     // ⭐ UPDATED: Configuration for the Hobbies Sprawl Images ⭐
     const HOBBIES_IMAGES = [
-        // Source, dimensions (doubled), and upright rotation
-        // Initial position (initial_x in vw, initial_y in vh) - Used if no saved position exists
-        { src: "images/Hobbies/MAJ.png", alt: "Mahjong", width: 360, height: 450, initial_x: 10, initial_y: 15, rotate: 0 },
-        { src: "images/Hobbies/Warhammer.png", alt: "Warhammer", width: 240, height: 360, initial_x: 70, initial_y: 45, rotate: 0 },
-        { src: "/images/Hobbies/Guitar.png", alt: "Electric Guitar", width: 260, height: 400, initial_x: 55, initial_y: 10, rotate: 0 }, 
-        { src: "images/Hobbies/Travel.png", alt: "Travel", width: 360, height: 320, initial_x: 80, initial_y: 20, rotate: 0 }, 
-        { src: "/images/Hobbies/MTG.png", alt: "MTG", width: 260, height: 320, initial_x: 5, initial_y: 50, rotate: 0 }, 
-        { src: "/images/Hobbies/Lifedrawing.png", alt: "Life Drawing", width: 280, height: 280, initial_x: 50, initial_y: 60, rotate: 0 }, 
+        // Source, dimensions, initial position (vw/vh), and right-side label (editable)
+        { src: "images/Hobbies/MAJ.png",         alt: "Mahjong",              width: 360, height: 450, initial_x: 10, initial_y: 15, rotate: 0, label: "Taichung" },
+        { src: "images/Hobbies/Warhammer.png",    alt: "Warhammer",            width: 240, height: 360, initial_x: 70, initial_y: 45, rotate: 0, label: "Toronto"  },
+        { src: "/images/Hobbies/Guitar.png",      alt: "Electric guitar",      width: 260, height: 400, initial_x: 55, initial_y: 10, rotate: 0, label: "Hong Kong" },
+        { src: "images/Hobbies/Travel.png",       alt: "Travel",               width: 360, height: 320, initial_x: 80, initial_y: 20, rotate: 0, label: "Earth"    },
+        { src: "/images/Hobbies/MTG.png",         alt: "Magic the gathering",  width: 260, height: 320, initial_x:  5, initial_y: 50, rotate: 0, label: "Taipei"    },
+        { src: "/images/Hobbies/Lifedrawing.png", alt: "Life drawing",         width: 280, height: 280, initial_x: 50, initial_y: 60, rotate: 0, label: "Ishigaki"  },
     ];
 
 
@@ -196,7 +195,7 @@ targetFolders.forEach(folder => {
     function getNextZIndex() {
         // Include hobby images in z-index calculation
         let maxZ = 1001; 
-        document.querySelectorAll('.window:not([style*="display: none"]), .sprawled-hobby-image, #spotify-player-widget').forEach(el => {
+        document.querySelectorAll('.window:not([style*="display: none"]), #spotify-player-widget').forEach(el => {
             const z = parseInt(el.style.zIndex);
             if (!isNaN(z) && z > maxZ) {
                 maxZ = z;
@@ -357,102 +356,115 @@ targetFolders.forEach(folder => {
         }
     }
 
-    // UPDATED: Toggles the sprawled images for Hobbies with Genie-like animation and persistence
+    // Genie-closes a single hobby window back to the dock icon
+    function genieCloseHobbyWindow(win) {
+        const iconRect = getHobbiesIconRect();
+        if (!iconRect) { win.remove(); return; }
+        const genieTrans = `left ${TRANSITION_DURATION} ${GENIE_EASING}, top ${TRANSITION_DURATION} ${GENIE_EASING}, width ${TRANSITION_DURATION} ${GENIE_EASING}, height ${TRANSITION_DURATION} ${GENIE_EASING}, opacity ${TRANSITION_DURATION} ease-out, transform ${TRANSITION_DURATION} ease-out`;
+        win.style.transition = genieTrans;
+        win.style.left      = `${iconRect.left}px`;
+        win.style.top       = `${iconRect.top}px`;
+        win.style.width     = `${iconRect.width}px`;
+        win.style.height    = `${iconRect.height}px`;
+        win.style.opacity   = '0';
+        win.style.transform = 'scale(0.1)';
+        win.addEventListener('transitionend', function handler(e) {
+            if (e.propertyName === 'opacity') { win.removeEventListener('transitionend', handler); win.remove(); }
+        });
+    }
+
+    // Toggles hobby image windows — Apple-style window per image
     function toggleHobbySprawl() {
-        const existingImages = document.querySelectorAll('.sprawled-hobby-image');
+        const existingWindows = document.querySelectorAll('.hobby-window');
         const iconRect = getHobbiesIconRect();
 
-        if (!iconRect) {
-            existingImages.forEach(img => img.remove());
+        if (!iconRect) { existingWindows.forEach(w => w.remove()); return; }
+
+        // ── CLOSE ALL ────────────────────────────────────────────────────────
+        if (existingWindows.length > 0) {
+            existingWindows.forEach(w => genieCloseHobbyWindow(w));
             return;
         }
 
-        // Custom cubic-bezier for a strong, swoopy acceleration/deceleration (Genie approximation)
-        const genieEasing = GENIE_EASING;
-        const transitionDuration = TRANSITION_DURATION;
+        // ── OPEN ─────────────────────────────────────────────────────────────
+        const BORDER   = 4;   // px white border around image
+        const HEADER_H = 30;  // px header height
+        const genieTrans = `left ${TRANSITION_DURATION} ${GENIE_EASING}, top ${TRANSITION_DURATION} ${GENIE_EASING}, width ${TRANSITION_DURATION} ${GENIE_EASING}, height ${TRANSITION_DURATION} ${GENIE_EASING}, opacity ${TRANSITION_DURATION} ease-out, transform ${TRANSITION_DURATION} ease-out`;
 
-        if (existingImages.length > 0) {
-            // --- CLOSE ANIMATION (Reverse Genie) ---
-            existingImages.forEach(img => {
-                // Ensure transition is active
-                img.style.transition = `left ${transitionDuration} ${genieEasing}, top ${transitionDuration} ${genieEasing}, width ${transitionDuration} ${genieEasing}, height ${transitionDuration} ${genieEasing}, opacity ${transitionDuration} ease-out, transform ${transitionDuration} ease-out, box-shadow 0.1s`;
-                
-                // Animate to icon's position/size/opacity
-                img.style.left = `${iconRect.left}px`;
-                img.style.top = `${iconRect.top}px`;
-                img.style.width = `${iconRect.width}px`; // Shrink to icon size
-                img.style.height = `${iconRect.height}px`; // Shrink to icon size
-                img.style.opacity = '0'; // Fade out
-                img.style.transform = `rotate(0deg) scale(0.1)`; // Add scale down for better effect
-
-                // Remove the element after the transition is complete
-                img.addEventListener('transitionend', function removeAfterTransition(e) {
-                    // Only remove on the 'opacity' transition to ensure all properties have finished
-                    if (e.propertyName === 'opacity') {
-                        img.removeEventListener('transitionend', removeAfterTransition);
-                        img.remove();
-                    }
-                });
-            });
-            return; // Exit after triggering the close animation
-        }
-
-        // --- OPEN ANIMATION (Genie) ---
         HOBBIES_IMAGES.forEach(config => {
+            const winW = config.width  + BORDER * 2;
+            const winH = config.height + BORDER * 2 + HEADER_H;
+
+            // ── Build window ─────────────────────────────────────────────────
+            const win = document.createElement('div');
+            win.className = 'window hobby-window';
+            win.setAttribute('data-hobby-key', config.alt);
+
+            // Header
+            const header = document.createElement('div');
+            header.className = 'window-header';
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'hobby-close-btn';
+            closeBtn.addEventListener('click', () => genieCloseHobbyWindow(win));
+
+            const title = document.createElement('span');
+            title.className = 'hobby-window-title';
+            title.textContent = config.alt;
+
+            const labelBtn = document.createElement('span');
+            labelBtn.className = 'hobby-window-label';
+            labelBtn.textContent = config.label || '';
+
+            header.appendChild(closeBtn);
+            header.appendChild(title);
+            header.appendChild(labelBtn);
+
+            // Content
+            const content = document.createElement('div');
+            content.className = 'hobby-window-content';
+
             const img = document.createElement('img');
-            img.src = config.src;
-            img.alt = config.alt;
-            img.className = 'sprawled-hobby-image'; 
-            
-            // Set styles for base setup
-            img.style.position = 'absolute';
-            img.style.zIndex = getNextZIndex(); 
-            img.style.boxShadow = '0 5px 10px rgba(154,160,185,.05), 0 15px 40px rgba(166,173,201,.2)';
-            img.style.cursor = '';
-            
-            // Set initial state (from icon) - NO TRANSITION applied yet
-            img.style.left = `${iconRect.left}px`;
-            img.style.top = `${iconRect.top}px`;
-            img.style.width = `${iconRect.width}px`;
-            img.style.height = `${iconRect.height}px`;
-            img.style.opacity = '0.1'; 
-            img.style.transform = `rotate(0deg) scale(0.1)`; // Start small
-            
-            // Pass alt text for saving position
-            makeMovable(img, config.alt); 
+            img.src       = config.src;
+            img.alt       = config.alt;
+            img.draggable = false;
+            img.className = 'hobby-window-img';
+            content.appendChild(img);
 
-            // Add the image to the DOM
-            desktop.appendChild(img);
-            
-            // Use setTimeout to allow the browser to paint the initial state before transition
+            win.appendChild(header);
+            win.appendChild(content);
+
+            // ── Initial (genie origin) state ─────────────────────────────────
+            win.style.cssText = `
+                position: absolute;
+                left: ${iconRect.left}px;
+                top: ${iconRect.top}px;
+                width: ${iconRect.width}px;
+                height: ${iconRect.height}px;
+                opacity: 0;
+                transform: scale(0.1);
+                z-index: ${getNextZIndex()};
+                overflow: hidden;
+            `;
+
+            makeMovable(win, config.alt, win);
+            desktop.appendChild(win);
+
+            // ── Animate to final position ─────────────────────────────────────
             setTimeout(() => {
-                // Apply the transition property
-                img.style.transition = `left ${transitionDuration} ${genieEasing}, top ${transitionDuration} ${genieEasing}, width ${transitionDuration} ${genieEasing}, height ${transitionDuration} ${genieEasing}, opacity ${transitionDuration} ease-out, transform ${transitionDuration} ease-out, box-shadow 0.1s`;
-                
-                let finalX, finalY;
-                const savedPosition = hobbyImagePositions.get(config.alt);
+                win.style.transition = genieTrans;
 
-                if (savedPosition) {
-                    // ⭐ Persistence: Use the last known position ⭐
-                    finalX = savedPosition.left;
-                    finalY = savedPosition.top;
-                } else {
-                    // Initial sprawl: Calculate final position with small random jitter
-                    const randomXOffset = Math.random() * 10;
-                    const randomYOffset = Math.random() * 10;
-                    finalX = `calc(${config.initial_x}vw + ${randomXOffset}px)`;
-                    finalY = `calc(${config.initial_y}vh + ${randomYOffset}px)`;
-                }
+                const saved = hobbyImagePositions.get(config.alt);
+                const finalX = saved ? saved.left : `calc(${config.initial_x}vw + ${Math.random() * 10}px)`;
+                const finalY = saved ? saved.top  : `calc(${config.initial_y}vh + ${Math.random() * 10}px)`;
 
-                // Transition to the final state
-                img.style.left = finalX;
-                img.style.top = finalY;
-                img.style.width = `${config.width}px`;
-                img.style.height = `${config.height}px`;
-                img.style.opacity = '1'; 
-                img.style.transform = `rotate(${config.rotate}deg) scale(1)`;
-
-            }, 20); 
+                win.style.left      = finalX;
+                win.style.top       = finalY;
+                win.style.width     = `${winW}px`;
+                win.style.height    = `${winH}px`;
+                win.style.opacity   = '1';
+                win.style.transform = 'scale(1)';
+            }, 20);
         });
     }
     
@@ -550,12 +562,13 @@ targetFolders.forEach(folder => {
     document.addEventListener('mouseup',   () => document.body.classList.remove('is-clicking'));
     
     // UPDATED: Movable logic for the new images (now saves position)
-    function makeMovable(element, key) {
+    function makeMovable(element, key, dragHandle = element) {
         let isDragging = false;
         let offset = { x: 0, y: 0 };
-        
-        element.addEventListener('mousedown', (e) => { 
-            e.preventDefault(); 
+
+        dragHandle.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.window-close-btn')) return;
+            e.preventDefault();
             isDragging = true;
             element.style.zIndex = getNextZIndex();
             document.body.classList.add('is-dragging');
@@ -713,35 +726,47 @@ targetFolders.forEach(folder => {
                 const toggleBtn = newWindow.querySelector('.window-size-toggle-btn');
 
                 if (toggleBtn) {
+                    let savedRect = null;
                     // Prevent dragging when clicking the button
                     toggleBtn.addEventListener('mousedown', (e) => e.stopPropagation());
 
                     toggleBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        
-                        // Check if we are currently in small mode
+
                         const isSmall = toggleBtn.classList.contains('small-mode');
-                        
-                        // Apply smooth transition for resizing
                         newWindow.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
 
                         if (isSmall) {
-                            // Switch to LARGE
-                            newWindow.style.width = '1250px'; 
-                            newWindow.style.height = '700px';
+                            // Save current geometry before going fullscreen
+                            savedRect = {
+                                left: newWindow.style.left,
+                                top: newWindow.style.top,
+                                width: newWindow.style.width,
+                                height: newWindow.style.height,
+                            };
+                            newWindow.style.left = '0';
+                            newWindow.style.top = '0';
+                            newWindow.style.width = '100vw';
+                            newWindow.style.height = '100vh';
                             toggleBtn.classList.remove('small-mode');
                             toggleBtn.classList.add('large-mode');
                         } else {
-                            // Switch to SMALL
-                            newWindow.style.width = '1000px';
-                            newWindow.style.height = '600px';
+                            // Restore saved geometry
+                            if (savedRect) {
+                                newWindow.style.left   = savedRect.left;
+                                newWindow.style.top    = savedRect.top;
+                                newWindow.style.width  = savedRect.width;
+                                newWindow.style.height = savedRect.height;
+                            } else {
+                                newWindow.style.width  = '1000px';
+                                newWindow.style.height = '600px';
+                            }
                             toggleBtn.classList.remove('large-mode');
                             toggleBtn.classList.add('small-mode');
                         }
 
-                        // Clean up transition after animation so manual resizing is still smooth
-                        setTimeout(() => { 
-                            newWindow.style.transition = 'none'; 
+                        setTimeout(() => {
+                            newWindow.style.transition = 'none';
                         }, 400);
                     });
                 }
@@ -770,29 +795,39 @@ targetFolders.forEach(folder => {
             // --- NEW RESIZE BUTTON LOGIC ---
 const toggleBtn = newWindow.querySelector('.window-size-toggle-btn');
 if (toggleBtn) {
-    // Prevent the button click from triggering window dragging
+    let savedRect = null;
     toggleBtn.addEventListener('mousedown', (e) => e.stopPropagation());
 
     toggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isSmall = toggleBtn.classList.contains('small-mode');
-        
-        // Apply smooth transition for the resize
         newWindow.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
 
         if (isSmall) {
-            // Change to Large
-            newWindow.style.width = '1250px'; 
-            newWindow.style.height = '700px';
+            savedRect = {
+                left: newWindow.style.left,
+                top: newWindow.style.top,
+                width: newWindow.style.width,
+                height: newWindow.style.height,
+            };
+            newWindow.style.left   = '0';
+            newWindow.style.top    = '0';
+            newWindow.style.width  = '100vw';
+            newWindow.style.height = '100vh';
             toggleBtn.classList.replace('small-mode', 'large-mode');
         } else {
-            // Change to Small
-            newWindow.style.width = '1000px';
-            newWindow.style.height = '600px';
+            if (savedRect) {
+                newWindow.style.left   = savedRect.left;
+                newWindow.style.top    = savedRect.top;
+                newWindow.style.width  = savedRect.width;
+                newWindow.style.height = savedRect.height;
+            } else {
+                newWindow.style.width  = '1000px';
+                newWindow.style.height = '600px';
+            }
             toggleBtn.classList.replace('large-mode', 'small-mode');
         }
 
-        // Clean up transition so manual resizing remains snappy
         setTimeout(() => { newWindow.style.transition = 'none'; }, 400);
     });
 }
@@ -805,7 +840,15 @@ if (toggleBtn) {
     const displayTitle = DISPLAY_TITLE_MAP[title] || capitalizeTitle(title);
     const titleElement = newWindow.querySelector('.window-title');
     titleElement.textContent = displayTitle;
-    
+
+    // Reveal title once user scrolls down 50px in the window content
+    const contentEl = newWindow.querySelector('.window-content');
+    if (contentEl && titleElement) {
+        contentEl.addEventListener('scroll', () => {
+            titleElement.classList.toggle('title-visible', contentEl.scrollTop > 125);
+        });
+    }
+
     // 1. Generate the filename (e.g., "BANK OF TAIWAN" -> "bank-of-taiwan.html")
     const safeTitle = title.toLowerCase().replace(/\s+/g, '-');
     const fileName = `projects/${safeTitle}.html`;
@@ -814,7 +857,7 @@ if (toggleBtn) {
 
     // --- Transition Styles ---
     const colorTransition = 'color 0.8s ease-in-out';
-    titleElement.style.transition = colorTransition;
+    titleElement.style.transition = `opacity 0.8s ease, ${colorTransition}`;
     contentContainer.style.transition = colorTransition;
 
     const currentColor = getCurrentTextColor();

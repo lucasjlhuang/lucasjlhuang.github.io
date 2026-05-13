@@ -72,6 +72,7 @@
         if (
             target.closest('.window-close-btn') ||
             target.closest('.window-size-toggle-btn') ||
+            target.closest('.hobby-close-btn') ||
             target.closest('.nav-project-link')
         ) return IMG.help;
 
