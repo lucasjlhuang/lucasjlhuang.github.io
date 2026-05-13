@@ -134,9 +134,9 @@
             if (saved) userStampNumber = JSON.parse(saved)?.stampNumber ?? null;
         } catch {}
 
-        const first  = cards.find(c => c.stamp_number === 1)
+        const second = cards.find(c => c.stamp_number === 1)
                     || [...cards].sort((a,b) => (a.id||0)-(b.id||0))[0];
-        const second = userStampNumber && userStampNumber !== 1
+        const first  = userStampNumber && userStampNumber !== 1
                     ? cards.find(c => c.stamp_number === userStampNumber)
                     : null;
         const rest   = cards.filter(c => c !== first && c !== second);
