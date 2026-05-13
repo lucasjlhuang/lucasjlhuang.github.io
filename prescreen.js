@@ -1245,7 +1245,29 @@
 
     // ─── Init ─────────────────────────────────────────────────────────────────
     function initPrescreen(number, editData = null) {
-        const prescreen = buildPrescreen(number);
+        const prescreen  = buildPrescreen(number);
+        const onMobile   = window.innerWidth <= 768;
+
+        // ── Mobile-only prescreen adjustments ────────────────────────────────
+        if (onMobile && !editData) {
+            // Placeholder
+            const nameInput = document.getElementById('stamp-name-input');
+            if (nameInput) nameInput.placeholder = 'Your name';
+
+            // Start with no image — src="" triggers the existing display:none CSS rule
+            const mobileImg = document.getElementById('stamp-selected-img');
+            if (mobileImg) mobileImg.src = '';
+
+            // Show "drag here" hint by default; hide it once an image is selected
+            const hint = document.querySelector('.drop-hint');
+            if (hint) {
+                hint.style.opacity = '1';
+                const observer = new MutationObserver(() => {
+                    hint.style.opacity = mobileImg.src ? '0' : '1';
+                });
+                observer.observe(mobileImg, { attributes: true, attributeFilter: ['src'] });
+            }
+        }
 
         // Stamp image speech bubble on hover
         const stampImg = document.getElementById('stamp-selected-img');
@@ -1284,12 +1306,27 @@
         }
 
         document.getElementById('prescreen-enter').addEventListener('click', () => {
+            const nameVal = document.getElementById('stamp-name-input').value.trim();
+
+            // Mobile: name is required
+            if (onMobile && !nameVal) {
+                const input = document.getElementById('stamp-name-input');
+                input.style.transition = 'outline 0.1s ease';
+                input.style.outline    = '1.5px solid rgba(0,0,0,0.4)';
+                input.placeholder      = 'name required!';
+                setTimeout(() => {
+                    input.style.outline = '';
+                    input.placeholder   = 'Your name';
+                }, 1200);
+                return;
+            }
+
             stampGenieOut(prescreen, {
-                name:         document.getElementById('stamp-name-input').value.trim(),
+                name:         nameVal,
                 date:         new Date().toISOString().split('T')[0],
                 innerColor:   activeInnerColor,
                 outlineColor: activeOutlineColor,
-                selectedImg:  activeImgDef.full,
+                selectedImg:  activeImgDef?.full || null,
                 stampNumber,
                 patternId:    activePattern?.id || null,
             }, !!editData);

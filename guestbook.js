@@ -108,7 +108,7 @@
                 <div style="position:absolute;inset:0;pointer-events:none;">
                     ${outlineSVG}
                 </div>
-                <div style="position:absolute;bottom:22px;right:14px;
+                <div style="position:absolute;bottom:25px;right:14px;
                      font-family:'SFMedium',sans-serif;font-size:15px;font-weight:700;
                      color:${txt.num};line-height:1;pointer-events:none;">
                     ${escHtml(String(card.stamp_number || '?'))}
