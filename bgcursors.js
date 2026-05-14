@@ -4,6 +4,31 @@
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     if (window.innerWidth <= 768) return;
 
+    /* ── Supabase ───────────────────────────────────────────────────────────── */
+    const SB_URL  = 'https://szzuffjmcrckyipgsquq.supabase.co';
+    const SB_ANON = 'sb_publishable_aIS1KXvtPNOimEnzsQ84PQ_2uYvA-Qz';
+
+    async function fetchRandomStamps(n) {
+        try {
+            let userStampNumber = null;
+            try {
+                const saved = localStorage.getItem('lh_id_card_v1');
+                if (saved) userStampNumber = JSON.parse(saved)?.stampNumber ?? null;
+            } catch {}
+
+            const res = await fetch(
+                `${SB_URL}/rest/v1/guest_cards?select=name,stamp_number,character_svg,border_color,card_color`,
+                { headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` } }
+            );
+            if (!res.ok) return [];
+            const all = await res.json();
+            const pool = userStampNumber
+                ? all.filter(c => c.stamp_number !== userStampNumber)
+                : all;
+            return pool.sort(() => Math.random() - 0.5).slice(0, n);
+        } catch { return []; }
+    }
+
     /* ── Config ─────────────────────────────────────────────────────────────── */
     const PLAYERS     = ['P2', 'P3', 'P4'];
     const IMG_COUNT   = 59;
@@ -390,6 +415,99 @@
         }
     }
 
+    /* ── Player stamps ───────────────────────────────────────────────────────── */
+    let playerStampsEl = null;
+
+    function showPlayerStamps(stamps) {
+        if (playerStampsEl) { playerStampsEl.remove(); playerStampsEl = null; }
+        if (!stamps.length) return;
+
+        const container = document.createElement('div');
+        container.id = 'bg-player-stamps';
+        container.style.cssText = `
+            position: fixed; top: 52px; right: 18px; z-index: 9998;
+            display: flex; flex-direction: column; gap: 5px;
+            align-items: flex-end; pointer-events: none;
+        `;
+
+        const PLAYER_COLORS = ['#FF3838', '#10BD0D', '#FF9C00'];
+
+        const rows = stamps.map((stamp, i) => {
+            const row = document.createElement('div');
+            row.style.cssText = `
+                display: flex; align-items: center; gap: 6px;
+                opacity: 0; transform: translateY(-10px);
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            `;
+
+            const textCol = document.createElement('div');
+            textCol.style.cssText = `
+                display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+            `;
+
+            const nameEl = document.createElement('span');
+            nameEl.textContent = stamp.name || ':(';
+            nameEl.style.cssText = `
+                font-family: 'SFMedium', sans-serif; font-size: 10px;
+                color: rgba(0,0,0,0.35); white-space: nowrap;
+            `;
+
+            const numEl = document.createElement('span');
+            numEl.textContent = stamp.stamp_number || '?';
+            numEl.style.cssText = `
+                font-family: 'SFMedium', sans-serif; font-size: 7px;
+                color: rgba(0,0,0,0.25); white-space: nowrap; line-height: 1;
+            `;
+
+            textCol.appendChild(nameEl);
+            textCol.appendChild(numEl);
+
+            const avatarWrap = document.createElement('div');
+            avatarWrap.style.cssText = `width: 28px; height: 28px; flex-shrink: 0;`;
+
+            const avatar = document.createElement('div');
+            avatar.style.cssText = `
+                width: 28px; height: 28px; border-radius: 50%;
+                border: 2px solid ${PLAYER_COLORS[i]};
+                background: ${stamp.card_color || '#f5f5f5'};
+                ${stamp.character_svg ? `background-image: url('${stamp.character_svg}'); background-size: cover; background-position: center;` : ''}
+            `;
+
+            avatarWrap.appendChild(avatar);
+            row.appendChild(textCol);
+            row.appendChild(avatarWrap);
+            container.appendChild(row);
+            return row;
+        });
+
+        document.body.appendChild(container);
+        playerStampsEl = container;
+
+        // Staggered slide-down + fade in
+        rows.forEach((row, i) => {
+            setTimeout(() => {
+                row.style.opacity   = '1';
+                row.style.transform = 'translateY(0)';
+            }, i * 80);
+        });
+    }
+
+    function hidePlayerStamps() {
+        if (!playerStampsEl) return;
+        const el = playerStampsEl;
+        playerStampsEl = null;
+
+        // Staggered slide-up + fade out
+        const rows = [...el.children];
+        rows.forEach((row, i) => {
+            setTimeout(() => {
+                row.style.opacity   = '0';
+                row.style.transform = 'translateY(-10px)';
+            }, i * 60);
+        });
+        setTimeout(() => el.remove(), rows.length * 60 + 320);
+    }
+
     /* ── Toggle button ───────────────────────────────────────────────────────── */
     function buildToggleBtn() {
         const btn = document.createElement('button');
@@ -422,9 +540,11 @@
                 NPCS.forEach((c, i) => c.resetToRest(i * 400));
                 btn.style.opacity = '0.7';
                 btn.style.color   = 'rgba(0,0,0,0.55)';
+                fetchRandomStamps(3).then(showPlayerStamps);
             } else {
                 NPCS.forEach(c => c.resetToRest());
                 clearAllFade();
+                hidePlayerStamps();
                 setTimeout(() => { scene.style.display = 'none'; }, 650);
                 btn.style.opacity = '0.5';
                 btn.style.color   = 'rgba(0,0,0,0.35)';
