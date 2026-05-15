@@ -18,8 +18,11 @@
 #gb-crate-btn.gb-crate-visible {
     opacity: 1;
     transform: scale(0.18) translateY(0);
+    transition: opacity 1s ease, transform 0.15s ease;
 }
-#gb-crate-btn:active { transform: scale(0.17); }
+#gb-crate-btn.gb-crate-visible:hover { transform: scale(0.19) translateY(0); }
+#gb-crate-btn:active { transform: scale(0.15); }
+
 
 /* All three SVGs are the same frame — stack as layers at natural size */
 .gb-crate-back {
@@ -43,7 +46,7 @@
 
 /* On hover, stamps rise out of the crate */
 #gb-crate-btn:hover .gb-crate-stamps {
-    transform: translateY(-6px);
+    transform: translateY(-16px);
 }
 
 /* ─── Full-screen white overlay ─── */
@@ -59,7 +62,7 @@
 #gb-overlay.gb-overlay-in  { opacity: 1; }
 #gb-overlay.gb-overlay-out { opacity: 0; pointer-events: none; }
 
-/* ─── Close button — empty crate, identical size and position to the open button ─── */
+/* ─── Close button — crate with stamps animating in ─── */
 .gb-close-btn {
     position: fixed;
     bottom: 5vh;
@@ -69,10 +72,27 @@
     isolation: isolate;
     transform-origin: bottom right;
     transform: scale(0.18) translateY(0);
-    transition: transform 0.15s ease;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.15s ease, opacity 0.6s ease;
 }
-.gb-close-btn:hover  { transform: scale(0.19) translateY(0); }
-.gb-close-btn:active { transform: scale(0.17) translateY(0); }
+.gb-close-btn.gb-close-ready {
+    opacity: 1;
+    pointer-events: auto;
+}
+.gb-close-btn.gb-close-ready:hover  { transform: scale(0.19) translateY(0); }
+.gb-close-btn.gb-close-ready:active { transform: scale(0.15) translateY(0); }
+
+/* Stamps hidden above — slide down and fade in on hover */
+.gb-close-btn .gb-crate-stamps {
+    opacity: 0;
+    transform: translateY(-40px);
+    transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.gb-close-btn:hover .gb-crate-stamps {
+    opacity: 1;
+    transform: translateY(0);
+}
 
 /* ─── Scrollable grid area ─── */
 .gb-grid-scroll {

@@ -182,12 +182,14 @@
         closeBtn.setAttribute('role', 'button');
         closeBtn.setAttribute('tabindex', '0');
         closeBtn.innerHTML = `
-            <img class="gb-crate-back"  src="/images/crate/crate-back.svg"  alt="" draggable="false">
-            <img class="gb-crate-front" src="/images/crate/crate-front.svg" alt="" draggable="false">
+            <img class="gb-crate-back"    src="/images/crate/crate-back.svg"    alt="" draggable="false">
+            <img class="gb-crate-stamps"  src="/images/crate/crate-stamps.svg"  alt="" draggable="false">
+            <img class="gb-crate-front"   src="/images/crate/crate-front.svg"   alt="" draggable="false">
         `;
         closeBtn.addEventListener('click', closeGuestBook);
         closeBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') closeGuestBook(); });
         overlay.appendChild(closeBtn);
+        setTimeout(() => closeBtn.classList.add('gb-close-ready'), 400);
 
         // Grid scroll area
         const scroll = document.createElement('div');
@@ -257,6 +259,20 @@
         const el = overlayEl;
         overlayEl = null;
         setTimeout(() => el.remove(), 400);
+
+        // Hide open button during the swap, then fade it back in
+        const openBtn = document.getElementById('gb-crate-btn');
+        if (openBtn) {
+            openBtn.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+            openBtn.style.opacity = '0';
+            openBtn.style.pointerEvents = 'none';
+            setTimeout(() => {
+                openBtn.style.transition = 'opacity 0.6s ease, transform 0.15s ease';
+                openBtn.style.opacity = '';
+                openBtn.style.pointerEvents = '';
+                setTimeout(() => { openBtn.style.transition = ''; }, 700);
+            }, 400);
+        }
     }
 
     // ─── Crate button ─────────────────────────────────────────────────────────
@@ -275,6 +291,7 @@
         btn.addEventListener('click', () => isOpen ? closeGuestBook() : openGuestBook());
         btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') btn.click(); });
         document.body.appendChild(btn);
+
 
         function show() {
             requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.add('gb-crate-visible')));
