@@ -68,15 +68,23 @@
         if (target.closest('.top-left, .top-right, .bottom-left, .bottom-right, .window-resize-handle'))
             return IMG.resize;
 
-        // Window buttons and nav — check before the open-hand window rule
+        // Window buttons, nav, read-more — check before the open-hand window rule
         if (
             target.closest('.window-close-btn') ||
             target.closest('.window-size-toggle-btn') ||
             target.closest('.hobby-close-btn') ||
-            target.closest('.nav-project-link')
+            target.closest('.nav-project-link') ||
+            target.closest('#read-more-btn')
         ) return IMG.help;
 
-        // Entire window body = open hand (drag to reposition)
+        // About-me text (after reveal) + slideshow = default pointer, not open-hand
+        if (target.closest('.about-me-text.visible')) return IMG.default;
+        if (target.closest('.about-slideshow'))        return IMG.default;
+
+        // Fullscreen windows are not draggable — use default cursor
+        if (target.closest('.window.is-fullscreen')) return IMG.default;
+
+        // Windowed = open hand (drag to reposition)
         if (target.closest('.window')) return IMG.openhand;
 
         // NSL / PMC system-static folders (not while dragging)

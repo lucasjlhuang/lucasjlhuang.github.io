@@ -18,6 +18,10 @@ main, section {
     margin-top: 2rem;
 }
 
+.final-row {
+    margin-bottom: 0;
+}
+
 .title-row {
     background: none;
 }
@@ -350,6 +354,12 @@ main.visible {
     padding-top: 0rem;
     margin-top: 0;
     padding-bottom: 3rem;
+}
+
+/* Stop scroll exactly at last content element — no trailing space */
+.window-content main > *:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .big-image {

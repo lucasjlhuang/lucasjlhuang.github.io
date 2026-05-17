@@ -615,7 +615,7 @@ targetFolders.forEach(folder => {
     }
     
     // ⭐ MODIFIED: openNewWindow now applies coloring and a color transition to title and content.
-    function openNewWindow(title, geometry = {}, folderElement = null) {
+    function openNewWindow(title, geometry = {}, folderElement = null, startFullscreen = false) {
         
         const defaultTemplate = windowTemplate; 
 
@@ -750,6 +750,7 @@ targetFolders.forEach(folder => {
                             newWindow.style.height = '100vh';
                             toggleBtn.classList.remove('small-mode');
                             toggleBtn.classList.add('large-mode');
+                            newWindow.classList.add('is-fullscreen');
                         } else {
                             // Restore saved geometry
                             if (savedRect) {
@@ -763,6 +764,7 @@ targetFolders.forEach(folder => {
                             }
                             toggleBtn.classList.remove('large-mode');
                             toggleBtn.classList.add('small-mode');
+                            newWindow.classList.remove('is-fullscreen');
                         }
 
                         setTimeout(() => {
@@ -795,7 +797,16 @@ targetFolders.forEach(folder => {
             // --- NEW RESIZE BUTTON LOGIC ---
 const toggleBtn = newWindow.querySelector('.window-size-toggle-btn');
 if (toggleBtn) {
-    let savedRect = null;
+    // If nav-swapped from fullscreen, preset savedRect to a sensible windowed size
+    let savedRect = startFullscreen
+        ? { left: '10vw', top: '10vh', width: '1000px', height: '600px' }
+        : null;
+
+    if (startFullscreen) {
+        toggleBtn.classList.replace('small-mode', 'large-mode');
+        newWindow.classList.add('is-fullscreen');
+    }
+
     toggleBtn.addEventListener('mousedown', (e) => e.stopPropagation());
 
     toggleBtn.addEventListener('click', (e) => {
@@ -815,6 +826,7 @@ if (toggleBtn) {
             newWindow.style.width  = '100vw';
             newWindow.style.height = '100vh';
             toggleBtn.classList.replace('small-mode', 'large-mode');
+            newWindow.classList.add('is-fullscreen');
         } else {
             if (savedRect) {
                 newWindow.style.left   = savedRect.left;
@@ -826,6 +838,7 @@ if (toggleBtn) {
                 newWindow.style.height = '600px';
             }
             toggleBtn.classList.replace('large-mode', 'small-mode');
+            newWindow.classList.remove('is-fullscreen');
         }
 
         setTimeout(() => { newWindow.style.transition = 'none'; }, 400);
@@ -870,7 +883,7 @@ if (toggleBtn) {
 
         function injectHTML(html) {
             contentContainer.innerHTML = html;
-            if (isProjectFolder && title !== 'About me') {
+            if (isProjectFolder) {
                 const mainContent = contentContainer.querySelector('main');
                 if (mainContent) {
                     void contentContainer.getBoundingClientRect();
@@ -879,6 +892,47 @@ if (toggleBtn) {
             }
             if (title === 'About me') {
                 initSlideshow();
+
+                const slideshow  = contentContainer.querySelector('.about-slideshow');
+                const grid       = contentContainer.querySelector('.about-me-grid');
+                const textColumn = contentContainer.querySelector('.about-text-column');
+
+                // Small window: cap text column at slideshow height
+                if (slideshow && textColumn) {
+                    const syncSmall = () => {
+                        const h = slideshow.offsetHeight;
+                        if (h > 0) {
+                            textColumn.style.height    = '';   // clear fullscreen height
+                            textColumn.style.maxHeight = h + 'px';
+                        }
+                    };
+                    syncSmall();
+                    new ResizeObserver(syncSmall).observe(slideshow);
+                }
+
+                // Fullscreen: set every element in the height chain explicitly
+                const mainEl        = contentContainer.querySelector('main.window-about-me');
+                const innerContent  = contentContainer.querySelector('.window-content');
+                const layoutWrapper = contentContainer.querySelector('.about-layout-wrapper');
+                if (grid && mainEl && innerContent && layoutWrapper && textColumn) {
+                    const syncFull = () => {
+                        // Skip in small-window mode (grid is display:none)
+                        if (getComputedStyle(grid).display === 'none') return;
+                        const h = contentContainer.offsetHeight;
+                        if (h <= 0) return;
+                        // Clear the small-window maxHeight so it can't cap the fullscreen height
+                        textColumn.style.maxHeight = '';
+                        // Set the full chain so overflow:hidden on innerContent clips at h
+                        mainEl.style.height        = h + 'px';
+                        innerContent.style.height  = h + 'px';
+                        grid.style.height          = h + 'px';
+                        grid.style.width           = h + 'px';
+                        layoutWrapper.style.height = h + 'px';
+                        textColumn.style.height    = h + 'px';
+                    };
+                    requestAnimationFrame(syncFull);
+                    new ResizeObserver(syncFull).observe(contentContainer);
+                }
             }
         }
 
@@ -913,52 +967,34 @@ if (toggleBtn) {
         if (navContainer && isProjectFolder) { 
             const allProjects = PROJECT_TITLES;
             
-            // ⭐ NEW/UPDATED: Define the common transition for size/font change ⭐
-            const navTransition = 'color 0.1s, font-size 0.3s, transform 0.3s'; // Transition for smooth magnification effect
-
-            let navHTML = '<div class="window-nav-inner" style="display: flex; justify-content: space-around; width: 100%; border-top: 1px solid var(--border-color); padding: 15px 0px 12px 0;">';
-            
+            let navHTML = '';
             allProjects.forEach(projectKey => {
                 const navTitle = DISPLAY_TITLE_MAP[projectKey] || capitalizeTitle(projectKey);
                 const isActive = projectKey === title;
-
-                // ⭐ CORRECTED ACTIVE LINK STYLES: Now includes !important for guaranteed size/scale match ⭐
-// ⭐ CORRECTED ACTIVE LINK STYLES: Now guarantees size and scale match with !important flags ⭐
-                const activeStyle = `text-decoration: none; color: #3399ff; font-family: 'SFBold'; font-size: 1.1rem !important; cursor: default; transform: scale(1.1) !important; transition: ${navTransition};`;                
-                // ⭐ INACTIVE LINK STYLES: Normal size, normal font (Base style, will be overridden on hover) ⭐
-                const inactiveStyle = `color: #007aff; font-weight: normal; font-family: sans-serif; text-decoration: none; font-size: 0.8rem; cursor: pointer; transform: scale(1.0); transition: ${navTransition};`;
-
-                const navStyle = isActive ? activeStyle : inactiveStyle;
-                    
-                navHTML += `<a href="#" class="nav-project-link" data-target-key="${projectKey}" 
-                             style="${navStyle}">
-                             ${navTitle}
-                            </a>`;
+                navHTML += `<a href="#" class="nav-project-link${isActive ? ' nav-active' : ''}" data-target-key="${projectKey}">${navTitle}</a>`;
             });
-            
-            navHTML += '</div>';
             navContainer.innerHTML = navHTML;
-            
+
             // Nav Click handler logic: Bring to front or perform the close/open swap.
             navContainer.querySelectorAll('.nav-project-link').forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
                     const targetKey = e.target.getAttribute('data-target-key');
-                    
+
                     if (!targetKey) return;
 
                     // 1. Prioritize: Check if a window for the target project is already open.
                     if (bringWindowsToFront(targetKey) > 0) {
                         return;
                     }
-                    
+
                     // 2. Fallback (No target window open): Perform the close/open swap
-                    
+
                     // Prevent swapping to the current content
                     if (targetKey === title) return;
 
-                    const currentWindow = newWindow; 
-                    
+                    const currentWindow = newWindow;
+
                     // 2a. Capture the geometry of the current window.
                     const geometry = {
                         width: currentWindow.style.width,
@@ -966,46 +1002,19 @@ if (toggleBtn) {
                         left: currentWindow.style.left,
                         top: currentWindow.style.top
                     };
-                    
+                    const wasFullscreen = currentWindow.classList.contains('is-fullscreen');
+
                     // 2b. Get the desktop folder element for the *target* project (where the OLD window will collapse to).
                     const targetFolderElement = getProjectFolderElement(targetKey);
 
                     // 2c. Close the current window (which contains the OLD content)
                     //     Set bypassAnimation to TRUE to instantly remove the old window without animation.
-                    closeWindow(title, true, targetFolderElement); 
-                    
+                    closeWindow(title, true, targetFolderElement);
+
                     // 2d. Open a brand NEW window with the target content
                     //     - Pass the captured geometry to open instantly in the same spot.
                     //     - Pass folderElement = null (default) to skip the open Genie animation.
-                    openNewWindow(targetKey, geometry); 
-                });
-                
-                // ⭐ UPDATED: Apply SFBold and Magnification on Mouseover (for INACTIVE links only) ⭐
-                link.addEventListener('mouseover', (e) => { 
-                    const targetKey = e.target.getAttribute('data-target-key');
-                    
-                    if (targetKey !== title) { // Only apply to inactive links
-                        // Apply color and magnification/boldness
-                        e.target.style.color = '#3399ff'; // Fixed hyperlink hover color
-                        e.target.style.fontWeight = 'bold'; 
-                        e.target.style.fontFamily = '"SFBold", sans-serif'; 
-                        e.target.style.fontSize = '1.1rem'; 
-                        e.target.style.transform = 'scale(1.1)'; 
-                    }
-                });
-
-                // ⭐ UPDATED: Remove Magnification on Mouseout (for INACTIVE links only) ⭐
-                link.addEventListener('mouseout', (e) => { 
-                    const targetKey = e.target.getAttribute('data-target-key');
-                    
-                    if (targetKey !== title) { // Only apply to inactive links
-                        // Revert to inactive style
-                        e.target.style.color = '#007aff'; // Fixed hyperlink color
-                        e.target.style.fontWeight = 'normal';
-                        e.target.style.fontFamily = 'sans-serif'; // Revert to generic sans-serif
-                        e.target.style.fontSize = '0.8rem'; 
-                        e.target.style.transform = 'scale(1.0)';
-                    }
+                    openNewWindow(targetKey, geometry, null, wasFullscreen);
                 });
             });
         }
@@ -1076,10 +1085,12 @@ if (toggleBtn) {
         let isDragging = false;
         let offset = { x: 0, y: 0 };
 
-        win.addEventListener('mousedown', (e) => { 
-            
-            if (e.target.classList.contains('window-close-btn') || 
-                e.target.classList.contains('window-resize-handle') || 
+        win.addEventListener('mousedown', (e) => {
+            // No dragging in fullscreen
+            if (win.classList.contains('is-fullscreen')) return;
+
+            if (e.target.classList.contains('window-close-btn') ||
+                e.target.classList.contains('window-resize-handle') ||
                 e.target.closest('.window-resize-handle')
             ) {
                 return;

@@ -415,22 +415,77 @@ button:hover .theme-toggle-btn {
     position: absolute;
     top: 15vh;
     left: 20vw;
-    width: 400px; /* Initial width */
-    height: 300px; /* Initial height */
-    overflow: hidden;
-    z-index: 1001; /* Above the dock */
-    
-    /* ⭐ START: Glassmorphism Effect for Project Folders (.window) ⭐ */
-    background: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
-    border-radius: 16px; /* Increased border radius */
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-    backdrop-filter: blur(5px); /* The main blur effect */
-    -webkit-backdrop-filter: blur(5px); /* Vendor prefix for compatibility */
-    border: 1px solid rgba(255, 255, 255, 0.17); /* Light border */
-    /* ⭐ END: Glassmorphism Effect ⭐ */
-    
-    display: flex; /* To manage header and content layout */
+    width: 400px;
+    height: 300px;
+    z-index: 1001;
+    display: flex;
     flex-direction: column;
+    gap: 8px;
+    overflow: visible;
+}
+
+.window-box {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.17);
+}
+
+.window-footer-nav {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0 20px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.17);
+    gap: 40px;
+}
+
+.window.is-fullscreen {
+    gap: 0;
+}
+.window.is-fullscreen .window-footer-nav {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+}
+
+
+.nav-project-link {
+    font-family: 'SFMedium', sans-serif;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    padding: 8px 8px;
+    transition: transform 0.2s ease;
+}
+.nav-project-link:hover {
+    font-family: 'SFBold', sans-serif;
+    color: rgba(255,255,255,0.6);
+    transform: scale(1.08);
+}
+.nav-project-link.nav-active {
+    font-family: 'SFBold', sans-serif;
+    color: #ffffff;
+    cursor: default;
 }
 
 .window-header {
@@ -909,21 +964,89 @@ button:hover .theme-toggle-btn {
     padding: 10px;
 }
 
-.window-about-me .about-me-text {
-     width: 50%;
-     padding-left: 50px;
-     font-family: "SFBold";;
-     font-size: 5rem;
-     max-height: 500px; 
-    
-    /* Enable vertical scrollbar only when content exceeds max-height */
-    overflow-y: auto;
-    
-    /* Optional: Ensure content doesn't break into a second row */
-    overflow-x: hidden;
+/* ── About-me: grid hidden by default, slideshow shown ── */
+.about-me-grid {
+    display: none;
+}
 
-    /* Add padding to the scrollable content for better aesthetics */
-    padding-right: 15px; /* Adds space so the text doesn't touch the scrollbar */
+/* Give main element a definite height so children can inherit it */
+.window.is-fullscreen main.window-about-me {
+    height: 100%;
+}
+
+/* Fullscreen: inner content becomes a side-by-side row */
+.window.is-fullscreen main.window-about-me > .window-content {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    height: 100%;
+    overflow: hidden;
+    gap: 0;
+    padding: 0;
+}
+
+/* ── Fullscreen about-me: grid | text-column (tldr top, text below) ─────── */
+.window.is-fullscreen .about-slideshow { display: none; }
+
+.window.is-fullscreen .about-layout-wrapper {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    align-items: flex-start;
+    /* height set by JS to match grid exactly */
+}
+
+.window.is-fullscreen .about-text-column {
+    display: flex;
+    flex-direction: column;
+    width: 60%;
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 28px;
+    /* height set by JS to match grid exactly */
+}
+
+/* TLDR sits on top inside the text column */
+.window.is-fullscreen .tldr-content {
+    flex-shrink: 0;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+/* Story text scrolls below TLDR */
+.window.is-fullscreen .about-me-text {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    max-height: none;
+    padding-bottom: 2rem;
+}
+
+/* Grid — height + width set by JS to a perfect square */
+.window.is-fullscreen .about-me-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.window.is-fullscreen .about-me-grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.window-about-me .about-me-text {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    width: 100%;
 }
 
 .about-me-text {
@@ -962,12 +1085,52 @@ button:hover .theme-toggle-btn {
     gap: 20px;
 }
 
-.tldr-trigger {
-    color: var(--text-color); /* Matches your theme toggle */
-    font-family: 'SFBold', sans-serif;
-    font-size: 1.5rem;
+/* ── TLDR — always displayed, read-more reveals text ─────────────────────── */
+.tldr-content {
+    padding: 0 0 12px;
+}
+
+.read-more-btn {
+    margin-top: 10px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: #000;
+    font-family: 'SFMedium', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.3px;
     cursor: pointer;
-    padding: 10px;
+    display: inline-block;
+}
+.read-more-btn:hover {
+    font-family: 'SFBold', sans-serif;
+}
+
+/* Text styles */
+.tldr-quote {
+    font-family: 'SFBold', sans-serif;
+    font-size: 0.9rem;
+    color: #000;
+    opacity: 1;
+    margin: 0 0 0.6rem;
+}
+.tldr-text {
+    font-family: 'SFRegular', sans-serif;
+    font-size: 0.85rem;
+    color: #000;
+    line-height: 1.5;
+    margin: 0 0 0.5rem;
+}
+
+/* Text column — stacks TLDR content + text vertically, clipped at slideshow bottom via JS */
+.about-text-column {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    padding-left: 16px;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .tldr-grid {
@@ -1008,10 +1171,11 @@ button:hover .theme-toggle-btn {
 /* 2. The Wrapper */
 .about-layout-wrapper {
     display: flex;
-    flex: 1; /* This tells the wrapper to take up all remaining height */
+    flex: 1;
     width: 100%;
-    min-height: 0; /* Important for flex children to scroll */
-    gap: 0;           /* Clean split, or add gap: 20px if you want space */
+    min-height: 0;
+    gap: 0;
+    padding-bottom: 1rem;
 }
 
 
@@ -1022,7 +1186,7 @@ button:hover .theme-toggle-btn {
     width: 50%;
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    align-self: flex-start; /* Keeps the square at the top */
+    align-self: flex-start;
 }
 
 .about-slideshow .mySlides {
@@ -1075,10 +1239,17 @@ button:hover .theme-toggle-btn {
 
 .about-title-text {
     display: inline-block;
-    line-height:4.5rem;
+    font-family: "SFBold";
+    font-size: 5rem;
+    line-height: 4.5rem;
     margin-bottom: 0;
     margin-top: 4rem;
     padding: 0;
+}
+
+/* Remove top gap from the very first section title */
+.about-me-text > p:first-child {
+    margin-top: 0;
 }
 
 .about-body-text {
@@ -1094,6 +1265,37 @@ button:hover .theme-toggle-btn {
 .about-me-link {
     text-decoration: none;
     color: #007afd;
+}
+
+
+/* ── About-me hover bubbles (scroll hint + photo captions) ──────────────── */
+#about-scroll-bubble,
+#img-caption-bubble {
+    position: fixed;
+    transform: translate(-50%, calc(-100% - 9px));
+    padding: 6px 10px;
+    background: #33333380;
+    color: #fff;
+    font-family: 'SFRegular', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 99999;
+    white-space: nowrap;
+    text-align: center;
+    display: none;
+}
+#about-scroll-bubble::after,
+#img-caption-bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #33333380 transparent transparent transparent;
 }
 
 .prevent-select {
