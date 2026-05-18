@@ -279,6 +279,9 @@
     function applyImageToStamp(imgDef) {
         selectedImgDef = imgDef;
         document.getElementById('stamp-selected-img').src = imgDef.full;
+        // Fade out "drag here" hint once a stamp is selected
+        const hint = document.getElementById('drop-hint');
+        if (hint) hint.style.opacity = '0';
         // Bounce
         const wrapper = document.getElementById('stamp-wrapper');
         wrapper.classList.remove('stamp-drop-bounce');
@@ -429,6 +432,24 @@
                 const over = clientX >= dr.left && clientX <= dr.right &&
                              clientY >= dr.top  && clientY <= dr.bottom;
                 dropTarget.classList.toggle('drop-hover', over);
+
+                const preview     = document.getElementById('stamp-preview-img');
+                const selectedImg = document.getElementById('stamp-selected-img');
+                const hint        = document.getElementById('drop-hint');
+
+                if (over) {
+                    // Show preview, hide the currently selected image
+                    // Only show hint if no image has ever been selected
+                    if (preview) { if (preview.getAttribute('src') !== imgDef.full) preview.src = imgDef.full; preview.style.display = 'block'; }
+                    if (selectedImg) selectedImg.style.opacity = '0';
+                    if (hint && !selectedImg?.getAttribute('src')) hint.style.opacity = '1';
+                } else {
+                    // Restore: hide preview, show selected image, restore hint state
+                    if (preview) preview.style.display = 'none';
+                    if (selectedImg) selectedImg.style.opacity = '1';
+                    // Hint visible only if no image is selected yet
+                    if (hint) hint.style.opacity = selectedImg?.getAttribute('src') ? '0' : '1';
+                }
             }
         }
 
@@ -439,14 +460,25 @@
             icon.style.zIndex    = '50';
             icon.style.transform = 'scale(1)';
             icon.style.boxShadow = '';
-            const bub = icon.querySelector('.icon-bubble');
-            if (bub) bub.style.display = '';
+
+            const preview     = document.getElementById('stamp-preview-img');
+            const selectedImg = document.getElementById('stamp-selected-img');
+            const hint        = document.getElementById('drop-hint');
+
+            // Always clean up preview and restore selected image
+            if (preview) preview.style.display = 'none';
+            if (selectedImg) selectedImg.style.opacity = '1';
+
             const dropTarget = document.getElementById('stamp-inner-area');
             if (dropTarget) {
                 const dr = dropTarget.getBoundingClientRect();
                 const over = clientX >= dr.left && clientX <= dr.right &&
                              clientY >= dr.top  && clientY <= dr.bottom;
                 if (over) {
+                    // Dropped — keep bubble hidden so it doesn't flash before icon fades
+                    const bub = icon.querySelector('.icon-bubble');
+                    if (bub) bub.style.display = 'none';
+                    // Apply image (hides hint inside applyImageToStamp)
                     if (activeIconEl && activeIconEl !== icon) {
                         respawnIcon(prescreen, activeIconEl);
                     }
@@ -455,6 +487,11 @@
                     activeIconEl = icon;
                     activeImgDef = imgDef;
                     applyImageToStamp(imgDef);
+                } else {
+                    // Not dropped — restore icon bubble and hint
+                    const bub = icon.querySelector('.icon-bubble');
+                    if (bub) bub.style.display = '';
+                    if (hint) hint.style.opacity = selectedImg?.getAttribute('src') ? '0' : '1';
                 }
                 dropTarget.classList.remove('drop-hover');
             }
@@ -976,8 +1013,10 @@
                     <div class="stamp-inner-sq" id="stamp-inner-sq"
                          style="background:${activeInnerColor}"></div>
                     <img class="stamp-selected-img" id="stamp-selected-img"
-                         src="${DEFAULT_IMG.full}" alt="">
-                    <div class="drop-hint">drag here</div>
+                         src="" alt="">
+                    <img class="stamp-preview-img" id="stamp-preview-img"
+                         src="" alt="">
+                    <div class="drop-hint" id="drop-hint">drag here</div>
                     <button class="color-swatch-btn" id="color-swatch-btn"
                             title="Pick color"
                             style="background:${activeInnerColor}"></button>
@@ -1312,6 +1351,12 @@
                     input.placeholder   = 'Your name';
                 }, 1200);
                 return;
+            }
+
+            // If the user never picked an image, assign one at random
+            if (!document.getElementById('stamp-selected-img')?.getAttribute('src')) {
+                activeImgDef = STAMP_IMAGES[Math.floor(Math.random() * STAMP_IMAGES.length)];
+                applyImageToStamp(activeImgDef);
             }
 
             stampGenieOut(prescreen, {

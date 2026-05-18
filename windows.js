@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Preloaded project HTML cache — populated after system:ready
     const projectHTMLCache = new Map();
 
+    // Tracks the nav pill indicator position from the previous window so the
+    // next window can slide from there instead of snapping in from nothing.
+    let _navIndicatorPrev = null;
+
     function preloadProjectHTML() {
         PROJECT_TITLES.forEach(title => {
             if (title === 'About me') return; // About me uses initSlideshow, skip
@@ -113,11 +117,11 @@ targetFolders.forEach(folder => {
         "VS Code": "Visual Studio Code",
         "Figma": "Figma",
         "Hobbies": "Hobbies", 
-        "BANK OF TAIWAN": "Bank of Taiwan",
+        "Bank of Taiwan": "Bank of Taiwan",
         "MARCOPOLO": "MarcoPolo",
         "VOGRO": "Vogro",
         "HESS": "HESS Education",
-        "ABOUT ME": "About me",
+        "About me": "About me",
         "GILBERT": "Gilbert",
         "[REDACTED]": "[redacted]"
     };
@@ -682,16 +686,11 @@ targetFolders.forEach(folder => {
             targetX = Math.max(0, centerX + randX) + 'px';
             targetY = Math.max(0, centerY + randY) + 'px';
         } else {
-            // ⭐ Case C: New Random Default Position (for Genie Final Destination & Standard Opens) ⭐
-            // X: 30% to 50%
-            // Y: 10% to 30%
-            const randomX = Math.random() * 35 + 5; // 30.0 to 49.99...
-            const randomY = Math.random() * 15 + 5; // 10.0 to 29.99...
-            
-            targetX = `${randomX}vw`;
-            targetY = `${randomY}vh`;
-            
-            
+            // Case C: Centre of screen (project windows)
+            const windowWidth  = newWindow.offsetWidth;
+            const windowHeight = newWindow.offsetHeight;
+            targetX = Math.max(0, (window.innerWidth  / 2) - (windowWidth  / 2)) + 'px';
+            targetY = Math.max(0, (window.innerHeight / 2) - (windowHeight / 2)) + 'px';
         }
 
         // 3. Apply Positioning: Genie Open vs. Standard
@@ -773,14 +772,13 @@ targetFolders.forEach(folder => {
                     });
                 }
                 
-                // After the transition, remove overflow:hidden so content displays correctly
+                // After the transition, remove overflow:hidden so the box-shadow shows correctly
                 newWindow.addEventListener('transitionend', function removeOverflow(e) {
                     if (e.propertyName === 'opacity') {
-                        newWindow.style.overflow = 
-                        'hidden';
+                        newWindow.style.overflow = '';
                         newWindow.removeEventListener('transitionend', removeOverflow);
-                        // Reset transition to 'none' so dragging/resizing isn.t sluggish.
-                        newWindow.style.transition = 'none'; 
+                        // Reset transition to 'none' so dragging/resizing isn't sluggish.
+                        newWindow.style.transition = 'none';
                     }
                 });
             }, 20);
@@ -854,12 +852,17 @@ if (toggleBtn) {
     const titleElement = newWindow.querySelector('.window-title');
     titleElement.textContent = displayTitle;
 
-    // Reveal title once user scrolls down 50px in the window content
-    const contentEl = newWindow.querySelector('.window-content');
-    if (contentEl && titleElement) {
-        contentEl.addEventListener('scroll', () => {
-            titleElement.classList.toggle('title-visible', contentEl.scrollTop > 125);
-        });
+    // About me has no scrolling — show title immediately.
+    // All other windows reveal the title once the user scrolls down.
+    if (title === 'About me') {
+        titleElement.classList.add('title-visible');
+    } else {
+        const contentEl = newWindow.querySelector('.window-content');
+        if (contentEl && titleElement) {
+            contentEl.addEventListener('scroll', () => {
+                titleElement.classList.toggle('title-visible', contentEl.scrollTop > 125);
+            });
+        }
     }
 
     // 1. Generate the filename (e.g., "BANK OF TAIWAN" -> "bank-of-taiwan.html")
@@ -891,48 +894,7 @@ if (toggleBtn) {
                 }
             }
             if (title === 'About me') {
-                initSlideshow();
-
-                const slideshow  = contentContainer.querySelector('.about-slideshow');
-                const grid       = contentContainer.querySelector('.about-me-grid');
-                const textColumn = contentContainer.querySelector('.about-text-column');
-
-                // Small window: cap text column at slideshow height
-                if (slideshow && textColumn) {
-                    const syncSmall = () => {
-                        const h = slideshow.offsetHeight;
-                        if (h > 0) {
-                            textColumn.style.height    = '';   // clear fullscreen height
-                            textColumn.style.maxHeight = h + 'px';
-                        }
-                    };
-                    syncSmall();
-                    new ResizeObserver(syncSmall).observe(slideshow);
-                }
-
-                // Fullscreen: set every element in the height chain explicitly
-                const mainEl        = contentContainer.querySelector('main.window-about-me');
-                const innerContent  = contentContainer.querySelector('.window-content');
-                const layoutWrapper = contentContainer.querySelector('.about-layout-wrapper');
-                if (grid && mainEl && innerContent && layoutWrapper && textColumn) {
-                    const syncFull = () => {
-                        // Skip in small-window mode (grid is display:none)
-                        if (getComputedStyle(grid).display === 'none') return;
-                        const h = contentContainer.offsetHeight;
-                        if (h <= 0) return;
-                        // Clear the small-window maxHeight so it can't cap the fullscreen height
-                        textColumn.style.maxHeight = '';
-                        // Set the full chain so overflow:hidden on innerContent clips at h
-                        mainEl.style.height        = h + 'px';
-                        innerContent.style.height  = h + 'px';
-                        grid.style.height          = h + 'px';
-                        grid.style.width           = h + 'px';
-                        layoutWrapper.style.height = h + 'px';
-                        textColumn.style.height    = h + 'px';
-                    };
-                    requestAnimationFrame(syncFull);
-                    new ResizeObserver(syncFull).observe(contentContainer);
-                }
+                initAboutCanvas(contentContainer, newWindow);
             }
         }
 
@@ -975,6 +937,74 @@ if (toggleBtn) {
             });
             navContainer.innerHTML = navHTML;
 
+            // ── Pill indicator (Web Animations API — reliable across DOM rebuilds) ──
+            const navIndicator = document.createElement('span');
+            navIndicator.className = 'nav-pill-indicator';
+            navContainer.insertBefore(navIndicator, navContainer.firstChild);
+
+            const PILL_EASING   = 'cubic-bezier(0.87, 0, 0.13, 1)';
+            const PILL_DURATION = 450;
+
+            // offsetLeft/offsetWidth are layout-based and work even during
+            // opacity/transform window-open animations (unlike getBoundingClientRect).
+            function getActiveMetrics() {
+                const activeLink = navContainer.querySelector('.nav-active');
+                if (!activeLink) return null;
+                return { left: activeLink.offsetLeft, width: activeLink.offsetWidth };
+            }
+
+            function placeIndicator(left, width) {
+                // Cancel any in-flight WAAPI animation first.
+                navIndicator.getAnimations().forEach(a => a.cancel());
+                navIndicator.style.left  = left  + 'px';
+                navIndicator.style.width = width + 'px';
+            }
+
+            function slideIndicatorFrom(fromLeft, fromWidth, toLeft, toWidth) {
+                navIndicator.getAnimations().forEach(a => a.cancel());
+                // Start position (committed to inline style so it's the baseline).
+                navIndicator.style.left  = fromLeft  + 'px';
+                navIndicator.style.width = fromWidth + 'px';
+
+                const anim = navIndicator.animate(
+                    [
+                        { left: fromLeft  + 'px', width: fromWidth + 'px' },
+                        { left: toLeft    + 'px', width: toWidth   + 'px' },
+                    ],
+                    { duration: PILL_DURATION, easing: PILL_EASING, fill: 'forwards' }
+                );
+                // Commit final position to inline style once done so resize/cancel is clean.
+                anim.onfinish = () => {
+                    navIndicator.style.left  = toLeft  + 'px';
+                    navIndicator.style.width = toWidth + 'px';
+                    anim.cancel();
+                };
+            }
+
+            // ResizeObserver fires asynchronously after layout is computed —
+            // unlike rAF which can fire before the nav has valid offsetLeft values.
+            // The initial callback handles first-position (with optional slide from
+            // the previous tab); subsequent callbacks handle fullscreen/resize snaps.
+            let navIndicatorReady = false;
+            new ResizeObserver(() => {
+                const m = getActiveMetrics();
+                if (!m || m.width === 0) return;
+
+                if (!navIndicatorReady) {
+                    navIndicatorReady = true;
+                    if (_navIndicatorPrev) {
+                        const prev = _navIndicatorPrev;
+                        _navIndicatorPrev = null;
+                        slideIndicatorFrom(prev.left, prev.width, m.left, m.width);
+                    } else {
+                        placeIndicator(m.left, m.width);
+                    }
+                } else {
+                    // Resize / fullscreen toggle — just snap, no slide.
+                    placeIndicator(m.left, m.width);
+                }
+            }).observe(navContainer);
+
             // Nav Click handler logic: Bring to front or perform the close/open swap.
             navContainer.querySelectorAll('.nav-project-link').forEach(link => {
                 link.addEventListener('click', (e) => {
@@ -995,7 +1025,16 @@ if (toggleBtn) {
 
                     const currentWindow = newWindow;
 
-                    // 2a. Capture the geometry of the current window.
+                    // 2a. Save the indicator's current VISUAL position via getBoundingClientRect
+                    //     (captures the live animated position if mid-slide).
+                    const navRect = navContainer.getBoundingClientRect();
+                    const indRect = navIndicator.getBoundingClientRect();
+                    _navIndicatorPrev = {
+                        left:  indRect.left - navRect.left,
+                        width: indRect.width,
+                    };
+
+                    // 2b. Capture the geometry of the current window.
                     const geometry = {
                         width: currentWindow.style.width,
                         height: currentWindow.style.height,
@@ -1004,16 +1043,11 @@ if (toggleBtn) {
                     };
                     const wasFullscreen = currentWindow.classList.contains('is-fullscreen');
 
-                    // 2b. Get the desktop folder element for the *target* project (where the OLD window will collapse to).
+                    // 2c. Get the desktop folder element for the *target* project.
                     const targetFolderElement = getProjectFolderElement(targetKey);
 
-                    // 2c. Close the current window (which contains the OLD content)
-                    //     Set bypassAnimation to TRUE to instantly remove the old window without animation.
+                    // 2d. Close the current window instantly, open the new one.
                     closeWindow(title, true, targetFolderElement);
-
-                    // 2d. Open a brand NEW window with the target content
-                    //     - Pass the captured geometry to open instantly in the same spot.
-                    //     - Pass folderElement = null (default) to skip the open Genie animation.
                     openNewWindow(targetKey, geometry, null, wasFullscreen);
                 });
             });
@@ -1415,6 +1449,25 @@ if (toggleBtn) {
         });
     }
     // --- END Spotify Player Toggle Logic ---
+
+    // Spotify cursor cover — keeps the custom cursor tracking over the iframe.
+    // Steps aside on mousedown so the full click sequence reaches the iframe.
+    // Restores on document mouseup (released outside iframe) or after 300ms
+    // (released inside iframe — parent never sees that mouseup cross-origin).
+    const spotifyCover = document.querySelector('.spotify-cursor-cover');
+    if (spotifyCover) {
+        spotifyCover.addEventListener('mousedown', () => {
+            spotifyCover.style.pointerEvents = 'none';
+            let restored = false;
+            const restore = () => {
+                if (restored) return;
+                restored = true;
+                spotifyCover.style.pointerEvents = '';
+            };
+            document.addEventListener('mouseup', restore, { once: true });
+            setTimeout(restore, 300);
+        });
+    }
     
     // ⭐ NEW: MutationObserver to detect dark-mode class change on the body
     const observer = new MutationObserver((mutationsList, observer) => {

@@ -1,184 +1,183 @@
-// slideshow.js
-let slideshowInterval;
-let autoScrollInterval;
+// slideshow.js — About Me canvas, parallax, captions, section navigator
 
-function initSlideshow() {
-    let slideIndex = 0;
-    let cycleCount = 0;
-    let slideshowSettled = false;
-    const slides = document.getElementsByClassName("mySlides");
-    const dotContainer = document.querySelector(".window-about-me #dotContainer");
-    const container = document.querySelector(".about-slideshow");
-    const textColumn = document.querySelector(".about-me-text");
+const STORY_SECTIONS = [
+    {
+        title: 'Hello hello',
+        body:  `I'm Lucas (if you didn't already know). I spent WAY too much time on this portfolio so I hope you enjoy it. As an architect-to-be turned designer, my goals have always been functional design and creativity. I'm constantly exploring new ideas (check out my playground) and challenging myself to diversify my skills.<br><br>Right now, I'm helping build the foundation for professional women's soccer in Canada <a class="about-me-link" href="https://www.NSL.ca" target="_blank">@NorthernSuperLeague</a>. On the side, I'm building a monthly mailing club and too many side projects to count.`,
+    },
+    {
+        title: 'Designer by accident',
+        body:  `Believe it or not, I ended up as a designer completely by accident.
+        Every week leading up to my highschool graduation I had a new career plan.
+        All I knew was I liked creating. I was making functional model cars, popsicle bridges holding up to 90lbs, bus stations with working electronics, but never once touched digital products. 
+        I only applied to GBDA at Waterloo because my sister was already in the program (shout out Sarah). <br><br>Like Bob Ross says, it was a happy accident — being creative while using logic and research to solve problems really scratched the itch.`,
+    },
+    {
+        title: 'Learning through exploration',
+        body:  `After graduating I decided to travel the world and find ways to learn about design through experiences and adventures. 
+        For three years I freelanced and worked odd jobs in Taiwan, Hong kong, Japan, France, and Germany.
+        I studied their designs, built products, taught students, cleaned hostels, translated, and lived life.
+        I've learned a lot about communicating through design, because often times design was the only way for us to communicate.
+        <br><br>Now i'm back home trying to find my next adventure, and catching up for lost time :)`,
+    },
+];
 
-    if (slides.length === 0 || !container) return;
+function initAboutCanvas(contentContainer, windowEl) {
+    const canvas      = contentContainer.querySelector('.about-canvas');
+    const items       = Array.from(contentContainer.querySelectorAll('.canvas-item'));
+    const tldrCard    = contentContainer.querySelector('#about-tldr-card');
+    const storyNav    = contentContainer.querySelector('#about-story-nav');
+    const navTitle    = contentContainer.querySelector('#story-nav-title');
+    const navBody     = contentContainer.querySelector('#story-nav-body');
+    const prevBtn     = contentContainer.querySelector('#story-prev-btn');
+    const nextBtn     = contentContainer.querySelector('#story-next-btn');
+    const readMoreBtn = contentContainer.querySelector('#read-more-btn');
 
-    // --- GENERATE DOTS ---
-    if (dotContainer) {
-        dotContainer.innerHTML = "";
-        for (let i = 0; i < slides.length; i++) {
-            const span = document.createElement("span");
-            span.classList.add("dot");
-            dotContainer.appendChild(span);
-        }
-    }
+    if (!canvas) return;
 
-    const dots = document.getElementsByClassName("dot");
+    contentContainer.style.position = 'relative';
+    contentContainer.style.overflow = 'hidden';
 
-    // --- RESET STATE ---
-    clearTimeout(slideshowInterval);
-    clearInterval(autoScrollInterval);
-    if (textColumn) {
-        textColumn.classList.remove("visible");
-        textColumn.scrollTop = 0;
-    }
+    // ── Parallax ─────────────────────────────────────────────────────────────
+    let targetX = 0, targetY = 0;
+    let currentX = 0, currentY = 0;
+    const STRENGTH = 25;
+    const LERP     = 0.06;
 
-    // ── Auto-scroll ──────────────────────────────────────────────────────────
-    function startAutoScroll() {
-        clearInterval(autoScrollInterval);
-        autoScrollInterval = setInterval(() => {
-            textColumn.scrollTop += 0.5;
-            if (textColumn.scrollTop + textColumn.clientHeight >= textColumn.scrollHeight) {
-                clearInterval(autoScrollInterval);
+    // Mouse position is always tracked relative to the window's rect, even
+    // when the cursor is outside it — so parallax continues past the edge.
+    const onMouseMove = (e) => {
+        const rect = windowEl.getBoundingClientRect();
+        targetX = (e.clientX - rect.left  - rect.width  / 2) / (rect.width  / 2);
+        targetY = (e.clientY - rect.top   - rect.height / 2) / (rect.height / 2);
+        targetX = Math.max(-1, Math.min(1, targetX));
+        targetY = Math.max(-1, Math.min(1, targetY));
+    };
+
+    // Listen on the document so the parallax keeps going outside the window.
+    document.addEventListener('mousemove', onMouseMove);
+
+    let rafId = null;
+
+    function startParallax() {
+        if (rafId) return;
+        function loop() {
+            // Stop and clean up if the window has been removed from the DOM.
+            if (!document.contains(windowEl)) {
+                rafId = null;
+                document.removeEventListener('mousemove', onMouseMove);
+                return;
             }
-        }, 30);
+            currentX += (targetX - currentX) * LERP;
+            currentY += (targetY - currentY) * LERP;
+            items.forEach(item => {
+                const depth = parseFloat(item.dataset.depth) || 1;
+                item.style.transform = `translate(${currentX * STRENGTH * depth}px, ${currentY * STRENGTH * depth}px)`;
+            });
+            rafId = requestAnimationFrame(loop);
+        }
+        rafId = requestAnimationFrame(loop);
     }
 
-    // ── Shared image caption bubble ──────────────────────────────────────────
+    function stopParallax() {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+    }
+
+    // ── Start parallax immediately — window handles its own fade-in ──────────
+    startParallax();
+
+    // ── "world" span — hover reveals all location labels ─────────────────────
+    const worldSpan = contentContainer.querySelector('.tldr-world');
+    if (worldSpan) {
+        worldSpan.addEventListener('mouseenter', () => canvas.classList.add('locations-visible'));
+        worldSpan.addEventListener('mouseleave', () => canvas.classList.remove('locations-visible'));
+    }
+
+    // ── Photo caption bubble ──────────────────────────────────────────────────
     const oldImgBubble = document.getElementById('img-caption-bubble');
     if (oldImgBubble) oldImgBubble.remove();
     const imgBubble = document.createElement('div');
     imgBubble.id = 'img-caption-bubble';
     document.body.appendChild(imgBubble);
 
-    function showImgBubble(caption, x, y) {
-        imgBubble.innerHTML = caption;
-        imgBubble.style.left = x + 'px';
-        imgBubble.style.top  = y + 'px';
-        imgBubble.style.display = 'block';
-    }
-    function hideImgBubble() {
-        imgBubble.style.display = 'none';
-    }
-
-    // Grid image captions (fullscreen)
-    const gridImgs = document.querySelectorAll('.about-me-grid img');
-    gridImgs.forEach(img => {
-        img.addEventListener('mouseenter', (e) => {
-            const cap = img.dataset.caption;
-            if (cap) showImgBubble(cap, e.clientX, e.clientY);
-        });
-        img.addEventListener('mousemove', (e) => {
-            imgBubble.style.left = e.clientX + 'px';
-            imgBubble.style.top  = e.clientY + 'px';
-        });
-        img.addEventListener('mouseleave', hideImgBubble);
-    });
-
-    // Slideshow caption (small window) — only after slideshow settles
-    container.addEventListener('mouseenter', (e) => {
-        if (!slideshowSettled) return;
-        const cap = slides[slideIndex - 1]?.dataset.caption;
-        if (cap) showImgBubble(cap, e.clientX, e.clientY);
-    });
-    container.addEventListener('mousemove', (e) => {
-        if (!slideshowSettled) return;
-        // Keep text current in case slide changed via click
-        const cap = slides[slideIndex - 1]?.dataset.caption;
-        if (cap) {
+    items.forEach(item => {
+        const cap = item.dataset.caption;
+        item.addEventListener('mouseenter', (e) => {
+            if (!cap) return;
             imgBubble.innerHTML = cap;
+            imgBubble.style.left    = e.clientX + 'px';
+            imgBubble.style.top     = e.clientY + 'px';
+            imgBubble.style.display = 'block';
+        });
+        item.addEventListener('mousemove', (e) => {
             imgBubble.style.left = e.clientX + 'px';
             imgBubble.style.top  = e.clientY + 'px';
-            imgBubble.style.display = 'block';
-        }
+        });
+        item.addEventListener('mouseleave', () => {
+            imgBubble.style.display = 'none';
+        });
     });
-    container.addEventListener('mouseleave', hideImgBubble);
 
-    // ── "Scroll me" hover bubble ─────────────────────────────────────────────
-    const oldBubble = document.getElementById('about-scroll-bubble');
-    if (oldBubble) oldBubble.remove();
-    const bubble = document.createElement('div');
-    bubble.id = 'about-scroll-bubble';
-    bubble.textContent = 'scroll me';
-    document.body.appendChild(bubble);
+    // ── Section navigator ─────────────────────────────────────────────────────
+    let currentSection = 0;
 
-    if (textColumn) {
-        textColumn.addEventListener('mouseenter', (e) => {
-            if (!textColumn.classList.contains('visible')) return;
-            bubble.style.left = e.clientX + 'px';
-            bubble.style.top  = e.clientY + 'px';
-            bubble.style.display = 'block';
-            clearInterval(autoScrollInterval);
+    function renderSection(idx) {
+        const sec = STORY_SECTIONS[idx];
+        navTitle.textContent  = sec.title;
+        navBody.innerHTML     = sec.body;
+        prevBtn.disabled      = idx === 0;
+        nextBtn.disabled      = idx === STORY_SECTIONS.length - 1;
+    }
+
+    if (prevBtn && nextBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentSection > 0) { currentSection--; renderSection(currentSection); }
         });
-        textColumn.addEventListener('mouseleave', () => {
-            bubble.style.display = 'none';
-            if (textColumn.classList.contains('visible')) startAutoScroll();
-        });
-        textColumn.addEventListener('mousemove', (e) => {
-            bubble.style.left = e.clientX + 'px';
-            bubble.style.top  = e.clientY + 'px';
+        nextBtn.addEventListener('click', () => {
+            if (currentSection < STORY_SECTIONS.length - 1) { currentSection++; renderSection(currentSection); }
         });
     }
 
-    // ── Slide display ────────────────────────────────────────────────────────
-    function updateDisplay() {
-        for (let i = 0; i < slides.length; i++) {
-            slides[i].style.display = "none";
-            if (dots[i]) dots[i].classList.remove("active");
-        }
-        slides[slideIndex - 1].style.display = "block";
-        if (dots[slideIndex - 1]) dots[slideIndex - 1].classList.add("active");
-    }
+    // ── Open / close ──────────────────────────────────────────────────────────
+    if (readMoreBtn && tldrCard && storyNav) {
+        let storyOpen = false;
 
-    function showSlides() {
-        slideIndex++;
-        if (slideIndex > slides.length) {
-            slideIndex = 1;
-            cycleCount++;
-        }
-        updateDisplay();
+        readMoreBtn.addEventListener('click', () => {
 
-        if (cycleCount < 1) {
-            slideshowInterval = setTimeout(showSlides, 75);
-        } else {
-            // Land on a random slide
-            slideIndex = Math.floor(Math.random() * slides.length) + 1;
-            updateDisplay();
-            slideshowSettled = true;
+            if (!storyOpen) {
+                // ── Open: TLDR fades out → story nav fades in ──
+                storyOpen = true;
+                readMoreBtn.classList.add('is-active');
 
-            // Wire up "read more?" button
-            const readMoreBtn = document.getElementById('read-more-btn');
-            const tldrContent = document.querySelector('.tldr-content');
-            if (readMoreBtn && textColumn && tldrContent) {
-                readMoreBtn.addEventListener('click', () => {
-                    // Fade out TLDR
-                    tldrContent.style.transition = 'opacity 0.4s ease';
-                    tldrContent.style.opacity = '0';
+                currentSection = 0;
+                renderSection(0);
 
-                    setTimeout(() => {
-                        tldrContent.style.display = 'none';
-                        textColumn.classList.add('visible');
-                        // Start auto-scroll after fade-in, unless cursor is already over text
-                        setTimeout(() => {
-                            if (!textColumn.matches(':hover')) startAutoScroll();
-                        }, 900);
-                    }, 420);
-                });
+                tldrCard.style.transition = 'opacity 0.35s ease';
+                tldrCard.style.opacity    = '0';
+                setTimeout(() => {
+                    tldrCard.style.display = 'none';
+                    storyNav.style.display = 'block';
+                    requestAnimationFrame(() => storyNav.classList.add('visible'));
+                }, 370);
+
+            } else {
+                // ── Close: story nav fades out → TLDR fades in ──
+                storyOpen = false;
+                readMoreBtn.classList.remove('is-active');
+
+                storyNav.classList.remove('visible');
+                setTimeout(() => {
+                    storyNav.style.display = 'none';
+                    tldrCard.style.display = '';
+                    tldrCard.style.opacity = '0';
+                    tldrCard.style.transition = 'opacity 0.35s ease';
+                    requestAnimationFrame(() => { tldrCard.style.opacity = '1'; });
+                }, 420);
             }
-        }
+        });
     }
-
-    setTimeout(showSlides, 400);
-
-    // Manual slideshow click — advance slide and immediately update caption bubble
-    container.onclick = () => {
-        slideIndex++;
-        if (slideIndex > slides.length) slideIndex = 1;
-        updateDisplay();
-        // If bubble is showing, refresh its text for the new slide
-        if (slideshowSettled && imgBubble.style.display !== 'none') {
-            const cap = slides[slideIndex - 1]?.dataset.caption;
-            if (cap) imgBubble.innerHTML = cap;
-        }
-    };
 }
+
+// Legacy alias — windows.js calls initSlideshow for About me
+function initSlideshow() {}

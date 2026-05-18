@@ -6,7 +6,9 @@
     position: fixed;
     inset: 0;
     z-index: 99999;
-    background: #FCFCFC;
+    background-color: #ffffff;
+    background-image: radial-gradient(circle, rgba(147, 197, 253, 0.25) 1.5px, transparent 1.5px);
+    background-size: 20px 20px;
     overflow: hidden;
 }
 
@@ -93,7 +95,7 @@
     text-transform: uppercase;
     color: rgba(0,0,0,0.35);
     pointer-events: none;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.2s ease;
     z-index: 5;
     background: rgba(255,255,255,0.45);
@@ -117,6 +119,18 @@
     z-index: 2;
 }
 .stamp-selected-img[src=""] { display: none; }
+
+.stamp-preview-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0.5;
+}
 
 
 /* # and name — bottom-right of stamp base, aligned to inner square right edge

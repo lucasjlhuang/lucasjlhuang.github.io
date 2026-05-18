@@ -74,12 +74,16 @@
             target.closest('.window-size-toggle-btn') ||
             target.closest('.hobby-close-btn') ||
             target.closest('.nav-project-link') ||
-            target.closest('#read-more-btn')
+            target.closest('#read-more-btn') ||
+            target.closest('.story-nav-arrow')
         ) return IMG.help;
 
-        // About-me text (after reveal) + slideshow = default pointer, not open-hand
-        if (target.closest('.about-me-text.visible')) return IMG.default;
-        if (target.closest('.about-slideshow'))        return IMG.default;
+        // Canvas items and "world" span — default pointer
+        if (target.closest('.canvas-item')) return IMG.default;
+        if (target.closest('.tldr-world'))  return IMG.default;
+
+        // About-me story nav text = default pointer
+        if (target.closest('.story-nav-body') || target.closest('.story-nav-title')) return IMG.default;
 
         // Fullscreen windows are not draggable — use default cursor
         if (target.closest('.window.is-fullscreen')) return IMG.default;

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Layout Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1a1a; font-family: sans-serif; padding: 24px; display: flex; gap: 24px; justify-content: center; }
+  .panel { flex: 1; max-width: 520px; }
+  h2 { color: #fff; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; opacity: .6; }
+  .canvas {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/10;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  /* card zone — shows where the TLDR card sits */
+  .card-zone {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(88%, 440px);
+    height: 38%;
+    background: rgba(0,122,255,0.06);
+    border: 1.5px dashed rgba(0,122,255,0.25);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: rgba(0,122,255,0.4); letter-spacing: .05em;
+  }
+  .dot {
+    position: absolute;
+    border-radius: 4px;
+    background: #333;
+    transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; color: #fff; font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  }
+  .label {
+    position: absolute;
+    font-size: 8px;
+    color: #555;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h2>Current</h2>
+  <div class="canvas" id="current">
+    <div class="card-zone">TLDR card</div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Proposed</h2>
+  <div class="canvas" id="proposed">
+    <div class="card-zone">TLDR card</div>
+  </div>
+</div>
+
+<script>
+const current = [
+  { id:'3',  l:3,  t:8,  w:74 },
+  { id:'4',  l:68, t:5,  w:64 },
+  { id:'5',  l:2,  t:54, w:69 },
+  { id:'6',  l:75, t:62, w:62 },
+  { id:'7',  l:81, t:22, w:75 },
+  { id:'8',  l:29, t:4,  w:66 },
+  { id:'9',  l:6,  t:74, w:68 },
+  { id:'10', l:47, t:77, w:75 },
+  { id:'13', l:54, t:6,  w:71 },
+  { id:'14', l:38, t:1,  w:60 },
+  { id:'15', l:87, t:48, w:75 },
+  { id:'16', l:20, t:82, w:75 },
+  { id:'17', l:62, t:76, w:71 },
+  { id:'18', l:88, t:3,  w:75 },
+  { id:'19', l:3,  t:35, w:63 },
+  { id:'20', l:35, t:87, w:66 },
+];
+
+const proposed = [
+  { id:'3',  l:4,  t:10, w:74 },  // similar, slight shift
+  { id:'4',  l:72, t:18, w:64 },  // dropped from top strip → right inner
+  { id:'5',  l:1,  t:52, w:69 },  // similar
+  { id:'6',  l:78, t:68, w:62 },  // pushed right/down
+  { id:'7',  l:86, t:24, w:75 },  // similar
+  { id:'8',  l:22, t:3,  w:66 },  // shifted left
+  { id:'9',  l:5,  t:79, w:68 },  // pushed lower
+  { id:'10', l:54, t:72, w:75 },  // shifted right/up
+  { id:'13', l:46, t:5,  w:71 },  // shifted left in top strip
+  { id:'14', l:14, t:42, w:60 },  // BIG: moved from top strip → left mid
+  { id:'15', l:83, t:50, w:75 },  // similar
+  { id:'16', l:24, t:85, w:75 },  // shifted right, clear of 9
+  { id:'17', l:64, t:83, w:71 },  // pushed lower
+  { id:'18', l:90, t:4,  w:75 },  // similar
+  { id:'19', l:84, t:86, w:63 },  // bottom-right corner
+  { id:'20', l:40, t:90, w:66 },  // shifted right
+];
+
+function render(containerId, items) {
+  const el = document.getElementById(containerId);
+  const W = el.clientWidth;
+  const H = el.clientHeight;
+
+  // scale dots: max real size 75px in a ~400px window → scale to preview
+  const scale = W / 400;
+
+  items.forEach(item => {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    const size = Math.max(18, item.w * scale * 0.7);
+    dot.style.cssText = `
+      left:${item.l}%;
+      top:${item.t}%;
+      width:${size}px;
+      height:${size}px;
+    `;
+    dot.textContent = item.id;
+    el.appendChild(dot);
+  });
+}
+
+render('current', current);
+render('proposed', proposed);
+</script>
+</body>
+</html>
