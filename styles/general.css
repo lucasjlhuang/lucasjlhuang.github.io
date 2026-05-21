@@ -3041,6 +3041,11 @@ img.infoimg {
     transition: opacity 1s ease, transform 1s ease;
 }
 
+/* Block project folder interaction until system is ready */
+body:not(.system-ready) .projectfolder {
+    pointer-events: none !important;
+}
+
 /* Gentle Load In (The Windows Content Animation) */
 .system-ready .dock,
 .system-ready .my-info,
