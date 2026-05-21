@@ -110,8 +110,14 @@
             target.closest('.sprawled-hobby-image')
         ) return IMG.openhand;
 
-        // Spotify dock item — link cursor
-        if (target.closest('[data-label="Spotify"]')) return IMG.link;
+        // Dock items that use link cursor
+        if (
+            target.closest('[data-label="Spotify"]') ||
+            target.closest('[data-label="Instagram"]') ||
+            target.closest('[data-label="LinkedIn"]') ||
+            target.closest('[data-label="E-mail"]') ||
+            target.closest('[data-label="Resume"]')
+        ) return IMG.link;
 
         // Clickable elements
         if (
