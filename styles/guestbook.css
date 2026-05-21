@@ -149,7 +149,7 @@
 /* ─── Edit button — bottom-left of user's own stamp, mirrors enter button style ─── */
 .gb-edit-btn {
     position: absolute;
-    bottom: 12px;
+    bottom: 25px;
     left: 13px;
     background: none;
     border: none;

@@ -1213,7 +1213,10 @@
 
         requestAnimationFrame(() => requestAnimationFrame(() => {
             el.classList.add('visible');
-            makeDraggable(el);
+            // Only draggable on desktop (fine pointer / mouse)
+            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                makeDraggable(el);
+            }
         }));
         return el;
     }

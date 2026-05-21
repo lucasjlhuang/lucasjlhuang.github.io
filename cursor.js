@@ -4,15 +4,16 @@
 
     const BASE = '/images/wii-pointer-set/';
     const IMG  = {
-        default:   BASE + 'WiiPointer.png',
-        openhand:  BASE + 'WiiPointerOpenHand.png',
-        link:      BASE + 'WiiPointerLink.png',
-        help:      BASE + 'WiiPointerHelp.png',
-        person:    BASE + 'Person.png',
-        typing:    BASE + 'Typing.png',
-        resize:    BASE + 'Resize.png',
-        click:     BASE + 'WiiPointerBlue.png',
-        grab:      BASE + 'WiiPointerGrab.png',
+        default:     BASE + 'WiiPointer.png',
+        openhand:    BASE + 'WiiPointerOpenHand.png',
+        link:        BASE + 'WiiPointerLink.png',
+        help:        BASE + 'WiiPointerHelp.png',
+        person:      BASE + 'Person.png',
+        typing:      BASE + 'Typing.png',
+        resize:      BASE + 'Resize.png',
+        click:       BASE + 'WiiPointerBlue.png',
+        grab:        BASE + 'WiiPointerGrab.png',
+        unavailable: BASE + 'Unavailable.png',
     };
 
     // Reuse existing element or create one
@@ -78,12 +79,18 @@
             target.closest('.story-nav-arrow')
         ) return IMG.help;
 
+        // Under-construction folders — unavailable cursor
+        if (target.closest('.under-construction')) return IMG.unavailable;
+
         // Canvas items and "world" span — default pointer
         if (target.closest('.canvas-item')) return IMG.default;
         if (target.closest('.tldr-world'))  return IMG.default;
 
-        // About-me story nav text = default pointer
-        if (target.closest('.story-nav-body') || target.closest('.story-nav-title')) return IMG.default;
+        // About-me story nav text = default pointer, but links inside it get help cursor
+        if (target.closest('.story-nav-body') || target.closest('.story-nav-title')) {
+            if (target.closest('a')) return IMG.link;
+            return IMG.default;
+        }
 
         // Fullscreen windows are not draggable — use default cursor
         if (target.closest('.window.is-fullscreen')) return IMG.default;
@@ -102,6 +109,9 @@
             target.closest('.window-header') ||
             target.closest('.sprawled-hobby-image')
         ) return IMG.openhand;
+
+        // Spotify dock item — link cursor
+        if (target.closest('[data-label="Spotify"]')) return IMG.link;
 
         // Clickable elements
         if (

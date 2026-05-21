@@ -83,19 +83,19 @@
         width: 22vw !important;
     }
 
-    /* Hide Marcopolo (6th child) and HESS (8th child) */
-    .wallpaper > .projectfolder:nth-child(6),
-    .wallpaper > .projectfolder:nth-child(8) {
+    /* Hide Bank of Taiwan (5th child) and VoGro (7th child) */
+    .wallpaper > .projectfolder:nth-child(5),
+    .wallpaper > .projectfolder:nth-child(7) {
         display: none !important;
     }
 
     /* Scattered organic positions
-       DOM: NSL=3, PMC=4, BOT=5, Marcopolo=6(hidden),
-            VoGro=7, HESS=8(hidden), About me=9, Gilbert=10 */
+       DOM: NSL=3, PMC=4, BOT=5(hidden), Hyperloop=6,
+            VoGro=7(hidden), HESS=8, About me=9, Gilbert=10 */
     .wallpaper > .projectfolder:nth-child(3)  { top: calc(28vh + 15px) !important; left: 6vw  !important; } /* NSL */
     .wallpaper > .projectfolder:nth-child(4)  { top: 48vh !important; left: 74vw !important; } /* PMC */
-    .wallpaper > .projectfolder:nth-child(5)  { top: 32vh !important; left: 62vw !important; } /* Bank of Taiwan */
-    .wallpaper > .projectfolder:nth-child(7)  { top: calc(68vh - 50px) !important; left: calc(58vw - 10px) !important; } /* VoGro */
+    .wallpaper > .projectfolder:nth-child(6)  { top: 32vh !important; left: 62vw !important; } /* Hyperloop */
+    .wallpaper > .projectfolder:nth-child(8)  { top: calc(68vh - 50px) !important; left: calc(58vw - 10px) !important; } /* HESS */
     .wallpaper > .projectfolder:nth-child(9)  { top: 55vh !important; left: 8vw  !important; } /* About me */
 
     /* Gilbert: calc-based centering so hop animation transform works cleanly */
@@ -145,7 +145,7 @@
 
     /* ─── Crate button: right-aligned, vertically centred with dock icons ─── */
     #gb-crate-btn {
-        right: 18px !important;
+        right: 10px !important;
         left: auto !important;
         bottom: calc(5vh + 1.2vh) !important;
         transform-origin: bottom right !important;

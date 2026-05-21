@@ -88,10 +88,11 @@ targetFolders.forEach(folder => {
     // ⭐ List of all 5 project keys for static navigation (unchanged) ⭐
     const PROJECT_TITLES = [
         "About me",
-        "VoGro",
-        "Bank of Taiwan",
-        "Marcopolo",
-        "Gilbert"
+        // "Hess",
+        // "Hyperloop",
+        // "Bank of Taiwan",
+        // "Gilbert",
+        "VoGro"
     ];
 
     // ⭐ List of dock apps that should only have one instance (UNCHANGED) ⭐
@@ -118,9 +119,9 @@ targetFolders.forEach(folder => {
         "Figma": "Figma",
         "Hobbies": "Hobbies", 
         "Bank of Taiwan": "Bank of Taiwan",
-        "MARCOPOLO": "MarcoPolo",
+        "Hyperloop": "Canadian Hyperloop Conference",
         "VOGRO": "Vogro",
-        "HESS": "HESS Education",
+        "Hess": "Hess",
         "About me": "About me",
         "GILBERT": "Gilbert",
         "[REDACTED]": "[redacted]"
@@ -686,11 +687,11 @@ targetFolders.forEach(folder => {
             targetX = Math.max(0, centerX + randX) + 'px';
             targetY = Math.max(0, centerY + randY) + 'px';
         } else {
-            // Case C: Centre of screen (project windows)
+            // Case C: Centre of screen (project windows) — shifted up from true centre
             const windowWidth  = newWindow.offsetWidth;
             const windowHeight = newWindow.offsetHeight;
             targetX = Math.max(0, (window.innerWidth  / 2) - (windowWidth  / 2)) + 'px';
-            targetY = Math.max(0, (window.innerHeight / 2) - (windowHeight / 2)) + 'px';
+            targetY = Math.max(0, (window.innerHeight / 2) - (windowHeight / 2) - 30) + 'px';
         }
 
         // 3. Apply Positioning: Genie Open vs. Standard

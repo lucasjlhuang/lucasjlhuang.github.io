@@ -465,8 +465,23 @@ img.projectimage {
     bottom: 0;
     width: 100%;
     text-align: center;
-    padding-bottom: 5vh; 
+    padding-bottom: 5vh;
     z-index: 1000;
+}
+
+.dock-disclaimer {
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    font-family: 'SFRegular', sans-serif;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 999;
 }
 
 .ProjectText {
@@ -499,6 +514,7 @@ img.projectimage {
   padding: 5px;
   background-color: #00000015;
   border: 1px solid #e4e4e450;
+  border-radius: 10px;
 }
 
 .projectfolder:hover {
@@ -2590,6 +2606,99 @@ img.infoimg {
     transform: translateX(-50%) translateY(0) !important;
 }
 
+
+/* ── Preview bubble (GIF + role/status) ──────────────────────────────────── */
+.preview-bubble {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+
+    background-color: #33333380;
+    border-radius: 8px;
+    padding: 8px;
+    width: fit-content;
+
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Arrow tail */
+.preview-bubble::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #33333380 transparent transparent transparent;
+    pointer-events: none;
+}
+
+.preview-gif {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    object-position: top left;
+    border-radius: 4px;
+    display: block;
+    background-color: #55555540; /* placeholder while gif loads */
+}
+
+.preview-meta {
+    display: flex;
+    align-items: stretch;
+    gap: 5px;
+    padding-top: 6px;
+    color: #ffffff;
+    font-size: 11px;
+    font-family: 'SFMedium', sans-serif;
+    font-weight: 500;
+    text-shadow: none;
+}
+
+.preview-role {
+    opacity: 1;
+    font-family: 'SFMedium', sans-serif;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    padding: 4px 10px;
+    flex: 1;
+    text-align: center;
+}
+
+.preview-status {
+    opacity: 1;
+    font-family: 'SFMedium', sans-serif;
+    text-transform: none;
+    letter-spacing: 0.4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    padding: 4px 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Show on hover — desktop (fine pointer) only */
+@media (hover: hover) and (pointer: fine) {
+    .projectfolder:hover .preview-bubble {
+        visibility: visible;
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+
+/* ── Under-construction folders ─────────────────────────────────────────── */
+.projectfolder.under-construction {
+    opacity: 0.75;
+}
 
 
 /* In Progress */
