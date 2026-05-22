@@ -2546,6 +2546,12 @@ main.window-about-me .read-toggle-wrapper {
     margin-top: 2px;
 }
 
+.title-svg {
+    display: block;
+    height: auto;
+    width: 11rem;
+}
+
 .my-info {
     position: fixed;
     left: 3rem;
