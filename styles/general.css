@@ -41,6 +41,14 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: 'InstrumentSans';
+    src: url('/fonts/InstrumentSans.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* 1. Base State */
 .projectfolder {
     opacity: 0;
@@ -411,7 +419,7 @@ div.wallpaper {
   background-image: url(/images/lightmode.jpg);
   background-position: center;
   background-repeat: no-repeat;
-  background-size: fill;
+  background-size: cover;
   height: 100vh;
   margin: 0;
   padding: 0;
@@ -664,14 +672,14 @@ body.dark-mode {
 
 
 div.wallpaper {
-  background-image: var(--wallpaper-image); 
+  background-image: var(--wallpaper-image);
   background-position: center;
   background-repeat: no-repeat;
-  background-size: cover; 
+  background-size: cover;
   height: 100vh;
   margin: 0;
   padding: 0;
-  transition: background-image 0.8s ease-in-out; 
+  transition: background-image 0.8s ease-in-out;
 }
 
 .dock {
@@ -2520,7 +2528,7 @@ main.window-about-me .read-toggle-wrapper {
     font-size: 1.2rem;
     margin-bottom: 0;
     padding-bottom: 0;
-    color: var(--text-color); /* Applied dynamic color */
+    color: var(--text-color);
 }
 
 .roles {
@@ -2531,10 +2539,17 @@ main.window-about-me .read-toggle-wrapper {
     color: var(--text-color); /* Applied dynamic color */
 }
 
+.chinese-name {
+    display: block;
+    height: 1.2rem;
+    width: auto;
+    margin-top: 2px;
+}
+
 .my-info {
     position: fixed;
-    left: 3rem; /* 3rem from left as requested */
-    top: 1vh;  /* 3rem from top as requested */
+    left: 3rem;
+    top: 1vh;
 }
 
 .sticky-logo {
@@ -2696,9 +2711,6 @@ img.infoimg {
 
 
 /* ── Under-construction folders ─────────────────────────────────────────── */
-.projectfolder.under-construction {
-    opacity: 0.75;
-}
 
 
 /* In Progress */
