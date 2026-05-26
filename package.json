@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@chenglou/pretext": "^0.0.7",
+    "gsap": "^3.15.0"
+  }
+}

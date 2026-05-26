@@ -1663,4 +1663,46 @@ window.toggleInProgress = function() {
 // the CSS 'hsl(var(--current-hue), 100%, 50%)' will update the cursor color automatically.
 
     preloadHobbyImages();
+
+    // ── macOS Dock magnification ──────────────────────────────────────────────
+    if (typeof gsap !== 'undefined') {
+        const dockEl    = document.querySelector('.dock');
+        const MAX_SCALE = 1.3;
+        const RADIUS    = 110; // px — half-width of influence
+
+        if (dockEl) {
+            const EXPAND = 17.5;
+            let dockInZone = false;
+
+            document.addEventListener('mousemove', e => {
+                const dr = dockEl.getBoundingClientRect();
+                const inZone = e.clientX >= dr.left   - EXPAND &&
+                               e.clientX <= dr.right  + EXPAND &&
+                               e.clientY >= dr.top    - EXPAND &&
+                               e.clientY <= dr.bottom + EXPAND;
+
+                if (inZone) {
+                    dockInZone = true;
+                    const mx = e.clientX;
+                    dockEl.querySelectorAll('li:not(.divider)').forEach(item => {
+                        const r    = item.getBoundingClientRect();
+                        const cx   = r.left + r.width / 2;
+                        const dist = Math.abs(mx - cx);
+                        const t    = Math.max(0, 1 - dist / RADIUS);
+                        const scale = 1 + (MAX_SCALE - 1) * Math.pow(t, 1);
+                        gsap.to(item, { scale, duration: 0.15, ease: 'power2.out', overwrite: 'auto' });
+                    });
+                } else if (dockInZone) {
+                    dockInZone = false;
+                    dockEl.querySelectorAll('li:not(.divider)').forEach(item => {
+                        gsap.to(item, {
+                            scale: 1, duration: 0.35, ease: 'power2.out', overwrite: 'auto',
+                            onComplete() { gsap.set(item, { clearProps: 'scale' }); },
+                        });
+                    });
+                }
+            }, { passive: true });
+        }
+    }
+
 });

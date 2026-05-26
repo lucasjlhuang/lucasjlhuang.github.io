@@ -441,7 +441,7 @@ div.projectfolder {
   font-family: 'SFMedium', sans-serif;
   color: #ffffff;
     text-shadow: 0px 1px 6px rgba(0, 0, 0, 0.4);
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, z-index 0s, background-color 0.6s ease-in-out;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease-out, z-index 0s, background-color 0.6s ease-in-out;
 }
 
 div.projectfolderheader {   
@@ -457,14 +457,16 @@ div.projectfolderheader {
 img.projectimage {
     height: 6vh;
     width: 6vh;
-    object-fit: cover; 
+    object-fit: cover;
     display: block;
-    border: 0px solid #ffffff;
+    border: 1px solid transparent;
     background-color: #ffffff00;
     border-radius: 5px;
-    
+
     min-width: 50px;
     min-height: 50px;
+    transition: padding 0.25s ease-out, background-color 0.25s ease-out,
+                border-color 0.25s ease-out, border-radius 0.25s ease-out;
 }
 
 .dock-container {
@@ -497,10 +499,10 @@ img.projectimage {
     font-size: 1.3vh;
     margin: 0;
     padding: 7px 0;
-   
-    background: rgba(0, 0, 0, 0, 0);
+
+    background: rgba(0, 0, 0, 0);
     border-radius: 5px;
-    transition: background-color 0.7s ease-in, 0.2s ease-out;
+    transition: transform 0.25s ease-out, background-color 0.25s ease-out, padding 0.25s ease-out;
 }
 .projectfolder:hover {
     z-index: 100;
@@ -521,7 +523,7 @@ img.projectimage {
 .projectfolder:hover .projectimage {
   padding: 5px;
   background-color: #00000015;
-  border: 1px solid #e4e4e450;
+  border-color: #e4e4e450;
   border-radius: 10px;
 }
 
@@ -544,6 +546,7 @@ img.projectimage {
 .dock {
     list-style: none;
     display: inline-flex;
+    align-items: flex-end;
     padding: 1.2vh 1vh;
     margin: 0;
 
@@ -555,10 +558,11 @@ img.projectimage {
 
 /* ICON WRAPPER */
 .dock li {
-    margin: 0 0.75vh; 
-  
-    position: relative; 
+    margin: 0 0.75vh;
+
+    position: relative;
     width: 40px;
+    transform-origin: bottom center;
 
 }
 
@@ -1315,60 +1319,136 @@ main.window-about-me {
     pointer-events: auto;
     user-select: none;
     will-change: transform;
+    cursor: grab;
+    /* Parallax + tilt: --px/--py from parallax loop, --rx/--ry from tilt loop */
+    transform: translate(var(--px, 0px), var(--py, 0px)) perspective(400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.canvas-item:hover {
+    transform: translate(var(--px, 0px), var(--py, 0px)) perspective(400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    z-index: 100;
+}
+.canvas-item:hover .item-mask {
+    border-color: rgba(0,0,0,0.22);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+.canvas-item.is-dragging {
+    cursor: grabbing;
+    transform: translate(0px, 0px) scale(1.15) !important;
+    z-index: 9999 !important;
+    transition: none !important;
+}
+.canvas-item.is-dragging .item-mask {
+    filter: blur(0.3px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.11);
+    border-color: rgba(0,0,0,0.3);
 }
 
-.canvas-item img {
+/* Only target the hidden original img, not .item-mask-img inside .item-mask */
+.canvas-item > img {
     width: var(--item-w, 50px);
     height: auto;
-    border-radius: 5px;
+    border-radius: 0;
     display: block;
     pointer-events: none;
     -webkit-user-drag: none;
 }
 
-/* Fullscreen — scale images up proportionally (~2× the small-window size) */
-.window.is-fullscreen .canvas-item img {
-    width: calc(var(--item-w, 50px) * 2);
+/* Fullscreen — scale mask up */
+.window.is-fullscreen .item-mask {
+    width:  70px;
+    height: 70px;
 }
 
-/* Location label — fades and grows in under image on hover */
+/* Location label — centred below icon, absolutely positioned */
 .canvas-item::after {
     content: attr(data-location);
-    display: block;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) scale(0.75);
+    transform-origin: center top;
+    margin-top: 5px;
     text-align: center;
     font-family: 'SFRegular', sans-serif;
     font-size: 0.65rem;
     color: rgba(0, 0, 0, 0.45);
     opacity: 0;
-    transform: scale(0.75);
-    transform-origin: center top;
     transition: opacity 0.4s ease, transform 0.4s ease;
-    margin-top: 5px;
     pointer-events: none;
     white-space: nowrap;
 }
 .canvas-item:hover::after {
     opacity: 1;
-    transform: scale(1);
+    transform: translateX(-50%) scale(1);
 }
 
 /* ── Center overlay ──────────────────────────────────────────────────────── */
 .about-center-overlay {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     z-index: 10;
     pointer-events: none;
 }
 
-/* TLDR card — no card, just centred text blending into the white window */
+/* TLDR card — full-height, horizontally centered, text flows around star at window center */
 .about-tldr-card {
-    pointer-events: auto;
-    max-width: 440px;
-    width: 88%;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 540px;
+    width: 92%;
+    text-align: left;
+}
+
+.tldr-quote {
     text-align: center;
+    margin-bottom: 10px;
+}
+
+/* Text-flow zones — fill their card so offsetHeight is the full window height */
+.textflow-zone,
+#tldr-textzone,
+#story-textzone {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    overflow: visible;
+}
+
+/* Lines injected by Textflow.render() inherit the card's font */
+.tf-layer {
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+    pointer-events: none; /* let canvas-item drags pass through */
+}
+
+/* Star placeholder — centered in the overlay (covers full window). */
+.tldr-placeholder {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    transition: none; /* JS controls transitions explicitly */
+    pointer-events: auto;
+    z-index: 2;
+}
+
+.north-star {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.tldr-text {
+    text-align: justify;
+    margin: 0;
 }
 
 /* "world" — styled word that reveals all location labels on hover */
@@ -1404,6 +1484,117 @@ main.window-about-me {
 }
 .canvas-item.img-entering {
     animation: canvas-img-enter 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── Canvas item mask (resting state — small window into the full photo) ─── */
+.canvas-item > img {
+    display: none; /* hidden; the item-mask shows the image instead */
+}
+
+.item-mask {
+    width: 60px;
+    height: 60px;
+    overflow: hidden;
+    border-radius: 0;
+    display: block;
+    pointer-events: none;
+    border: 1.5px solid rgba(0,0,0,0.08);
+    box-sizing: border-box;
+}
+
+/* Gray placeholder icons (no real image) */
+.canvas-item.is-placeholder .item-mask {
+    background: #ddd;
+}
+
+.item-mask-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+/* ── Canvas expand overlay ───────────────────────────────────────────────── */
+/* All position/size set inline by JS. Slides from icon → placeholder → expands. */
+.canvas-expand-overlay {
+    position: absolute;
+    display: none;
+    z-index: 20;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.canvas-expand-overlay.is-expanded {
+    pointer-events: auto;
+    cursor: grab;
+}
+.canvas-expand-overlay.is-expanded:active {
+    cursor: grabbing;
+}
+
+.canvas-expand-overlay .overlay-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.canvas-expand-overlay .overlay-text-group {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.overlay-caption-bubble {
+    background: rgba(255, 255, 255, 0.92);
+    color: #222;
+    font-family: 'SFMedium', sans-serif;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 7px 14px;
+    border-radius: 10px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    position: relative;
+}
+
+.overlay-caption-bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 7px solid transparent;
+    border-top-color: rgba(255, 255, 255, 0.92);
+}
+
+.overlay-location {
+    font-family: 'SFBold', sans-serif;
+    font-size: 15px;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.3px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Fade text in after expansion settles */
+.canvas-expand-overlay.is-expanded .overlay-caption-bubble,
+.canvas-expand-overlay.is-expanded .overlay-location {
+    opacity: 1;
+    transition: opacity 0.25s ease 0.35s;
 }
 
 /* Story card — full-window grid, 3 quadrants, hidden until opened */
@@ -1455,41 +1646,42 @@ main.window-about-me {
 }
 
 /* ── Story navigator (replaces TLDR when "more" is active) ──────────────── */
+/* Matches .about-tldr-card layout exactly — same max-width, same middle-row */
 .about-story-nav {
     display: none;
-    pointer-events: auto;
-    max-width: 440px;
-    width: 88%;
-    opacity: 0;
-    transition: opacity 0.4s ease;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 540px;
+    width: 92%;
+    /* opacity managed directly by JS */
 }
-.about-story-nav.visible {
-    opacity: 1;
-}
-.story-nav-header {
+
+/* Title reuses .tldr-quote — no extra rule needed */
+
+/* Story zone text is rendered by Textflow.render() — styled via .tf-layer (inherits card font) */
+
+/* Prev / next controls row */
+.story-nav-controls {
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 5px;
-    margin-bottom: 0.7rem;
-}
-.story-nav-title {
-    font-family: 'SFBold', sans-serif;
-    font-size: 0.9rem;
-    color: #000;
-    margin: 0;
-    white-space: nowrap;
+    gap: 4px;
+    margin-top: 10px;
 }
 .story-nav-arrow {
     background: none;
     border: none;
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     color: #000;
-    padding: 8px 10px;
+    padding: 6px 12px;
     line-height: 1;
     opacity: 0.35;
     transition: opacity 0.2s ease;
     flex-shrink: 0;
+    cursor: pointer;
 }
 .story-nav-arrow:not(:disabled):hover {
     opacity: 1;
@@ -1497,18 +1689,6 @@ main.window-about-me {
 .story-nav-arrow:disabled {
     visibility: hidden;
     cursor: default;
-}
-.story-nav-body {
-    font-family: 'SFRegular', sans-serif;
-    font-size: 0.85rem;
-    color: #000;
-    line-height: 1.55;
-    margin: 0;
-    text-align: center;
-}
-.story-nav-body a {
-    color: #007afd;
-    text-decoration: none;
 }
 
 /* Read toggle wrapper — fixed bottom center */
@@ -2635,9 +2815,14 @@ img.infoimg {
     left: 50%;
     transform: translateX(-50%) translateY(10px);
 
-    background-color: #33333380;
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
     padding: 8px;
+    overflow: hidden;
     width: fit-content;
 
     visibility: hidden;
@@ -2647,17 +2832,8 @@ img.infoimg {
     z-index: 1000;
 }
 
-/* Arrow tail */
 .preview-bubble::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border-width: 6px;
-    border-style: solid;
-    border-color: #33333380 transparent transparent transparent;
-    pointer-events: none;
+    display: none;
 }
 
 .preview-gif {
@@ -2667,7 +2843,7 @@ img.infoimg {
     object-position: top left;
     border-radius: 4px;
     display: block;
-    background-color: #55555540; /* placeholder while gif loads */
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .preview-meta {
@@ -2675,7 +2851,7 @@ img.infoimg {
     align-items: stretch;
     gap: 5px;
     padding-top: 6px;
-    color: #ffffff;
+    color: rgba(255, 255, 255, 0.85);
     font-size: 11px;
     font-family: 'SFMedium', sans-serif;
     font-weight: 500;

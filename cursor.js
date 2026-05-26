@@ -82,12 +82,17 @@
         // Under-construction folders — unavailable cursor
         if (target.closest('.under-construction')) return IMG.unavailable;
 
-        // Canvas items and "world" span — default pointer
-        if (target.closest('.canvas-item')) return IMG.default;
+        // Canvas items — open hand (draggable), expanded overlay — open hand
+        if (target.closest('.canvas-expand-overlay')) return IMG.openhand;
+        if (target.closest('.canvas-item')) return IMG.openhand;
         if (target.closest('.tldr-world'))  return IMG.default;
 
-        // About-me story nav text = default pointer, but links inside it get help cursor
-        if (target.closest('.story-nav-body') || target.closest('.story-nav-title')) {
+        // About-me text zones and TLDR card — default pointer, links get link cursor
+        if (
+            target.closest('.textflow-zone') ||
+            target.closest('#story-nav-title') ||
+            target.closest('.about-tldr-card')
+        ) {
             if (target.closest('a')) return IMG.link;
             return IMG.default;
         }

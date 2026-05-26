@@ -324,21 +324,6 @@
         }, { once: true });
     }
 
-    /* ── Wait for scatter icons ──────────────────────────────────────────────── */
-    function waitForIcons() {
-        if (document.querySelector('.scatter-icon')) { init(); return; }
-        const observer = new MutationObserver(() => {
-            if (document.querySelector('.scatter-icon')) {
-                observer.disconnect();
-                init();
-            }
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', waitForIcons);
-    } else {
-        waitForIcons();
-    }
+    /* ── Start on demand via prescreen:start-npcs event ────────────────────── */
+    document.addEventListener('prescreen:start-npcs', () => init(), { once: true });
 })();

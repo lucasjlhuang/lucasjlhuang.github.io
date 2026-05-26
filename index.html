@@ -18,6 +18,11 @@
 
 <!-- PRESCREEN — runs first, before main UI boots -->
 <!-- Character system must load before prescreen.js -->
+<!-- GSAP first so it's available to prescreen and all subsequent scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="/node_modules/gsap/dist/MorphSVGPlugin.min.js" defer></script>
+<script src="/node_modules/gsap/dist/DrawSVGPlugin.min.js" defer></script>
+
 <script src="/cursor.js" defer></script>
 <script src="/prescreencursors.js" defer></script>
 <script src="/character.js" defer></script>
@@ -25,7 +30,10 @@
 
 <script src="/folders.js" defer></script>
 <!-- <script src="/daynightoggle.js" defer></script> -->
+<script type="importmap">{"imports":{"@chenglou/pretext":"/node_modules/@chenglou/pretext/dist/layout.js"}}</script>
+<script src="/textflow.js" defer></script>
 <script src="/slideshow.js" defer></script>
+<script type="module" src="/about-text.js"></script>
 <script src="/windows.js" defer></script>
 <script src="/guestbook.js" defer></script>
 <script src="/bgcursors.js" defer></script>

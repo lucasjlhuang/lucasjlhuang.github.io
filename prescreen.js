@@ -278,15 +278,8 @@
     // ─── Apply image (colors stay independent) ────────────────────────────────
     function applyImageToStamp(imgDef) {
         selectedImgDef = imgDef;
-        document.getElementById('stamp-selected-img').src = imgDef.full;
-        // Fade out "drag here" hint once a stamp is selected
-        const hint = document.getElementById('drop-hint');
-        if (hint) hint.style.opacity = '0';
-        // Bounce
-        const wrapper = document.getElementById('stamp-wrapper');
-        wrapper.classList.remove('stamp-drop-bounce');
-        void wrapper.offsetWidth;
-        wrapper.classList.add('stamp-drop-bounce');
+        const imgEl = document.getElementById('stamp-selected-img');
+        if (imgEl) imgEl.src = imgDef.full;
     }
 
     // ─── Apply colors ─────────────────────────────────────────────────────────
@@ -310,7 +303,7 @@
     let activeImgDef  = DEFAULT_IMG;
 
     // ─── Weighted scatter: denser toward center ───────────────────────────────
-    function scatterIcons(prescreen, skipId) {
+    function scatterIcons(prescreen, skipId, onDone) {
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         const cx = vw / 2;
@@ -364,6 +357,7 @@
             ? STAMP_IMAGES.filter(img => img.id !== skipId)
             : STAMP_IMAGES;
 
+        const scatterIcons = [];
         toScatter.forEach(imgDef => {
             let pos, attempts = 0;
             do {
@@ -372,11 +366,32 @@
             } while (overlaps(pos.x, pos.y) && attempts < 300);
 
             placed.push({ x: pos.x, y: pos.y, w: ICON_SIZE, h: ICON_SIZE });
-            const icon = createIcon(prescreen, imgDef, pos.x, pos.y);
-            // Stagger appear animation
-            const delay = placed.length * 22;
-            setTimeout(() => icon.classList.add('icon-appear'), delay);
+            scatterIcons.push(createIcon(prescreen, imgDef, pos.x, pos.y));
         });
+
+        // Entrance animation — GSAP if available, CSS fallback otherwise
+        if (typeof gsap !== 'undefined') {
+            gsap.fromTo(scatterIcons,
+                { scale: 0.5, opacity: 0 },
+                {
+                    scale:    1,
+                    opacity:  1,
+                    duration: 0.5,
+                    ease:     'power2.out',
+                    stagger:  { amount: 0.4, from: 'random' },
+                    onComplete() {
+                        scatterIcons.forEach(el => el.classList.add('icon-appear'));
+                        gsap.set(scatterIcons, { clearProps: 'transform,opacity' });
+                        if (onDone) onDone();
+                    },
+                }
+            );
+        } else {
+            scatterIcons.forEach((icon, i) => {
+                setTimeout(() => icon.classList.add('icon-appear'), i * 22);
+            });
+            if (onDone) onDone();
+        }
     }
 
     function createIcon(prescreen, imgDef, x, y) {
@@ -435,20 +450,13 @@
 
                 const preview     = document.getElementById('stamp-preview-img');
                 const selectedImg = document.getElementById('stamp-selected-img');
-                const hint        = document.getElementById('drop-hint');
 
                 if (over) {
-                    // Show preview, hide the currently selected image
-                    // Only show hint if no image has ever been selected
                     if (preview) { if (preview.getAttribute('src') !== imgDef.full) preview.src = imgDef.full; preview.style.display = 'block'; }
                     if (selectedImg) selectedImg.style.opacity = '0';
-                    if (hint && !selectedImg?.getAttribute('src')) hint.style.opacity = '1';
                 } else {
-                    // Restore: hide preview, show selected image, restore hint state
                     if (preview) preview.style.display = 'none';
                     if (selectedImg) selectedImg.style.opacity = '1';
-                    // Hint visible only if no image is selected yet
-                    if (hint) hint.style.opacity = selectedImg?.getAttribute('src') ? '0' : '1';
                 }
             }
         }
@@ -463,7 +471,6 @@
 
             const preview     = document.getElementById('stamp-preview-img');
             const selectedImg = document.getElementById('stamp-selected-img');
-            const hint        = document.getElementById('drop-hint');
 
             // Always clean up preview and restore selected image
             if (preview) preview.style.display = 'none';
@@ -488,10 +495,9 @@
                     activeImgDef = imgDef;
                     applyImageToStamp(imgDef);
                 } else {
-                    // Not dropped — restore icon bubble and hint
+                    // Not dropped — restore icon bubble
                     const bub = icon.querySelector('.icon-bubble');
                     if (bub) bub.style.display = '';
-                    if (hint) hint.style.opacity = selectedImg?.getAttribute('src') ? '0' : '1';
                 }
                 dropTarget.classList.remove('drop-hover');
             }
@@ -1016,7 +1022,6 @@
                          src="" alt="">
                     <img class="stamp-preview-img" id="stamp-preview-img"
                          src="" alt="">
-                    <div class="drop-hint" id="drop-hint">drag here</div>
                     <button class="color-swatch-btn" id="color-swatch-btn"
                             title="Pick color"
                             style="background:${activeInnerColor}"></button>
@@ -1026,6 +1031,9 @@
                        type="text" placeholder="Your name"
                        maxlength="28" autocomplete="off" spellcheck="false">
             </div>
+
+            <!-- Cycle word above stamp -->
+            <div id="stamp-cycle-word" class="stamp-cycle-word"></div>
 
             <!-- Enter button below stamp -->
             <div class="stamp-enter-wrap" id="stamp-enter-wrap">
@@ -1039,18 +1047,218 @@
         const s = document.getElementById('prescreen-init-shield');
         if (s) s.remove();
 
-        // Scatter icons
-        requestAnimationFrame(() => scatterIcons(el, DEFAULT_IMG.id));
+        // Scatter icons deferred — triggered later by showStampBubbles
 
         return el;
     }
 
+    // ─── Random name pool for cycles ─────────────────────────────────────────
+    const RANDOM_NAMES = [
+        'Alex','Jordan','Sam','Taylor','Casey','Riley','Morgan','Jamie',
+        'Quinn','Avery','Reese','Skyler','Dakota','Emery','Finley',
+    ];
+
+    // ─── 3 randomization cycles with GSAP ────────────────────────────────────
+    function runRandomCycles(onDone) {
+        const wrapper = document.getElementById('stamp-wrapper');
+        const wordEl  = document.getElementById('stamp-cycle-word');
+        const words   = ['Make', 'A', 'Stamp'];
+        let count = 0;
+
+        // Suppress CSS transition so GSAP controls motion cleanly
+        wrapper.style.transition = 'none';
+        gsap.set(wordEl, { xPercent: -50, opacity: 0, scale: 1, y: 0 });
+
+        function applySwap(mode) {
+            if (mode === 'random') {
+                const img  = STAMP_IMAGES[Math.floor(Math.random() * STAMP_IMAGES.length)];
+                selectedImgDef = img;
+                const imgEl = document.getElementById('stamp-selected-img');
+                if (imgEl) imgEl.src = img.full;
+                randomizeStamp();
+                const nameEl = document.getElementById('stamp-name-input');
+                if (nameEl) nameEl.value = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+            } else if (mode === 'reset') {
+                // Blank white stamp — no image, no pattern, no name
+                const imgEl = document.getElementById('stamp-selected-img');
+                if (imgEl) imgEl.src = '';
+                applyInnerColor('#FFFFFF');
+                applyOutlineColor(OUTLINE_COLORS[0]);
+                applyPattern(null);
+                const nameEl = document.getElementById('stamp-name-input');
+                if (nameEl) nameEl.value = '';
+            }
+            // mode === 'none': keep current stamp values as-is
+        }
+
+        function animateCycle(word, mode, cb) {
+            const tl = gsap.timeline({ onComplete: cb });
+            tl.to(wrapper, { filter: 'blur(10px)', opacity: 0, duration: 0.22, ease: 'power2.in' })
+              .to(wordEl,   { opacity: 0, y: -5,               duration: 0.18, ease: 'power2.in' }, '<')
+              .call(() => { applySwap(mode); wordEl.textContent = word; })
+              .to(wrapper,  { filter: 'blur(0px)', opacity: 1, duration: 0.32, ease: 'power2.out' })
+              .fromTo(wordEl,
+                  { opacity: 0, y: 6 },
+                  { opacity: 1, y: 0, duration: 0.26, ease: 'back.out(1.4)' },
+                  '<'
+              )
+              .to({}, { duration: 0.1 });
+        }
+
+        function next() {
+            if (count >= 3) {
+                gsap.set(wrapper, { clearProps: 'transform,opacity,filter' });
+                wrapper.style.transition = '';
+                setTimeout(() => animateCycle('please :)', 'reset', onDone), 300);
+                return;
+            }
+            // Cycle 0 keeps the initial randomized stamp; cycles 1+ randomize
+            const mode = count === 0 ? 'none' : 'random';
+            const word = words[count];
+            count++;
+            animateCycle(word, mode, next);
+        }
+        next();
+    }
+
+    // ─── Stamp hint bubbles ───────────────────────────────────────────────────
+    // ─── Proximity effect for scatter icons ──────────────────────────────────
+    function setupIconProximity(prescreen) {
+        const RADIUS   = 120;
+        const STRENGTH = 10;
+
+        function onMove(e) {
+            if (document.body.classList.contains('is-dragging')) return;
+            const mx = e.clientX, my = e.clientY;
+
+            prescreen.querySelectorAll('.scatter-icon').forEach(icon => {
+                if (icon.style.zIndex === '9000') return;
+                const r  = icon.getBoundingClientRect();
+                const cx = r.left + r.width  / 2;
+                const cy = r.top  + r.height / 2;
+                const d  = Math.hypot(mx - cx, my - cy);
+
+                if (d < RADIUS && d > 0) {
+                    const t  = 1 - d / RADIUS;
+                    const nx = (mx - cx) / d;
+                    const ny = (my - cy) / d;
+                    gsap.to(icon, { x: nx * STRENGTH * t, y: ny * STRENGTH * t, duration: 0.3, ease: 'power2.out', overwrite: 'auto' });
+                } else {
+                    gsap.to(icon, { x: 0, y: 0, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
+                }
+            });
+        }
+
+        prescreen.addEventListener('mousemove', onMove, { passive: true });
+
+        document.addEventListener('prescreen:done', () => {
+            prescreen.removeEventListener('mousemove', onMove);
+        }, { once: true });
+    }
+
+    function showStampBubbles() {
+        const prescreen = document.getElementById('prescreen');
+        const wordEl    = document.getElementById('stamp-cycle-word');
+        const enterWrap = document.getElementById('stamp-enter-wrap');
+
+        // stamp-inner-sq  → 3px extra gap above; stamp-name-input → anchor to right edge (text is right-aligned)
+        const targets = [
+            { id: 'stamp-inner-sq',   text: 'drop it',        gap: 11 },
+            { id: 'color-swatch-btn', text: 'personalize it',  gap: 8  },
+            { id: 'stamp-name-input', text: 'sign it',         gap: 8, rightAlign: true },
+        ];
+
+        function spawnBubbles() {
+            const bubbles = targets.map(({ id, text, gap, rightAlign }) => {
+                const el = document.getElementById(id);
+                if (!el) return null;
+                const r   = el.getBoundingClientRect();
+                const bub = document.createElement('div');
+                bub.className   = 'stamp-hint-bubble';
+                bub.textContent = text;
+                // Right-aligned inputs: anchor to right edge so bubble sits over the visible text
+                bub.style.left = (rightAlign ? r.right : r.left + r.width / 2) + 'px';
+                bub.style.top  = '0px';
+                document.body.appendChild(bub);
+                gsap.set(bub, { xPercent: -50 });
+                const bubH = bub.offsetHeight;
+                bub.style.top = (r.top - bubH - gap) + 'px';
+                return bub;
+            }).filter(Boolean);
+
+            // Slower, gentle fade-in upward
+            gsap.fromTo(bubbles,
+                { y: 10, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.7, ease: 'power1.out', stagger: 0.2, delay: 0.2 }
+            );
+
+            // NPCs enter at t+1.5s
+            setTimeout(() => document.dispatchEvent(new CustomEvent('prescreen:start-npcs')), 1500);
+
+            // Bubbles leave at t+3s; enter button after
+            setTimeout(() => {
+                gsap.to(bubbles, {
+                    y: -6, opacity: 0, duration: 0.25, ease: 'power2.in', stagger: 0.05,
+                    onComplete: () => {
+                        bubbles.forEach(b => b.remove());
+                        if (enterWrap) enterWrap.classList.add('enter-appear');
+                    },
+                });
+            }, 3000);
+        }
+
+        // Stamp is blank — scatter all images (no skip)
+        scatterIcons(prescreen, null, () => {
+            setupIconProximity(prescreen);
+            // Icons loaded — brief pause, then slide "please :)" out, then bubbles
+            setTimeout(() => {
+                if (wordEl) {
+                    gsap.to(wordEl, {
+                        y: 18, opacity: 0, duration: 0.35, ease: 'power2.in',
+                        onComplete: () => {
+                            if (wordEl.parentNode) wordEl.remove();
+                            spawnBubbles();
+                        },
+                    });
+                } else {
+                    spawnBubbles();
+                }
+            }, 300);
+        });
+    }
+
     // ─── Reveal ───────────────────────────────────────────────────────────────
     function revealPrescreen() {
-        document.getElementById('stamp-wrapper').classList.add('stamp-appear');
-        setTimeout(() => {
-            document.getElementById('stamp-enter-wrap').classList.add('enter-appear');
-        }, 400);
+        const wrapper = document.getElementById('stamp-wrapper');
+
+        // Apply initial randomized stamp before animating in
+        const initImg  = STAMP_IMAGES[Math.floor(Math.random() * STAMP_IMAGES.length)];
+        selectedImgDef = initImg;
+        const initImgEl = document.getElementById('stamp-selected-img');
+        if (initImgEl) initImgEl.src = initImg.full;
+        randomizeStamp();
+        const initNameEl = document.getElementById('stamp-name-input');
+        if (initNameEl) initNameEl.value = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+
+        if (typeof gsap !== 'undefined') {
+            gsap.fromTo(wrapper,
+                { scale: 0.5, opacity: 0 },
+                {
+                    scale:    1,
+                    opacity:  1,
+                    duration: 0.3,
+                    ease:     'power2.out',
+                    onComplete() {
+                        wrapper.classList.add('stamp-appear');
+                        gsap.set(wrapper, { clearProps: 'scale,opacity' });
+                        // Brief pause then randomize 3 times, then show bubbles
+                        setTimeout(() => runRandomCycles(showStampBubbles), 200);
+                    },
+                }
+            );
+        } else {
+            wrapper.classList.add('stamp-appear');
+        }
     }
 
     // ─── Enter button SVG ─────────────────────────────────────────────────────
@@ -1293,15 +1501,6 @@
             const mobileImg = document.getElementById('stamp-selected-img');
             if (mobileImg) mobileImg.src = '';
 
-            // Show "drag here" hint by default; hide it once an image is selected
-            const hint = document.querySelector('.drop-hint');
-            if (hint) {
-                hint.style.opacity = '1';
-                const observer = new MutationObserver(() => {
-                    hint.style.opacity = mobileImg.src ? '0' : '1';
-                });
-                observer.observe(mobileImg, { attributes: true, attributeFilter: ['src'] });
-            }
         }
 
         // Stamp image speech bubble on hover

@@ -102,7 +102,7 @@
     overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: rgba(0,0,0,0.12) transparent;
-    padding: 48px 0 60px;
+    padding: 96px 0 60px;
     box-sizing: border-box;
 }
 .gb-grid-scroll::-webkit-scrollbar       { width: 4px; }
@@ -117,25 +117,20 @@
     row-gap: 32px;
 }
 
-/* ─── Each stamp cell ─── */
+/* ─── Each stamp cell — opacity/transform driven by GSAP ─── */
 .gb-stamp-cell {
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transition: transform 0.2s ease, filter 0.2s ease;
     filter:
         drop-shadow(0 3px 10px rgba(0,0,0,0.13))
         drop-shadow(0 0 0 0.5px rgba(0,0,0,0.07));
-}
-.gb-stamp-cell.gb-cell-in {
-    opacity: 1;
-    transform: translateY(0);
+    cursor: url('/images/wii-pointer-set/WiiPointer.cur'), pointer;
 }
 .gb-stamp-cell:hover {
     filter:
         drop-shadow(0 6px 20px rgba(0,0,0,0.18))
         drop-shadow(0 0 0 0.5px rgba(0,0,0,0.07));
     transform: translateY(-4px);
-    transition: opacity 0.6s ease, transform 0.2s ease, filter 0.2s ease;
+    transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 /* ─── Stamp body — exact prescreen size ─── */
@@ -146,25 +141,35 @@
     flex-shrink: 0;
 }
 
-/* ─── Edit button — bottom-left of user's own stamp, mirrors enter button style ─── */
+/* ─── Edit button — centred on user's own stamp, glassmorphism pill ─── */
 .gb-edit-btn {
     position: absolute;
-    bottom: 25px;
-    left: 13px;
-    background: none;
-    border: none;
-    padding: 4px 8px;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 20px;
+    padding: 5px 13px;
     font-family: 'SFMedium', sans-serif;
     font-size: 9px;
-    letter-spacing: 0.4px;
-    color: rgba(0,0,0,0.45);
-    cursor: pointer;
+    letter-spacing: 0.5px;
+    color: rgba(0, 0, 0, 0.5);
+    cursor: url('/images/wii-pointer-set/WiiPointerHelp.cur'), help;
     outline: none;
     z-index: 10;
-    transition: color 0.25s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-.gb-edit-btn:hover  { color: rgba(0,0,0,0.75); }
-.gb-edit-btn:active { transform: scale(0.97); }
+.gb-edit-btn:hover {
+    background: rgba(255, 255, 255, 0.38);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(0, 0, 0, 0.75);
+}
+.gb-edit-btn:active { transform: translateX(-50%) scale(0.96); }
 
 /* ─── Empty state ─── */
 .gb-empty {
@@ -174,4 +179,175 @@
     font-size: 13px;
     color: rgba(0,0,0,0.35);
     padding: 80px 0;
+}
+
+/* ─── Filter wrap — outer container (All circle + pill) ─── */
+.gb-filter-wrap {
+    position: fixed;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100012;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Circle "All" button + "123" button — shared base */
+.gb-filter-all-btn,
+.gb-filter-123-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    font-family: 'SFMedium', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    color: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    flex-shrink: 0;
+}
+.gb-filter-all-btn:hover,
+.gb-filter-123-btn:hover {
+    color: rgba(0, 0, 0, 0.75);
+    background: rgba(255, 255, 255, 0.38);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+.gb-filter-123-btn.gb-filter-btn-active {
+    background: rgba(45, 100, 255, 0.09) !important;
+    color: #2d64ff !important;
+    border-color: rgba(45, 100, 255, 0.2) !important;
+}
+
+/* Filter pill */
+.gb-filter-bar {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 20px;
+    padding: 4px 6px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.gb-filter-btn {
+    background: none;
+    border: none;
+    padding: 5px 14px;
+    font-family: 'SFMedium', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    color: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    border-radius: 14px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.gb-filter-btn:hover {
+    color: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.05);
+}
+.gb-filter-btn-active {
+    background: rgba(45, 100, 255, 0.09) !important;
+    color: #2d64ff !important;
+}
+/* Palette-open state — keeps the hover look while palette is visible */
+.gb-filter-btn-open {
+    color: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* ─── Filter palette (dropdown panel) — columns set by JS ─── */
+.gb-filter-palette {
+    position: fixed;
+    z-index: 100013;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.17);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    display: grid;
+    gap: 6px;
+}
+.gb-filter-palette[data-key="image"]   { max-height: 210px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.1) transparent; }
+.gb-filter-palette[data-key="image"]::-webkit-scrollbar       { width: 3px; }
+.gb-filter-palette[data-key="image"]::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+
+/* ─── Palette chips ─── */
+.gb-palette-chip {
+    border: none;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: transform 0.12s ease;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    padding: 0;
+}
+.gb-palette-chip:hover  { transform: scale(1.12); }
+.gb-palette-chip:active { transform: scale(0.96); }
+.gb-palette-chip-selected { outline-color: #2d64ff; }
+
+/* Color swatch */
+.gb-palette-color {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+/* Image thumbnail */
+.gb-palette-image {
+    width: 36px;
+    height: 36px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.04);
+}
+.gb-palette-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+}
+
+/* Pattern swatch — same dimensions as image chips */
+.gb-palette-pattern {
+    width: 36px;
+    height: 36px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.04);
+}
+.gb-palette-pattern img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+}
+
+/* Solid / no-pattern chip */
+.gb-palette-solid {
+    font-family: 'SFMedium', sans-serif;
+    font-size: 9px;
+    color: rgba(0,0,0,0.45);
+    background: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.2px;
 }
