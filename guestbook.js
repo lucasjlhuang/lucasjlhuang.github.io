@@ -13,13 +13,15 @@
     let isOpen     = false;
 
     // ─── Filter / sort state ─────────────────────────────────────────────────
-    let activeFilters = {};   // { color: '#hex', image: 'url', pattern: 'id' }
-    let sortByNumber  = false;
-    let originalOrder = [];   // cell elements in insertion order
+    let activeFilters  = {};   // { color: '#hex', image: 'url', pattern: 'id' }
+    let sortByNumber   = false;
+    let originalOrder  = [];   // cell elements in insertion order
+    let updateGen      = 0;    // incremented each updateGrid call to cancel stale phases
 
-    let paletteEl    = null;
-    let filterBarEl  = null;  // outer .gb-filter-wrap
-    let filterPillEl = null;  // inner .gb-filter-bar pill (for palette Y position)
+    let paletteEl          = null;
+    let filterBarEl        = null;  // outer .gb-filter-wrap
+    let filterPillEl       = null;  // inner .gb-filter-bar pill (for palette Y position)
+    let draggableInstances = [];    // GSAP Draggable instances — killed on close
 
     // ─── Edit button SVG tracing ─────────────────────────────────────────────
     function initEditButton(btn) {
@@ -183,7 +185,7 @@
     }
 
     function updateGrid(grid) {
-        const prevHidden = new Set(originalOrder.filter(c => c.style.display === 'none'));
+        const myGen  = ++updateGen;
 
         const visible = originalOrder.filter(c =>  matchesAllFilters(c));
         const hidden  = originalOrder.filter(c => !matchesAllFilters(c));
@@ -194,40 +196,52 @@
             : visible;
 
         if (typeof gsap !== 'undefined') {
-            hidden.forEach(cell => {
-                if (!prevHidden.has(cell)) {
-                    gsap.to(cell, {
-                        opacity: 0, y: -10, duration: 0.18, ease: 'power2.in',
-                        overwrite: 'auto',
-                        onComplete() {
-                            gsap.set(cell, { display: 'none', clearProps: 'y' });
-                        },
-                    });
-                }
-            });
+            const nowVisible      = originalOrder.filter(c => c.style.display !== 'none');
+            const nowVisibleBodies = nowVisible.map(c => c.querySelector('.gb-stamp-body')).filter(Boolean);
 
-            ordered.forEach((cell, i) => {
-                const wasHidden = prevHidden.has(cell);
-                cell.style.display = '';
-                grid.appendChild(cell);
-                if (wasHidden) {
-                    const targetOp = cell.dataset.isUserStamp === '1' ? 0.7 : 1;
+            function revealOrdered() {
+                if (updateGen !== myGen) return; // newer filter fired, abort
+
+                // Hide all, reorder DOM
+                originalOrder.forEach(c => { c.style.display = 'none'; });
+                ordered.forEach(c => grid.appendChild(c));
+                hidden.forEach(c  => grid.appendChild(c));
+
+                // Reveal matching stamps one by one, left to right
+                // x: 0 resets any drag-displaced stamps back to grid position
+                ordered.forEach((cell, i) => {
+                    cell.style.display = '';
+                    const body     = cell.querySelector('.gb-stamp-body');
+                    const targetOp = cell.dataset.isUserStamp === '1' ? 0.4 : 1;
+                    const d        = i * 0.04;
                     gsap.fromTo(cell,
-                        { opacity: 0, y: 10 },
-                        {
-                            opacity: targetOp, y: 0, duration: 0.6, ease: 'power2.out',
-                            delay: i * 0.035, overwrite: 'auto',
-                            onComplete() { gsap.set(cell, { clearProps: 'y' }); },
-                        }
+                        { y: 10, x: 0 },
+                        { y: 0, x: 0, duration: 0.6, ease: 'power2.out', delay: d, overwrite: 'auto',
+                          onComplete() { gsap.set(cell, { clearProps: 'y,x' }); } }
                     );
-                }
-            });
+                    if (body) {
+                        gsap.fromTo(body,
+                            { opacity: 0 },
+                            { opacity: targetOp, duration: 0.6, ease: 'power2.out', delay: d, overwrite: 'auto' }
+                        );
+                    }
+                });
+            }
+
+            if (nowVisibleBodies.length > 0) {
+                // Phase 1: fade all stamp bodies out together, then reveal matching ones
+                gsap.to(nowVisibleBodies, {
+                    opacity: 0, duration: 0.18, ease: 'power2.in',
+                    overwrite: 'auto',
+                    onComplete: revealOrdered,
+                });
+            } else {
+                revealOrdered();
+            }
         } else {
             ordered.forEach(cell => { cell.style.display = ''; grid.appendChild(cell); });
             hidden.forEach(cell  => { cell.style.display = 'none'; grid.appendChild(cell); });
         }
-
-        hidden.forEach(cell => grid.appendChild(cell));
     }
 
     function applyFilter(type, value, grid) {
@@ -240,10 +254,51 @@
         updateFilterBtnStates();
     }
 
+    // ─── Active filter button — fill the whole pill ──────────────────────────
+    const PAT_SWATCHES = {
+        'dots':      '/images/swatch/dots.png',
+        'v-stripes': '/images/swatch/verticle.png',
+        'h-stripes': '/images/swatch/horizontal.png',
+        'topo':      '/images/swatch/topo.png',
+    };
+
     function updateFilterBtnStates() {
         if (!filterBarEl) return;
         filterBarEl.querySelectorAll('.gb-filter-btn').forEach(b => {
-            b.classList.toggle('gb-filter-btn-active', b.dataset.key in activeFilters);
+            const isActive = b.dataset.key in activeFilters;
+            b.classList.toggle('gb-filter-btn-active', isActive);
+            b.classList.toggle('gb-filter-btn-filled',  isActive);
+
+            if (isActive) {
+                const key   = b.dataset.key;
+                const value = activeFilters[key];
+                // Clear text — explicit height + aspect-ratio in CSS sizes the circle
+                b.innerHTML = '';
+
+                if (key === 'color') {
+                    b.style.background      = value;
+                    b.style.backgroundImage = '';
+                } else {
+                    let src = null;
+                    if (key === 'image') {
+                        src = value.replace('/prescreen-big/', '/prescreen-small/');
+                    } else if (key === 'pattern' && value !== 'none') {
+                        src = PAT_SWATCHES[value] || null;
+                    }
+                    if (src) {
+                        b.style.background      = 'rgba(0,0,0,0.04)';
+                        b.style.backgroundImage = `url('${src}')`;
+                    } else {
+                        // 'none' pattern → plain light fill
+                        b.style.background      = '#e8e8e8';
+                        b.style.backgroundImage = '';
+                    }
+                }
+            } else {
+                b.textContent           = b.dataset.label || b.dataset.key;
+                b.style.background      = '';
+                b.style.backgroundImage = '';
+            }
         });
         const sortBtn = filterBarEl.querySelector('.gb-filter-123-btn');
         if (sortBtn) sortBtn.classList.toggle('gb-filter-btn-active', sortByNumber);
@@ -294,9 +349,10 @@
         ];
         defs.filter(d => d.show).forEach(({ key, label }) => {
             const btn = document.createElement('button');
-            btn.className   = 'gb-filter-btn';
-            btn.textContent = label;
-            btn.dataset.key = key;
+            btn.className    = 'gb-filter-btn';
+            btn.textContent  = label;
+            btn.dataset.key  = key;
+            btn.dataset.label = label;   // preserved for restoring inactive text
             btn.addEventListener('click', () => {
                 const alreadyOpen = paletteEl && paletteEl.dataset.key === key;
                 closePalette();
@@ -327,7 +383,7 @@
 
         // Only show options valid under the OTHER active filters (not this key's own filter)
         const otherFiltered = allCards.filter(c => {
-            if (key !== 'color'   && activeFilters.color   && c.border_color  !== activeFilters.color)  return false;
+            if (key !== 'color'   && activeFilters.color   && (c.border_color || '').toLowerCase() !== activeFilters.color)  return false;
             if (key !== 'image'   && activeFilters.image   && c.character_svg !== activeFilters.image)  return false;
             if (key !== 'pattern' && activeFilters.pattern) {
                 if (activeFilters.pattern === 'none') { if (c.pattern_id) return false; }
@@ -337,17 +393,22 @@
         });
 
         if (key === 'color') {
-            const seen = new Map();
-            otherFiltered.forEach(c => {
-                if (c.border_color) {
-                    const norm = c.border_color.toLowerCase();
-                    seen.set(norm, (seen.get(norm) || 0) + 1);
-                }
-            });
-            seen.forEach((_, color) => {
+            // Canonical 30-color palette in the same order as the prescreen picker
+            const CANONICAL = [
+                '#ffffff','#f5f5f5','#e8e0d0','#fadadd','#f4a8b0','#ff6b6b',
+                '#e74c3c','#fff3b0','#f5e6ca','#ffb347','#f39c12','#e67e22',
+                '#d4edda','#a8d5ba','#4ecdc4','#45b7d1','#b8d4e8','#3498db',
+                '#1b4f72','#c4b5d5','#9b59b6','#2c3e50','#1a1a2e','#4a4a5a',
+                '#6c7a89','#2d4739','#6e2c00','#4a235a','#000000','#888888',
+            ];
+            const inData = new Set(
+                otherFiltered.map(c => (c.border_color || '').toLowerCase()).filter(Boolean)
+            );
+            CANONICAL.forEach(color => {
+                if (!inData.has(color)) return; // not present in filtered cards
                 const chip = makeChip('gb-palette-color');
                 chip.style.background = color;
-                chip.title = color;
+                chip.title = color.toUpperCase();
                 if ((activeFilters.color || '').toLowerCase() === color) chip.classList.add('gb-palette-chip-selected');
                 chip.addEventListener('click', () => { applyFilter('color', color, grid); closePalette(); });
                 pal.appendChild(chip);
@@ -460,6 +521,12 @@
         if (isOpen) return;
         isOpen = true;
 
+        // Register Club GSAP plugins if available (safe to call multiple times)
+        if (typeof gsap !== 'undefined') {
+            if (typeof Draggable     !== 'undefined') gsap.registerPlugin(Draggable);
+            if (typeof InertiaPlugin !== 'undefined') gsap.registerPlugin(InertiaPlugin);
+        }
+
         const overlay = document.createElement('div');
         overlay.id = 'gb-overlay';
         overlayEl = overlay;
@@ -525,6 +592,18 @@
                     const editBtn = document.createElement('button');
                     editBtn.className = 'gb-edit-btn';
                     editBtn.textContent = 'edit';
+
+                    // Hover: user's stamp body fades to 100%, then back to 40%
+                    const body = cell.querySelector('.gb-stamp-body');
+                    editBtn.addEventListener('mouseenter', () => {
+                        if (body && typeof gsap !== 'undefined')
+                            gsap.to(body, { opacity: 1, duration: 0.2, overwrite: 'auto' });
+                    });
+                    editBtn.addEventListener('mouseleave', () => {
+                        if (body && typeof gsap !== 'undefined')
+                            gsap.to(body, { opacity: 0.4, duration: 0.2, overwrite: 'auto' });
+                    });
+
                     editBtn.addEventListener('click', e => {
                         e.stopPropagation();
                         closeGuestBook();
@@ -532,24 +611,49 @@
                             if (window.__openEditPrescreen) window.__openEditPrescreen();
                         }, 450);
                     });
-                    const body = cell.querySelector('.gb-stamp-body');
-                    if (body) body.appendChild(editBtn);
+                    // Button is a sibling of stamp-body (not inside it) so it's
+                    // unaffected by the body's 0.4 opacity and stays at 100% always
+                    cell.appendChild(editBtn);
                 }
 
                 grid.appendChild(cell);
                 originalOrder.push(cell);
 
-                // GSAP load-in: staggered one-by-one, matching the filter-reveal animation
+                // GSAP load-in: y on cell, opacity on stamp body
+                // (keeps edit button outside the opacity context → always 100%)
                 if (typeof gsap !== 'undefined') {
-                    const targetOp = isUserStamp ? 0.7 : 1;
+                    const body     = cell.querySelector('.gb-stamp-body');
+                    const targetOp = isUserStamp ? 0.4 : 1;
+                    const d        = 0.08 + i * 0.035;
                     gsap.fromTo(cell,
-                        { opacity: 0, y: 10 },
-                        {
-                            opacity: targetOp, y: 0, duration: 0.6, ease: 'power2.out',
-                            delay: 0.08 + i * 0.035,
-                            onComplete() { gsap.set(cell, { clearProps: 'y' }); },
-                        }
+                        { y: 10 },
+                        { y: 0, duration: 0.6, ease: 'power2.out', delay: d, overwrite: 'auto',
+                          onComplete() { gsap.set(cell, { clearProps: 'y' }); } }
                     );
+                    if (body) {
+                        gsap.fromTo(body,
+                            { opacity: 0 },
+                            { opacity: targetOp, duration: 0.6, ease: 'power2.out', delay: d, overwrite: 'auto' }
+                        );
+                    }
+
+                    // Make non-user stamps draggable with inertia
+                    if (!isUserStamp && typeof Draggable !== 'undefined') {
+                        const inst = Draggable.create(cell, {
+                            type: 'x,y',
+                            inertia: typeof InertiaPlugin !== 'undefined',
+                            zIndexBoost: false,
+                            onDragStart() {
+                                gsap.set(cell, { zIndex: 100 });
+                                document.body.classList.add('gb-is-dragging');
+                            },
+                            onDragEnd() {
+                                gsap.set(cell, { zIndex: '' });
+                                document.body.classList.remove('gb-is-dragging');
+                            },
+                        })[0];
+                        draggableInstances.push(inst);
+                    }
                 }
             });
 
@@ -567,6 +671,10 @@
         sortByNumber  = false;
         filterBarEl   = null;
         filterPillEl  = null;
+
+        // Kill all Draggable instances — fresh ones are created on next open
+        draggableInstances.forEach(d => d.kill());
+        draggableInstances = [];
 
         // Fade crate button out immediately
         const openBtn = document.getElementById('gb-crate-btn');

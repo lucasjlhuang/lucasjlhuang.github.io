@@ -497,8 +497,15 @@ targetFolders.forEach(folder => {
             // ── Mobile: only Gilbert animates in, slam → ripple reveals everything ──
             const gilbertPromise = new Promise(resolve => {
                 setTimeout(() => {
-                    if (gilbertFolder) gilbertFolder.classList.add('appear');
-                    setTimeout(resolve, 500);
+                    if (gilbertFolder) {
+                        gilbertFolder.classList.add('appear');
+                        gsap.fromTo(gilbertFolder,
+                            { scale: 0, opacity: 0 },
+                            { scale: 1, opacity: 1, duration: 0.8, ease: 'elastic.out(1, 0.5)',
+                              onComplete: () => gsap.set(gilbertFolder, { clearProps: 'scale,opacity,transform' }) }
+                        );
+                    }
+                    setTimeout(resolve, 800);
                 }, 0);
             });
 
@@ -525,7 +532,12 @@ targetFolders.forEach(folder => {
                 return new Promise(resolve => {
                     setTimeout(() => {
                         folder.classList.add('appear');
-                        setTimeout(resolve, 500);
+                        gsap.fromTo(folder,
+                            { scale: 0, opacity: 0 },
+                            { scale: 1, opacity: 1, duration: 0.8, ease: 'elastic.out(1, 0.5)',
+                              onComplete: () => gsap.set(folder, { clearProps: 'scale,opacity,transform' }) }
+                        );
+                        setTimeout(resolve, 800);
                     }, index * 175);
                 });
             });

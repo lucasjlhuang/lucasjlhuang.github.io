@@ -70,7 +70,7 @@ function makeMovable(folder, header) {
 document.addEventListener('DOMContentLoaded', () => {
     // Select ALL headers
     const headers = document.querySelectorAll('.projectfolderheader');
-    
+
     // Apply the drag logic to every folder/header pair
     headers.forEach(header => {
         const folder = header.closest('.projectfolder');

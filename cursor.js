@@ -44,8 +44,9 @@
     function pickCursor(target) {
         const body = document.body;
 
-        // Drag overrides everything
-        if (body.classList.contains('is-dragging')) return IMG.grab;
+        // Drag overrides everything (site-wide + guestbook stamp drag)
+        if (body.classList.contains('is-dragging') ||
+            body.classList.contains('gb-is-dragging')) return IMG.grab;
 
         // Click state — but not inside typing field
         if (body.classList.contains('is-clicking')) {
@@ -84,7 +85,8 @@
 
         // Canvas items — open hand (draggable), expanded overlay — open hand
         if (target.closest('.canvas-expand-overlay')) return IMG.openhand;
-        if (target.closest('.canvas-item')) return IMG.openhand;
+        if (target.closest('.canvas-item'))      return IMG.openhand;
+        if (target.closest('.canvas-text-pill')) return IMG.openhand;
         if (target.closest('.tldr-world'))  return IMG.default;
 
         // About-me text zones and TLDR card — default pointer, links get link cursor
@@ -124,6 +126,13 @@
             target.closest('[data-label="Resume"]')
         ) return IMG.link;
 
+        // Guestbook gallery stamps — open hand for draggable (non-user) stamps
+        const gbCell = target.closest('.gb-stamp-cell');
+        if (gbCell) {
+            if (gbCell.dataset.isUserStamp) return IMG.help;
+            return IMG.openhand;
+        }
+
         // Clickable elements
         if (
             target.closest('.dock li') ||
@@ -134,7 +143,6 @@
             target.closest('.in-progress-header') ||
             target.closest('.progress-item') ||
             target.closest('.clickable') ||
-            target.closest('.gb-stamp-cell') ||
             target.closest('button') ||
             target.closest('a')
         ) return IMG.help;
@@ -145,15 +153,21 @@
     let raf = null;
     let mx = -200, my = -200;
 
-    document.addEventListener('mousemove', e => {
+    function onMove(e) {
         mx = e.clientX;
         my = e.clientY;
         if (!raf) raf = requestAnimationFrame(() => {
             el.style.transform = `translate(${mx}px,${my}px)`;
-            setImg(pickCursor(e.target));
+            // elementFromPoint is reliable even when e.target is stale (e.g. during GSAP drag)
+            setImg(pickCursor(document.elementFromPoint(mx, my) || document.body));
             raf = null;
         });
-    }, { passive: true });
+    }
+
+    // mousemove for normal use; pointermove on window for when GSAP Draggable's
+    // preventDefault(pointerdown) suppresses the compatibility mousemove events
+    document.addEventListener('mousemove',  onMove, { passive: true });
+    window.addEventListener('pointermove',  onMove, { passive: true });
 
     // Keep cursor image in sync when body classes change (drag/click states)
     const bodyObserver = new MutationObserver(() => {

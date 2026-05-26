@@ -118,7 +118,7 @@
         <!-- Gray placeholder icons — draggable but no photo -->
         <div class="canvas-item " data-depth="0.9"
              style="left:32%;top:28%;" data-caption="Finally became a Canadian"
-             data-location=":Edmonton, Alberta">
+             data-location="Edmonton, Alberta">
              
             <img src="/images/about-me-images/icons/21.png" alt="">
         </div>
@@ -175,7 +175,7 @@
                 <svg class="north-star" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
                     <!-- Outline drawn by DrawSVG on drag -->
                     <rect class="star-border" x="1" y="1" width="42" height="42"
-                          fill="none" stroke="#3161f9" stroke-width="1.5"/>
+                          fill="none" stroke="#3161f9" stroke-width="1"/>
                     <!-- Star shape — morphs to + on drag -->
                     <path class="north-star-shape"
                           d="M22,2 L25,19 L42,22 L25,25 L22,42 L19,25 L2,22 L19,19 Z"
@@ -188,30 +188,6 @@
             </div>
         </div>
 
-        <!-- TLDR card — shown on "more", content wired by pretext -->
-        <div class="about-tldr-card" id="about-tldr-card" style="display:none;">
-            <div id="tldr-textzone"></div>
-        </div>
-
-        <!-- Story navigator — shown on "more" -->
-        <div class="about-story-nav" id="about-story-nav" style="display:none;">
-            <div id="story-nav-title" class="story-nav-title"></div>
-            <div id="story-textzone"></div>
-            <div class="story-nav-controls">
-                <button class="story-nav-arrow" id="story-prev-btn" aria-label="Previous">&#8249;</button>
-                <button class="story-nav-arrow" id="story-next-btn" aria-label="Next">&#8250;</button>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ── Read toggle ───────────────────────────────────────────────────── -->
-    <div class="read-toggle-wrapper">
-        <span class="read-toggle-label">read</span>
-        <button class="read-more-btn" id="read-more-btn">
-            <span class="toggle-less">less</span>
-            <span class="toggle-more">more</span>
-        </button>
     </div>
 
 </main>

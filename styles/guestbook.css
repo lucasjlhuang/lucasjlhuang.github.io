@@ -119,11 +119,17 @@
 
 /* ─── Each stamp cell — opacity/transform driven by GSAP ─── */
 .gb-stamp-cell {
+    position: relative;
     transition: transform 0.2s ease, filter 0.2s ease;
     filter:
         drop-shadow(0 3px 10px rgba(0,0,0,0.13))
         drop-shadow(0 0 0 0.5px rgba(0,0,0,0.07));
     cursor: url('/images/wii-pointer-set/WiiPointer.cur'), pointer;
+}
+
+/* Non-user stamps get the open-hand cursor */
+.gb-stamp-cell:not([data-is-user-stamp]) {
+    cursor: url('/images/wii-pointer-set/WiiPointerOpenHand.cur'), grab;
 }
 .gb-stamp-cell:hover {
     filter:
@@ -144,10 +150,10 @@
 /* ─── Edit button — centred on user's own stamp, solid blue pill ─── */
 .gb-edit-btn {
     position: absolute;
-    bottom: 20px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    background: rgba(45, 100, 255, 0.6);
+    transform: translate(-50%, -50%);
+    background: #2d64ff;
     border: none;
     border-radius: 20px;
     padding: 5px 13px;
@@ -159,13 +165,14 @@
     outline: none;
     z-index: 10;
     white-space: nowrap;
-    transition: background 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.15s ease, background 0.2s ease;
 }
 .gb-edit-btn:hover {
     background: #2d64ff;
     color: #fff;
+    transform: translate(-50%, -50%) scale(1.08);
 }
-.gb-edit-btn:active { transform: translateX(-50%) scale(0.96); }
+.gb-edit-btn:active { transform: translate(-50%, -50%) scale(0.96); }
 
 /* ─── Empty state ─── */
 .gb-empty {
@@ -253,14 +260,30 @@
     color: rgba(0, 0, 0, 0.7);
     background: rgba(0, 0, 0, 0.05);
 }
+/* Active text state (123 sort button uses this via its own more-specific rule) */
 .gb-filter-btn-active {
-    background: rgba(45, 100, 255, 0.09) !important;
-    color: #2d64ff !important;
+    background: rgba(45, 100, 255, 0.09);
+    color: #2d64ff;
 }
 /* Palette-open state — keeps the hover look while palette is visible */
 .gb-filter-btn-open {
     color: rgba(0, 0, 0, 0.7);
     background: rgba(0, 0, 0, 0.05);
+}
+
+/* ─── Filled active state — shrinks to a circle the same height as the text buttons ─── */
+.gb-filter-btn.gb-filter-btn-filled {
+    padding: 0;
+    /* height matches the inactive text button: 5px pad + ~13px line-height + 5px pad */
+    height: 23px;
+    aspect-ratio: 1;          /* width = height → perfect circle */
+    border-radius: 50%;
+    overflow: hidden;
+    /* inset ring so the border sits inside the circle, not outside it */
+    box-shadow: inset 0 0 0 1.5px rgba(45, 100, 255, 0.55);
+    background-size: cover !important;
+    background-position: center !important;
+    color: transparent !important;
 }
 
 /* ─── Filter palette (dropdown panel) — columns set by JS ─── */
