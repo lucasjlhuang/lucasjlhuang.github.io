@@ -21,9 +21,12 @@ window.STORY_SECTIONS = [
     },
     {
         title: 'Learning through exploration',
+        hideTitle: true,
         body: [
-            { text: `After graduating I decided to travel the world and find ways to learn about design through experiences and adventures. For three years I freelanced and worked odd jobs in Taiwan, Hong Kong, Japan, France, and Germany. I studied their designs, built products, taught students, cleaned hostels, translated, and lived life. I've learned a lot about communicating through design, because often times design was the only way for us to communicate.`, side: 'right' },
-            { text: `Now i'm back home trying to find my next adventure, and catching up for lost time :)`, side: 'left' },
+            { text: `After graduating I decided to travel the world and find ways to learn about design through experiences and adventures.`, side: 'right' },
+            { text: `For three years I freelanced and worked odd jobs in Taiwan 🇹🇼, Hong Kong 🇭🇰, Japan 🇯🇵, France 🇫🇷, and Germany 🇩🇪.`, side: 'right' },
+            { text: `I studied their designs, built products, taught students, cleaned hostels, translated, and lived life. I've learned a lot about communicating through design, because often times design was the only way for us to communicate.`, side: 'left' },
+            { text: `Now i'm back home trying to find my next adventure, and catching up for lost time :)`, side: 'right' },
         ],
     },
 ];
@@ -92,10 +95,10 @@ function initAboutCanvas(contentContainer, windowEl) {
 
     // ── Text pill data ─────────────────────────────────────────────────────────
     const TEXT_PILLS_DATA = [
-        { title: 'TLDR<br>"Super cool guy ;)" — My mom if you asked her.', body: window.TLDR_BODY, left: '35%', top: '44%' },
+        { title: 'TLDR<br>"Super cool guy ;)" — My mom if you asked her.', hideTitle: true, body: window.TLDR_BODY, left: '35%', top: '44%' },
         { title: 'Hello hello',                  body: window.STORY_SECTIONS[0].body,  left: '52%', top: '22%' },
-        { title: 'Designer by accident',         body: window.STORY_SECTIONS[1].body,  left: '18%', top: '60%' },
-        { title: 'Learning through exploration', body: window.STORY_SECTIONS[2].body,  left: '63%', top: '52%' },
+        { title: 'Designer by accident', hideTitle: true, body: window.STORY_SECTIONS[1].body, left: '18%', top: '60%' },
+        { title: 'Learning through exploration', hideTitle: true, body: window.STORY_SECTIONS[2].body, left: '63%', top: '52%' },
     ];
 
     // ── Create text pills ──────────────────────────────────────────────────────
@@ -464,15 +467,26 @@ function initAboutCanvas(contentContainer, windowEl) {
 
         ov.phase = 'shrinking';
         ov.el.classList.remove('is-expanded');
-        // Leave 'is-text' intact — removing it mid-close shows the blank image layout.
 
-        // For text overlays: hide panel content instantly before collapse
+        // ── Text overlay: stagger chat bubbles up then remove ─────────────────
         if (ov.activeType === 'text') {
-            const tp = ov.el.querySelector('.overlay-tp');
-            tp.style.transition = 'none';
-            tp.style.opacity    = '0';
+            const rows = Array.from(ov.el.querySelectorAll('.chat-row'));
+            gsap.to(rows, {
+                opacity: 0,
+                y: -14,
+                duration: 0.18,
+                stagger: 0.06,
+                ease: 'power2.in',
+                onComplete: () => {
+                    ov.el.remove();
+                    overlays.splice(overlays.indexOf(ov), 1);
+                    if (pill) { pill.style.left = pill._defaultLeft; pill.style.top = pill._defaultTop; popItemIn(pill); }
+                }
+            });
+            return;
         }
 
+        // ── Image overlay: shrink back to star ────────────────────────────────
         const pc   = centerOf(placeholder);
         const EASE = 'cubic-bezier(0.4, 0, 0.6, 1)';
         const DUR  = '0.2s';
@@ -548,60 +562,130 @@ function initAboutCanvas(contentContainer, windowEl) {
         ov.el.classList.add('is-text');
         ov.el.style.display = 'block';
 
-        const pc = centerOf(placeholder);
-        snapOv(ov, pc.x, pc.y, STAR_W, STAR_H, 8);
+        const ccW = contentContainer.offsetWidth;
+        const ccH = contentContainer.offsetHeight;
+        const cx  = ccW / 2;
+        const cy  = ccH / 2;
 
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-            const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
-            const DUR  = '0.32s';
-            ov.el.style.transition   = `left ${DUR} ${EASE}, top ${DUR} ${EASE}, width ${DUR} ${EASE}, height ${DUR} ${EASE}, border-radius ${DUR} ${EASE}`;
-            ov.el.style.left         = (pc.x - EXP_TEXT_W / 2) + 'px';
-            ov.el.style.top          = (pc.y - EXP_TEXT_H / 2) + 'px';
-            ov.el.style.width        = EXP_TEXT_W + 'px';
-            ov.el.style.height       = EXP_TEXT_H + 'px';
-            ov.el.style.borderRadius = '16px';
-            ov.el.classList.add('is-expanded');
-            ov.el.addEventListener('transitionend', function onExpand(ev) {
-                if (ev.propertyName !== 'width') return;
-                ov.el.removeEventListener('transitionend', onExpand);
-                ov.phase = 'open';
-            });
-        }));
+        // Place at full size to measure natural content height
+        ov.el.style.transition   = 'none';
+        ov.el.style.left         = (cx - EXP_TEXT_W / 2) + 'px';
+        ov.el.style.top          = (cy - EXP_TEXT_H / 2) + 'px';
+        ov.el.style.width        = EXP_TEXT_W + 'px';
+        ov.el.style.height       = EXP_TEXT_H + 'px';
+        ov.el.style.borderRadius = '16px';
+        ov.el.classList.add('is-expanded');
+
+        // Measure actual row heights (rows are in DOM even at opacity 0)
+        ov.el.offsetHeight; // force reflow
+        const rows = Array.from(ov.el.querySelectorAll('.chat-row'));
+        const tp   = ov.el.querySelector('.overlay-tp');
+        const pad  = parseFloat(getComputedStyle(tp).paddingTop) +
+                     parseFloat(getComputedStyle(tp).paddingBottom);
+        let contentH = pad;
+        rows.forEach(r => { contentH += r.offsetHeight + 8; });
+        if (rows.length) contentH -= 8; // remove trailing gap
+        const actualH = Math.min(Math.max(contentH, 80), EXP_TEXT_H);
+
+        // Reposition vertically using true content height
+        ov.el.style.top    = (cy - actualH / 2) + 'px';
+        ov.el.style.height = actualH + 'px';
+
+        // Stagger chat bubbles in from below
+        gsap.fromTo(rows,
+            { opacity: 0, y: 14 },
+            {
+                opacity: 1, y: 0,
+                duration: 0.18,
+                stagger: 0.06,
+                ease: 'power2.out',
+                onComplete: () => { ov.phase = 'open'; }
+            }
+        );
     }
 
     // ── Overlay: swap content (drop on existing overlay) ──────────────────────
     function swapAt(ov, item) {
-        if (ov.activeType === 'text') {
-            const dims = getExpImgDims();
-            const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)', DUR = '0.22s';
-            ov.el.style.transition   = `width ${DUR} ${EASE}, height ${DUR} ${EASE}, border-radius ${DUR} ${EASE}`;
-            ov.el.style.width        = dims.w + 'px';
-            ov.el.style.height       = dims.h + 'px';
-            ov.el.style.borderRadius = '0px';
-            ov.el.classList.remove('is-text');
-            ov.el.classList.add('is-expanded');
-        }
         const prev = ov.activeItem, prevPill = ov.activePill;
-        ov.activeItem = item; ov.activePill = null; ov.activeType = 'image';
-        setImageContent(ov, item);
-        if (prev)     { prev.style.left     = prev._defaultLeft;     prev.style.top     = prev._defaultTop;     popItemIn(prev);     }
-        if (prevPill) { prevPill.style.left = prevPill._defaultLeft; prevPill.style.top = prevPill._defaultTop; popItemIn(prevPill); }
+
+        const doSwap = () => {
+            ov.activeItem = item; ov.activePill = null; ov.activeType = 'image';
+            setImageContent(ov, item);
+            if (prev)     { prev.style.left     = prev._defaultLeft;     prev.style.top     = prev._defaultTop;     popItemIn(prev);     }
+            if (prevPill) { prevPill.style.left = prevPill._defaultLeft; prevPill.style.top = prevPill._defaultTop; popItemIn(prevPill); }
+        };
+
+        if (ov.activeType === 'text') {
+            // Stagger out old bubbles, then resize centered on same point
+            const oldRows = Array.from(ov.el.querySelectorAll('.chat-row'));
+            gsap.to(oldRows, {
+                opacity: 0, y: -14, duration: 0.18, stagger: 0.06, ease: 'power2.in',
+                onComplete: () => {
+                    const dims = getExpImgDims();
+                    const cr   = contentContainer.getBoundingClientRect();
+                    const or   = ov.el.getBoundingClientRect();
+                    const ocx  = or.left - cr.left + or.width  / 2;
+                    const ocy  = or.top  - cr.top  + or.height / 2;
+                    const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)', DUR = '0.22s';
+                    ov.el.style.transition   = `left ${DUR} ${EASE}, top ${DUR} ${EASE}, width ${DUR} ${EASE}, height ${DUR} ${EASE}, border-radius ${DUR} ${EASE}`;
+                    ov.el.style.left         = (ocx - dims.w / 2) + 'px';
+                    ov.el.style.top          = (ocy - dims.h / 2) + 'px';
+                    ov.el.style.width        = dims.w + 'px';
+                    ov.el.style.height       = dims.h + 'px';
+                    ov.el.style.borderRadius = '0px';
+                    ov.el.classList.remove('is-text');
+                    ov.el.classList.add('is-expanded');
+                    doSwap();
+                }
+            });
+        } else {
+            doSwap();
+        }
     }
 
     function swapAtText(ov, pill) {
-        if (ov.activeType === 'image') {
+        cancelBubbleGenie(ov);
+        const bubble = ov.el.querySelector('.overlay-caption-bubble');
+        if (bubble) gsap.set(bubble, { opacity: 0 });
+        const prev = ov.activePill, prevItem = ov.activeItem;
+        const wasType = ov.activeType;
+        ov.activeType = 'text'; // set immediately so mouseenter won't re-show bubble
+
+        const doSwap = () => {
+            ov.activePill = pill; ov.activeItem = null;
+            setTextContent(ov, pill);
+            const newRows = Array.from(ov.el.querySelectorAll('.chat-row'));
+            gsap.fromTo(newRows,
+                { opacity: 0, y: 14 },
+                { opacity: 1, y: 0, duration: 0.18, stagger: 0.06, ease: 'power2.out' }
+            );
+            if (prev)     { prev.style.left     = prev._defaultLeft;     prev.style.top     = prev._defaultTop;     popItemIn(prev);     }
+            if (prevItem) { prevItem.style.left = prevItem._defaultLeft; prevItem.style.top = prevItem._defaultTop; popItemIn(prevItem); }
+        };
+
+        if (wasType === 'text') {
+            // Stagger out old bubbles, then stagger in new ones
+            const oldRows = Array.from(ov.el.querySelectorAll('.chat-row'));
+            gsap.to(oldRows, {
+                opacity: 0, y: -14, duration: 0.18, stagger: 0.06, ease: 'power2.in',
+                onComplete: doSwap
+            });
+        } else {
+            // image → text: resize centered on current overlay center, then stagger in
+            const cr   = contentContainer.getBoundingClientRect();
+            const or   = ov.el.getBoundingClientRect();
+            const ocx  = or.left - cr.left + or.width  / 2;
+            const ocy  = or.top  - cr.top  + or.height / 2;
             const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)', DUR = '0.22s';
-            ov.el.style.transition   = `width ${DUR} ${EASE}, height ${DUR} ${EASE}, border-radius ${DUR} ${EASE}`;
+            ov.el.style.transition   = `left ${DUR} ${EASE}, top ${DUR} ${EASE}, width ${DUR} ${EASE}, height ${DUR} ${EASE}, border-radius ${DUR} ${EASE}`;
+            ov.el.style.left         = (ocx - EXP_TEXT_W / 2) + 'px';
+            ov.el.style.top          = (ocy - EXP_TEXT_H / 2) + 'px';
             ov.el.style.width        = EXP_TEXT_W + 'px';
             ov.el.style.height       = EXP_TEXT_H + 'px';
             ov.el.style.borderRadius = '16px';
             ov.el.classList.add('is-text');
+            setTimeout(doSwap, 220);
         }
-        const prev = ov.activePill, prevItem = ov.activeItem;
-        ov.activePill = pill; ov.activeItem = null; ov.activeType = 'text';
-        setTextContent(ov, pill);
-        if (prev)     { prev.style.left     = prev._defaultLeft;     prev.style.top     = prev._defaultTop;     popItemIn(prev);     }
-        if (prevItem) { prevItem.style.left = prevItem._defaultLeft; prevItem.style.top = prevItem._defaultTop; popItemIn(prevItem); }
     }
 
     // ── Overlay interaction: click-to-close + drag to reposition ──────────────
@@ -687,7 +771,7 @@ function initAboutCanvas(contentContainer, windowEl) {
             e.preventDefault();
             e.stopPropagation();
 
-            el._popping  = false;
+            el._popping       = false;
             draggingItem = el;
             canvas.classList.remove('locations-visible');
             animateStarDrag();
@@ -706,6 +790,12 @@ function initAboutCanvas(contentContainer, windowEl) {
             el.style.removeProperty('--py');
             el.style.left = (elCX - elW / 2) + 'px';
             el.style.top  = (elCY - elH / 2) + 'px';
+
+            // Reparent to contentContainer so it stacks above overlays
+            el.style.position = 'absolute';
+            el.style.zIndex   = ++zCounter;
+            contentContainer.appendChild(el);
+
             el.classList.add('is-dragging');
             document.body.classList.add('is-dragging');
 
@@ -720,6 +810,10 @@ function initAboutCanvas(contentContainer, windowEl) {
                 document.removeEventListener('mouseup',   onUp);
                 el.classList.remove('is-dragging');
                 el.style.removeProperty('transform');
+                el.style.removeProperty('z-index');
+                el.style.removeProperty('position');
+                // Return to canvas (coordinates are identical since canvas is inset:0)
+                canvas.appendChild(el);
                 document.body.classList.remove('is-dragging');
                 draggingItem = null;
                 animateStarReset();
