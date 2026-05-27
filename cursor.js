@@ -126,11 +126,11 @@
             target.closest('[data-label="Resume"]')
         ) return IMG.link;
 
-        // Guestbook gallery stamps — open hand for draggable (non-user) stamps
+        // Guestbook gallery stamps
         const gbCell = target.closest('.gb-stamp-cell');
         if (gbCell) {
             if (gbCell.dataset.isUserStamp) return IMG.help;
-            return IMG.openhand;
+            return IMG.default;
         }
 
         // Clickable elements

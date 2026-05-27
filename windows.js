@@ -545,13 +545,50 @@ targetFolders.forEach(folder => {
             Promise.all(growthPromises).then(() => {
                 const lastFolder = finalLoadingQueue[finalLoadingQueue.length - 1];
                 lastFolder.classList.add('system-trigger');
+                lastFolder.addEventListener('animationend', () => lastFolder.classList.remove('system-trigger'), { once: true });
                 setTimeout(() => {
                     triggerSystemRipple(lastFolder, staticFolders);
                     document.body.classList.add('system-ready');
                     document.dispatchEvent(new CustomEvent('system:ready'));
+                    startIdleAnimations([...finalLoadingQueue, ...staticFolders]);
                 }, 365);
             });
         }
+    }
+
+    function startIdleAnimations(allFolders) {
+        const RADIUS   = 120;
+        const STRENGTH = 10;
+
+        document.addEventListener('mousemove', (e) => {
+            allFolders.forEach(folder => {
+                const r    = folder.getBoundingClientRect();
+                const cx   = r.left + r.width  / 2;
+                const cy   = r.top  + r.height / 2;
+                const dx   = e.clientX - cx;
+                const dy   = e.clientY - cy;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist < RADIUS && dist > 0) {
+                    const t  = 1 - dist / RADIUS;
+                    gsap.to(folder, {
+                        x: (dx / dist) * STRENGTH * t,
+                        y: (dy / dist) * STRENGTH * t,
+                        duration: 0.4, ease: 'power2.out', overwrite: 'auto',
+                        onStart: () => { folder.style.transition = 'none'; },
+                    });
+                } else {
+                    gsap.to(folder, {
+                        x: 0, y: 0,
+                        duration: 0.6, ease: 'power2.out', overwrite: 'auto',
+                        onComplete: () => {
+                            folder.style.transition = '';
+                            gsap.set(folder, { clearProps: 'x,y' });
+                        },
+                    });
+                }
+            });
+        }, { passive: true });
     }
 
     function triggerSystemRipple(element, staticFolders, otherFolders = []) {

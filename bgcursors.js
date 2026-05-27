@@ -31,10 +31,9 @@
 
     /* ── Config ─────────────────────────────────────────────────────────────── */
     const PLAYERS     = ['P2', 'P3', 'P4'];
-    const IMG_COUNT   = 59;
     const BLOCK_SZ    = 40;
-    const STEP        = BLOCK_SZ + 3;
-    const RADIUS      = 4;
+    const STEP        = BLOCK_SZ + 2;
+    const RADIUS      = 3;
     const CURSOR_SZ   = 64;
     const DOCK_H      = 72;
     const SCATTER_N   = 9;
@@ -44,7 +43,20 @@
     const HOLD_OY     = Math.round(CURSOR_SZ * 0.55);
 
     /* ── Shapes — [col, row], row 0 = bottom, builds in array order ─────────── */
+    // groundAnchor: true → row 0 always sits on the floor (above dock)
     const SHAPES = {
+
+        // Jenga tower — 3 wide × 5 tall, floor-anchored
+        jenga: {
+            cells: [
+                [0,0],[1,0],[2,0],
+                [0,1],[1,1],[2,1],
+                [0,2],[1,2],[2,2],
+                [0,3],[1,3],[2,3],
+                [0,4],[1,4],[2,4],
+            ],
+            groundAnchor: true,
+        },
 
         // Smiley — curved mouth + eyes, no top arc
         smiley: [
@@ -114,6 +126,13 @@
     let fillIndex     = 0;
     let running       = false;
 
+    /* ── Physics (Matter.js) ─────────────────────────────────────────────────── */
+    let physEngine   = null;
+    let physWorld    = null;
+    const physBodies = []; // { el, body, removeAt }
+    let lastPhysTime = 0;
+    let userDrag     = null; // { body, el, offsetX, offsetY, velX, velY }
+
     /* ── Utils ───────────────────────────────────────────────────────────────── */
     function rand(a, b)        { return Math.random() * (b - a) + a; }
     function randInt(a, b)     { return Math.floor(rand(a, b + 1)); }
@@ -133,9 +152,13 @@
     }
 
     function pickNewShape() {
-        const keys  = Object.keys(SHAPES);
-        const key   = keys[randInt(0, keys.length - 1)];
-        const cells = SHAPES[key];
+        const keys    = Object.keys(SHAPES);
+        const key     = keys[randInt(0, keys.length - 1)];
+        const shapeDef = SHAPES[key];
+
+        // Support both plain array and { cells, groundAnchor } object formats
+        const cells       = Array.isArray(shapeDef) ? shapeDef : shapeDef.cells;
+        const groundAnchor = !Array.isArray(shapeDef) && shapeDef.groundAnchor;
 
         const maxCol = Math.max(...cells.map(([c]) => c));
         const maxRow = Math.max(...cells.map(([,r]) => r));
@@ -143,18 +166,22 @@
         const shapeH = (maxRow + 1) * STEP;
 
         const margin  = 80;
-        const topSafe = margin + shapeH;
-        const botSafe = window.innerHeight - DOCK_H - margin;
         const lftSafe = margin;
         const rgtSafe = window.innerWidth - shapeW - margin;
 
-        // Try up to 12 random positions, keep the one with fewest overlaps
-        let bestPlan   = null;
-        let bestCount  = Infinity;
+        // Ground-anchored shapes always sit on the floor; others float anywhere safe
+        const floorY  = window.innerHeight - DOCK_H - 10;
+        const topSafe = margin + shapeH;
+        const botSafe = window.innerHeight - DOCK_H - margin;
+
+        let bestPlan  = null;
+        let bestCount = Infinity;
 
         for (let i = 0; i < 12; i++) {
             const anchorX = lftSafe < rgtSafe ? rand(lftSafe, rgtSafe) : window.innerWidth  / 2 - shapeW / 2;
-            const anchorY = topSafe < botSafe ? rand(topSafe, botSafe) : window.innerHeight / 2;
+            const anchorY = groundAnchor
+                ? floorY
+                : (topSafe < botSafe ? rand(topSafe, botSafe) : window.innerHeight / 2);
 
             const plan = cells.map(([col, row]) => ({
                 x: anchorX + col * STEP,
@@ -180,26 +207,41 @@
         return fillIndex < shapePlan.length ? shapePlan[fillIndex] : null;
     }
 
+    /* ── Tetris colours ──────────────────────────────────────────────────────── */
+    const TETRIS_COLORS = [
+        '#FF5A5A', // red
+        '#FF9F1C', // orange
+        '#FFD60A', // yellow
+        '#4CC9F0', // cyan
+        '#4361EE', // blue
+        '#7B2FBE', // purple
+        '#2DC653', // green
+        '#F72585', // pink
+    ];
+
     /* ── Block factory ───────────────────────────────────────────────────────── */
-    function makeBlockEl(idx) {
-        idx = idx ?? randInt(1, IMG_COUNT);
+    function makeBlockEl(color) {
+        color = color ?? TETRIS_COLORS[randInt(0, TETRIS_COLORS.length - 1)];
         const el = document.createElement('div');
-        el.style.cssText = `position:absolute;width:${BLOCK_SZ}px;height:${BLOCK_SZ}px;
-            background:#fff;overflow:hidden;pointer-events:none;will-change:transform;
-            border-radius:${RADIUS}px;transform-origin:center;
-            box-shadow:0 2px 8px rgba(0,0,0,.13),0 0 0 .5px rgba(0,0,0,.07);`;
-        const img = document.createElement('img');
-        img.src = `/images/prescreen-small/${idx}.png`;
-        img.draggable = false;
-        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;';
-        el.appendChild(img);
-        return { el, idx };
+        el.dataset.blockColor = color;
+        el.style.cssText = `
+            position:absolute; width:${BLOCK_SZ}px; height:${BLOCK_SZ}px;
+            background:${color};
+            box-sizing:border-box;
+            border-top:3px solid rgba(255,255,255,0.55);
+            border-left:3px solid rgba(255,255,255,0.55);
+            border-bottom:3px solid rgba(0,0,0,0.28);
+            border-right:3px solid rgba(0,0,0,0.28);
+            border-radius:${RADIUS}px;
+            pointer-events:auto; will-change:transform; transform-origin:center;
+        `;
+        return { el, color };
     }
 
     /* ── Scatter blocks ──────────────────────────────────────────────────────── */
     function spawnBlock() {
         if (!running) return;
-        const { el, idx } = makeBlockEl();
+        const { el, color } = makeBlockEl();
         const margin = 80;
         const x = rand(margin, window.innerWidth  - margin - BLOCK_SZ);
         const y = rand(margin, window.innerHeight - DOCK_H - margin - BLOCK_SZ);
@@ -208,7 +250,7 @@
         el.style.transition = 'opacity .4s ease';
         scene.appendChild(el);
         requestAnimationFrame(() => { el.style.opacity = '1'; });
-        scattered.push({ el, x, y, idx, claimed: false });
+        scattered.push({ el, x, y, color, claimed: false });
     }
 
     /* ── Pile / shape ────────────────────────────────────────────────────────── */
@@ -233,27 +275,45 @@
         const toFall = pileBlocks.splice(0);
         fillIndex = 0;
 
-        toFall.forEach(({ el, x, y }, i) => {
-            el.style.pointerEvents = 'none';
-            const dx    = rand(-200, 200);
-            const rot   = rand(-130, 130);
-            const delay = i * 28;
+        if (physEngine && physWorld && typeof Matter !== 'undefined') {
+            const { Bodies, Body, Composite } = Matter;
+            const lifetime = 4000;
 
-            el.animate([
-                { transform: `translate(${x}px,${y}px) rotate(0deg)`,                  opacity: 1,    offset: 0    },
-                { transform: `translate(${x}px,${y}px) rotate(-7deg)`,                 opacity: 1,    offset: 0.08 },
-                { transform: `translate(${x}px,${y}px) rotate(9deg)`,                  opacity: 1,    offset: 0.16 },
-                { transform: `translate(${x}px,${y}px) rotate(-6deg)`,                 opacity: 1,    offset: 0.24 },
-                { transform: `translate(${x}px,${y}px) rotate(4deg)`,                  opacity: 1,    offset: 0.32 },
-                { transform: `translate(${x}px,${y}px) rotate(0deg)`,                  opacity: 1,    offset: 0.38 },
-                { transform: `translate(${x+dx*.3}px,${y+50}px) rotate(${rot*.5}deg)`, opacity: 0.8,  offset: 0.58 },
-                { transform: `translate(${x+dx}px,${y+240}px)   rotate(${rot}deg)`,    opacity: 0,    offset: 1    },
-            ], { duration: 1100, delay, easing: 'ease-in', fill: 'forwards' });
+            toFall.forEach(({ el, x, y }) => {
+                el.style.pointerEvents = 'none';
+                el.removeEventListener('click', collapsePile);
+                el.style.transition = 'none';
 
-            setTimeout(() => el.remove(), 1100 + delay + 250);
-        });
+                const cx   = x + BLOCK_SZ / 2;
+                const cy   = y + BLOCK_SZ / 2;
+                const body = Bodies.rectangle(cx, cy, BLOCK_SZ - 1, BLOCK_SZ - 1, {
+                    restitution:  0.3,
+                    friction:     0.55,
+                    frictionAir:  0.008,
+                    density:      0.003,
+                });
+                Body.setVelocity(body,        { x: rand(-5, 5), y: rand(-14, -5) });
+                Body.setAngularVelocity(body, rand(-0.25, 0.25));
+                Composite.add(physWorld, body);
+                physBodies.push({ el, body, removeAt: performance.now() + lifetime });
+            });
+        } else {
+            // Fallback when Matter.js isn't loaded
+            toFall.forEach(({ el, x, y }, i) => {
+                el.style.pointerEvents = 'none';
+                const dx    = rand(-200, 200);
+                const rot   = rand(-130, 130);
+                const delay = i * 28;
+                el.animate([
+                    { transform: `translate(${x}px,${y}px) rotate(0deg)`,                  opacity: 1,   offset: 0    },
+                    { transform: `translate(${x+dx*.3}px,${y+50}px) rotate(${rot*.5}deg)`, opacity: 0.8, offset: 0.55 },
+                    { transform: `translate(${x+dx}px,${y+240}px) rotate(${rot}deg)`,      opacity: 0,   offset: 1    },
+                ], { duration: 1100, delay, easing: 'ease-in', fill: 'forwards' });
+                setTimeout(() => el.remove(), 1100 + delay + 250);
+            });
+        }
 
-        setTimeout(pickNewShape, 1500);
+        setTimeout(pickNewShape, 2200);
     }
 
     /* ── Fade-out clear (for toggle off) ─────────────────────────────────────── */
@@ -275,6 +335,212 @@
         });
         pileBlocks.length = 0;
         fillIndex = 0;
+
+        // Clean up active TTT game
+        if (ttt.active) {
+            ttt.lines.forEach(el => el.remove());
+            ttt.blocks.forEach(el => el.remove());
+            ttt.lines  = [];
+            ttt.blocks = [];
+            ttt.active = false;
+            ttt.npcIdx = -1;
+        }
+
+        // Drop any user-dragged block
+        if (userDrag && physEngine) {
+            Matter.Body.setStatic(userDrag.body, false);
+            Matter.Composite.remove(physWorld, userDrag.body);
+            userDrag.el.remove();
+            userDrag = null;
+        }
+
+        // Clean up any in-flight physics bodies
+        if (physEngine && physWorld && typeof Matter !== 'undefined') {
+            physBodies.forEach(pb => {
+                Matter.Composite.remove(physWorld, pb.body);
+                pb.el.style.transition = `opacity ${fadeDur}ms ease`;
+                pb.el.style.opacity    = '0';
+                setTimeout(() => pb.el.remove(), fadeDur + 100);
+            });
+            physBodies.length = 0;
+        }
+    }
+
+    /* ── Physics init ────────────────────────────────────────────────────────── */
+    function initPhysics() {
+        if (typeof Matter === 'undefined') return;
+        const { Engine, Bodies, Composite } = Matter;
+
+        physEngine = Engine.create({ gravity: { x: 0, y: 2.2 } });
+        physWorld  = physEngine.world;
+
+        const W = window.innerWidth;
+        const H = window.innerHeight;
+
+        // Ground sits just above the dock, walls on each side
+        Composite.add(physWorld, [
+            Bodies.rectangle(W / 2,   H - DOCK_H + 30, W + 200, 60, { isStatic: true, label: 'ground' }),
+            Bodies.rectangle(-25,     H / 2,            50,  H * 2,  { isStatic: true, label: 'wallL'  }),
+            Bodies.rectangle(W + 25,  H / 2,            50,  H * 2,  { isStatic: true, label: 'wallR'  }),
+        ]);
+    }
+
+    /* ── Tic-Tac-Toe ────────────────────────────────────────────────────────── */
+    const TTT_CELL       = STEP + 10;   // spacing between cell top-lefts
+    const TTT_USER_COLOR = '#DEDEDE';
+    const TTT_NPC_COLORS = ['#FF3838', '#10BD0D', '#FF9C00'];
+
+    const ttt = {
+        active: false, npcIdx: -1,
+        board: Array(9).fill(null), // null | 'user' | 'npc'
+        cells: [],                  // { x, y } × 9
+        blocks: [],                 // placed block elements
+        lines: [],                  // grid line elements
+        waitingForUser: false,
+        gameOver: false,
+        npcColor: '',
+    };
+
+    function startTicTacToe(npcIdx) {
+        if (ttt.active) return;
+        const W = window.innerWidth, H = window.innerHeight;
+        const gridSpan = 2 * TTT_CELL + BLOCK_SZ;
+        const ax = rand(W * 0.2, W * 0.72 - gridSpan);
+        const ay = rand(H * 0.18, H * 0.55 - gridSpan);
+
+        ttt.active         = true;
+        ttt.npcIdx         = npcIdx;
+        ttt.board          = Array(9).fill(null);
+        ttt.blocks         = [];
+        ttt.lines          = [];
+        ttt.waitingForUser = true;
+        ttt.gameOver       = false;
+        ttt.npcColor       = TTT_NPC_COLORS[npcIdx % TTT_NPC_COLORS.length];
+
+        ttt.cells = [];
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                ttt.cells.push({ x: ax + c * TTT_CELL, y: ay + r * TTT_CELL });
+            }
+        }
+        drawTTTGrid(ax, ay, gridSpan);
+    }
+
+    function drawTTTGrid(ax, ay, span) {
+        const lineH = span + 12;
+        const thick = 3;
+        // gap centre between cells: ax + BLOCK_SZ + (TTT_CELL - BLOCK_SZ) / 2 = ax + TTT_CELL - TTT_CELL/2 + BLOCK_SZ/2
+        const gap1 = ax + BLOCK_SZ + (TTT_CELL - BLOCK_SZ) / 2 - thick / 2;
+        const gap2 = gap1 + TTT_CELL;
+        const gapR1 = ay + BLOCK_SZ + (TTT_CELL - BLOCK_SZ) / 2 - thick / 2;
+        const gapR2 = gapR1 + TTT_CELL;
+
+        [[gap1, ay - 6, thick, lineH], [gap2, ay - 6, thick, lineH],
+         [ax - 6, gapR1, lineH, thick], [ax - 6, gapR2, lineH, thick]
+        ].forEach(([x, y, w, h]) => {
+            const el = document.createElement('div');
+            el.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;
+                background:rgba(0,0,0,0.13);border-radius:2px;pointer-events:none;z-index:3;
+                opacity:0;transition:opacity 0.35s ease;`;
+            scene.appendChild(el);
+            ttt.lines.push(el);
+            requestAnimationFrame(() => { el.style.opacity = '1'; });
+        });
+    }
+
+    function tttCheckWin(board, player) {
+        return [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
+            .some(([a,b,c]) => board[a] === player && board[b] === player && board[c] === player);
+    }
+
+    function tttNPCPick() {
+        // Win → block user → center → corner → any
+        for (const player of ['npc', 'user']) {
+            for (let i = 0; i < 9; i++) {
+                if (ttt.board[i] !== null) continue;
+                const t = [...ttt.board]; t[i] = player;
+                if (tttCheckWin(t, player)) return i;
+            }
+        }
+        if (ttt.board[4] === null) return 4;
+        const corners = [0,2,6,8].filter(i => ttt.board[i] === null);
+        if (corners.length) return corners[randInt(0, corners.length - 1)];
+        const empty = ttt.board.map((v, i) => v === null ? i : -1).filter(i => i !== -1);
+        return empty.length ? empty[randInt(0, empty.length - 1)] : -1;
+    }
+
+    function placeTTTBlock(cellIdx, player) {
+        if (cellIdx < 0 || ttt.board[cellIdx] !== null) return false;
+        const { x, y } = ttt.cells[cellIdx];
+        const color = player === 'user' ? TTT_USER_COLOR : ttt.npcColor;
+        const { el } = makeBlockEl(color);
+        el.style.transform     = `translate(${x}px,${y}px)`;
+        el.style.opacity       = '0';
+        el.style.transition    = 'opacity 0.2s ease, transform 0.2s ease';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex        = '4';
+        scene.appendChild(el);
+        requestAnimationFrame(() => { el.style.opacity = '1'; });
+        ttt.board[cellIdx] = player;
+        ttt.blocks.push(el);
+        return true;
+    }
+
+    function endTicTacToe(result) {
+        ttt.gameOver = true;
+        ttt.waitingForUser = false;
+        const delay = result === 'draw' ? 900 : 1400;
+        setTimeout(() => {
+            ttt.lines.forEach(el => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 400);
+            });
+            if (physEngine && physWorld) {
+                ttt.blocks.forEach(el => {
+                    const r  = el.getBoundingClientRect();
+                    const cx = r.left + r.width  / 2;
+                    const cy = r.top  + r.height / 2;
+                    const body = Matter.Bodies.rectangle(cx, cy, BLOCK_SZ - 1, BLOCK_SZ - 1,
+                        { restitution: 0.35, friction: 0.5, frictionAir: 0.008, density: 0.003 });
+                    Matter.Body.setVelocity(body,        { x: rand(-7, 7), y: rand(-14, -5) });
+                    Matter.Body.setAngularVelocity(body, rand(-0.3, 0.3));
+                    Matter.Composite.add(physWorld, body);
+                    el.style.transition = 'none';
+                    physBodies.push({ el, body, removeAt: performance.now() + 4500 });
+                });
+            } else {
+                ttt.blocks.forEach(el => el.remove());
+            }
+            ttt.blocks = [];
+            ttt.lines  = [];
+            ttt.active = false;
+            ttt.npcIdx = -1;
+        }, delay);
+    }
+
+    function onTTTCellClick(mx, my) {
+        if (!ttt.active || !ttt.waitingForUser || ttt.gameOver) return false;
+        const cellIdx = ttt.cells.findIndex(({ x, y }) =>
+            mx >= x && mx <= x + BLOCK_SZ && my >= y && my <= y + BLOCK_SZ
+        );
+        if (cellIdx < 0 || ttt.board[cellIdx] !== null) return false;
+
+        placeTTTBlock(cellIdx, 'user');
+        ttt.waitingForUser = false;
+
+        if (tttCheckWin(ttt.board, 'user'))         { setTimeout(() => endTicTacToe('user-wins'), 350); return true; }
+        if (ttt.board.every(v => v !== null))        { setTimeout(() => endTicTacToe('draw'),      350); return true; }
+
+        // Send the NPC to its chosen cell
+        const npc = NPCS[ttt.npcIdx];
+        if (!npc) { endTicTacToe('draw'); return true; }
+        const pick = tttNPCPick();
+        if (pick < 0) { endTicTacToe('draw'); return true; }
+        npc.tttPick = pick;
+        const { x, y } = ttt.cells[pick];
+        npc.state = 'moving';
+        npc.journey(x + BLOCK_SZ / 2, y + BLOCK_SZ / 2, 'ttt-place');
+        return true;
     }
 
     /* ── NPC cursor ──────────────────────────────────────────────────────────── */
@@ -293,6 +559,7 @@
             this.visitCount = 0;
             this.visitGoal  = 0;
             this.timer      = 0;
+            this.tttPick    = -1;
 
             this.el = document.createElement('img');
             this.el.src = `/images/${player}/Pointer.png`;
@@ -333,7 +600,18 @@
             this.visitCount = 0;
             this.visitGoal  = randInt(2, 5);
             this.img('Pointer');
-            this.pickBlock();
+
+            // 30% chance to start a tic-tac-toe game if none is active
+            const myIdx = PLAYERS.indexOf(this.player);
+            if (!ttt.active && Math.random() < 0.30) {
+                startTicTacToe(myIdx);
+                this.state = 'ttt-waiting';
+                // Walk to a spot near the grid to watch
+                const { x, y } = ttt.cells[0];
+                this.journey(x - 60, y - 40, 'ttt-watching');
+            } else {
+                this.pickBlock();
+            }
         }
 
         pickBlock() {
@@ -405,12 +683,44 @@
                         this.img('Open');
                     }
                     if (t >= 1) {
-                        if      (this.nextState === 'atBlock')   { this.img('Open'); this.state = 'hovering'; this.timer = now + rand(120, 350); }
-                        else if (this.nextState === 'atPile')    { this.drop(); }
-                        else if (this.nextState === 'offscreen') { this.el.style.opacity = '0'; this.state = 'resting'; this.restUntil = now + rand(800, 2500); }
+                        if      (this.nextState === 'atBlock')     { this.img('Open'); this.state = 'hovering'; this.timer = now + rand(120, 350); }
+                        else if (this.nextState === 'atPile')      { this.drop(); }
+                        else if (this.nextState === 'offscreen')   { this.el.style.opacity = '0'; this.state = 'resting'; this.restUntil = now + rand(800, 2500); }
+                        else if (this.nextState === 'ttt-watching') { this.state = 'ttt-waiting'; }
+                        else if (this.nextState === 'ttt-place')   {
+                            // Arrived at chosen TTT cell — pause then place
+                            this.img('Open');
+                            this.state = 'ttt-placing';
+                            this.timer = now + rand(350, 700);
+                        }
                     }
                     break;
                 }
+
+                case 'ttt-waiting':
+                    // Stay put; onTTTCellClick will assign next move via journey()
+                    if (!ttt.active) { this.resetToRest(500); }
+                    break;
+
+                case 'ttt-placing':
+                    if (now >= this.timer) {
+                        this.img('Closed');
+                        setTimeout(() => { if (this.state !== 'resting') this.img('Open'); }, 250);
+                        placeTTTBlock(this.tttPick, 'npc');
+                        this.tttPick = -1;
+
+                        if (tttCheckWin(ttt.board, 'npc')) {
+                            setTimeout(() => endTicTacToe('npc-wins'), 400);
+                            this.state = 'ttt-waiting';
+                        } else if (ttt.board.every(v => v !== null)) {
+                            setTimeout(() => endTicTacToe('draw'), 400);
+                            this.state = 'ttt-waiting';
+                        } else {
+                            ttt.waitingForUser = true;
+                            this.state = 'ttt-waiting';
+                        }
+                    }
+                    break;
             }
         }
     }
@@ -554,8 +864,117 @@
         document.body.appendChild(btn);
     }
 
+    /* ── User block drag ────────────────────────────────────────────────────── */
+    function onAnyMouseDown(e) {
+        // TTT cell click — intercept before block drag
+        if (running && ttt.active) {
+            if (onTTTCellClick(e.clientX, e.clientY)) { e.stopPropagation(); return; }
+        }
+    }
+
+    function onSceneMouseDown(e) {
+        const el = e.target.closest('[data-block-color]');
+        if (!el || !running || !physEngine) return;
+
+        // Don't steal blocks an NPC is carrying or en route to
+        if (NPCS.some(n => n.held?.el === el || n.claimed?.el === el)) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const r  = el.getBoundingClientRect();
+        const cx = r.left + r.width  / 2;
+        const cy = r.top  + r.height / 2;
+
+        // Evict from pile (keep the click→collapsePile listener; it fires after mouseup
+        // and collapses whatever pile blocks remain)
+        const pi = pileBlocks.findIndex(pb => pb.el === el);
+        if (pi !== -1) pileBlocks.splice(pi, 1);
+        // Evict from scattered
+        const si = scattered.findIndex(b => b.el === el);
+        if (si !== -1) scattered.splice(si, 1);
+
+        // Evict from active physics list (we'll re-add on release)
+        const xi = physBodies.findIndex(pb => pb.el === el);
+        if (xi !== -1) {
+            Matter.Composite.remove(physWorld, physBodies[xi].body);
+            physBodies.splice(xi, 1);
+        }
+
+        // Static body while dragging — acts as a solid pusher for other bodies
+        const body = Matter.Bodies.rectangle(cx, cy, BLOCK_SZ - 1, BLOCK_SZ - 1, {
+            isStatic: true, restitution: 0.5, friction: 0.3, label: 'user-drag',
+        });
+        Matter.Composite.add(physWorld, body);
+
+        el.style.transition = 'none';
+        el.style.opacity    = '0.85';
+        el.style.zIndex     = '8';
+
+        userDrag = {
+            body, el,
+            offsetX: cx - e.clientX,
+            offsetY: cy - e.clientY,
+            velX: 0, velY: 0,
+            prevX: cx, prevY: cy,
+        };
+    }
+
+    function onDocMouseMove(e) {
+        if (!userDrag) return;
+        const { body, el, offsetX, offsetY } = userDrag;
+        const cx = e.clientX + offsetX;
+        const cy = e.clientY + offsetY;
+        userDrag.velX = cx - userDrag.prevX;
+        userDrag.velY = cy - userDrag.prevY;
+        userDrag.prevX = cx;
+        userDrag.prevY = cy;
+        Matter.Body.setPosition(body, { x: cx, y: cy });
+        el.style.transform = `translate(${cx - BLOCK_SZ / 2}px,${cy - BLOCK_SZ / 2}px)`;
+    }
+
+    function onDocMouseUp() {
+        if (!userDrag) return;
+        const { body, el, velX, velY } = userDrag;
+        userDrag = null;
+        Matter.Body.setStatic(body, false);
+        Matter.Body.setVelocity(body, { x: velX * 0.9, y: velY * 0.9 });
+        Matter.Body.setAngularVelocity(body, (velX - velY) * 0.012);
+        el.style.opacity = '1';
+        el.style.zIndex  = '';
+        physBodies.push({ el, body, removeAt: performance.now() + 5000 });
+    }
+
     /* ── RAF loop ────────────────────────────────────────────────────────────── */
     function loop(now) {
+        // Step physics engine and sync block DOM elements
+        if (physEngine && physBodies.length) {
+            const delta = lastPhysTime ? Math.min(now - lastPhysTime, 50) : 16.67;
+            Matter.Engine.update(physEngine, delta);
+            lastPhysTime = now;
+
+            for (let i = physBodies.length - 1; i >= 0; i--) {
+                const pb = physBodies[i];
+                const { x, y } = pb.body.position;
+                const a = pb.body.angle;
+                pb.el.style.transform = `translate(${x - BLOCK_SZ / 2}px,${y - BLOCK_SZ / 2}px) rotate(${a}rad)`;
+
+                // Fade out in last 700ms of lifetime
+                const timeLeft = pb.removeAt - now;
+                if (timeLeft < 700 && pb.el.style.opacity !== '0') {
+                    pb.el.style.transition = 'opacity 0.7s ease';
+                    pb.el.style.opacity    = '0';
+                }
+                if (timeLeft <= 0) {
+                    Matter.Composite.remove(physWorld, pb.body);
+                    pb.el.remove();
+                    physBodies.splice(i, 1);
+                }
+            }
+        } else {
+            lastPhysTime = 0;
+        }
+
         NPCS.forEach(c => c.update(now));
         requestAnimationFrame(loop);
     }
@@ -569,15 +988,22 @@
         scene.style.cssText = 'position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;display:none;';
         document.body.appendChild(scene);
 
-        PLAYERS.forEach(p => ['pointer','open','closed'].forEach(s => { new Image().src = `/images/${p}/${s}.png`; }));
+        PLAYERS.forEach(p => ['Pointer','Open','Closed'].forEach(s => { new Image().src = `/images/${p}/${s}.png`; }));
 
         pileZone = document.createElement('div');
         pileZone.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;pointer-events:none;';
         document.body.appendChild(pileZone);
 
+        initPhysics();
         pickNewShape();
         PLAYERS.forEach((p, i) => NPCS.push(new NPC(p, i)));
         buildToggleBtn();
+
+        document.addEventListener('mousedown', onAnyMouseDown,  { capture: true });
+        scene.addEventListener('mousedown',    onSceneMouseDown);
+        document.addEventListener('mousemove', onDocMouseMove,  { passive: true });
+        document.addEventListener('mouseup',   onDocMouseUp);
+
         requestAnimationFrame(loop);
     }
 

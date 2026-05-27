@@ -637,27 +637,45 @@
                         );
                     }
 
-                    // Make non-user stamps draggable with inertia
-                    if (!isUserStamp && typeof Draggable !== 'undefined') {
-                        const inst = Draggable.create(cell, {
-                            type: 'x,y',
-                            inertia: typeof InertiaPlugin !== 'undefined',
-                            zIndexBoost: false,
-                            onDragStart() {
-                                gsap.set(cell, { zIndex: 100 });
-                                document.body.classList.add('gb-is-dragging');
-                            },
-                            onDragEnd() {
-                                gsap.set(cell, { zIndex: '' });
-                                document.body.classList.remove('gb-is-dragging');
-                            },
-                        })[0];
-                        draggableInstances.push(inst);
-                    }
                 }
             });
 
             buildFilterBar(overlay, ordered, grid);
+
+            if (typeof gsap !== 'undefined') {
+                const PAN_STRENGTH  = 8;
+                const TILT_MAX      = 30;
+                const RADIUS        = Math.hypot(window.innerWidth, window.innerHeight);
+
+                scroll.addEventListener('mousemove', (e) => {
+                    if (document.body.classList.contains('gb-is-dragging')) return;
+                    scroll.querySelectorAll('.gb-stamp-cell').forEach(cell => {
+                        if (cell.style.zIndex === '100') return;
+                        const r    = cell.getBoundingClientRect();
+                        const cx   = r.left + r.width  / 2;
+                        const cy   = r.top  + r.height / 2;
+                        const dx   = e.clientX - cx;
+                        const dy   = e.clientY - cy;
+                        const dist = Math.hypot(dx, dy);
+                        if (dist < RADIUS && dist > 0) {
+                            const t  = 1 - dist / RADIUS;
+                            const rx = -(Math.max(-1, Math.min(1, dy / (r.height / 2)))) * TILT_MAX * t;
+                            const ry =  (Math.max(-1, Math.min(1, dx / (r.width  / 2)))) * TILT_MAX * t;
+                            const tx =  (dx / dist) * PAN_STRENGTH * t;
+                            const ty =  (dy / dist) * PAN_STRENGTH * t;
+                            gsap.to(cell, { x: tx, y: ty, rotateX: rx, rotateY: ry, transformPerspective: 600, duration: 0.3, ease: 'power2.out', overwrite: 'auto' });
+                        } else {
+                            gsap.to(cell, { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
+                        }
+                    });
+                }, { passive: true });
+
+                scroll.addEventListener('mouseleave', () => {
+                    scroll.querySelectorAll('.gb-stamp-cell').forEach(cell => {
+                        gsap.to(cell, { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
+                    });
+                }, { passive: true });
+            }
         }
     }
 

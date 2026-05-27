@@ -1062,7 +1062,7 @@
     function runRandomCycles(onDone) {
         const wrapper = document.getElementById('stamp-wrapper');
         const wordEl  = document.getElementById('stamp-cycle-word');
-        const words   = ['Make', 'A', 'Stamp'];
+        const words   = ['Make', 'a', 'stamp', 'please :)'];
         let count = 0;
 
         // Suppress CSS transition so GSAP controls motion cleanly
@@ -1156,20 +1156,62 @@
         }, { once: true });
     }
 
+    function setupStampTilt(prescreen) {
+        if (typeof gsap === 'undefined') return;
+
+        const TILT_MAX = 20;
+        const PAN      = 12;
+
+        function getTargets() {
+            return [
+                document.getElementById('stamp-wrapper'),
+                document.getElementById('stamp-enter-wrap'),
+                ...document.querySelectorAll('.stamp-hint-bubble'),
+            ].filter(Boolean);
+        }
+
+        function onMove(e) {
+            const hw = window.innerWidth  / 2;
+            const hh = window.innerHeight / 2;
+            const dx = e.clientX - hw;
+            const dy = e.clientY - hh;
+            const rx = -(Math.max(-1, Math.min(1, dy / hh))) * TILT_MAX;
+            const ry =  (Math.max(-1, Math.min(1, dx / hw))) * TILT_MAX;
+            const tx =  (Math.max(-1, Math.min(1, dx / hw))) * PAN;
+            const ty =  (Math.max(-1, Math.min(1, dy / hh))) * PAN;
+            gsap.to(getTargets(), { rotateX: rx, rotateY: ry, x: tx, y: ty, transformPerspective: 800, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
+        }
+
+        function onLeave() {
+            gsap.to(getTargets(), { rotateX: 0, rotateY: 0, x: 0, y: 0, duration: 0.7, ease: 'power2.out', overwrite: 'auto' });
+        }
+
+        prescreen.addEventListener('mousemove', onMove, { passive: true });
+        prescreen.addEventListener('mouseleave', onLeave, { passive: true });
+
+        document.addEventListener('prescreen:done', () => {
+            prescreen.removeEventListener('mousemove', onMove);
+            prescreen.removeEventListener('mouseleave', onLeave);
+            gsap.set(getTargets(), { clearProps: 'rotateX,rotateY,x,y,transformPerspective' });
+        }, { once: true });
+    }
+
     function showStampBubbles() {
         const prescreen = document.getElementById('prescreen');
         const wordEl    = document.getElementById('stamp-cycle-word');
         const enterWrap = document.getElementById('stamp-enter-wrap');
 
+        setupStampTilt(prescreen);
+
         // stamp-inner-sq  → 3px extra gap above; stamp-name-input → anchor to right edge (text is right-aligned)
         const targets = [
             { id: 'stamp-inner-sq',   text: 'drop it',        gap: 11 },
             { id: 'color-swatch-btn', text: 'personalize it',  gap: 8  },
-            { id: 'stamp-name-input', text: 'sign it',         gap: 8, rightAlign: true },
+            { id: 'stamp-name-input', text: 'sign it',         gap: 8, rightAlign: true, offsetX: -20 },
         ];
 
         function spawnBubbles() {
-            const bubbles = targets.map(({ id, text, gap, rightAlign }) => {
+            const bubbles = targets.map(({ id, text, gap, rightAlign, offsetX = 0 }) => {
                 const el = document.getElementById(id);
                 if (!el) return null;
                 const r   = el.getBoundingClientRect();
@@ -1177,7 +1219,7 @@
                 bub.className   = 'stamp-hint-bubble';
                 bub.textContent = text;
                 // Right-aligned inputs: anchor to right edge so bubble sits over the visible text
-                bub.style.left = (rightAlign ? r.right : r.left + r.width / 2) + 'px';
+                bub.style.left = ((rightAlign ? r.right : r.left + r.width / 2) + offsetX) + 'px';
                 bub.style.top  = '0px';
                 document.body.appendChild(bub);
                 gsap.set(bub, { xPercent: -50 });
@@ -1421,9 +1463,33 @@
 
         requestAnimationFrame(() => requestAnimationFrame(() => {
             el.classList.add('visible');
+            // Strip transform from transition after entrance so GSAP can control it freely
+            setTimeout(() => { el.style.transition = 'opacity 1s ease'; }, 1050);
             // Only draggable on desktop (fine pointer / mouse)
             if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
                 makeDraggable(el);
+            }
+
+            if (typeof gsap !== 'undefined') {
+                const TILT_MAX = 20;
+                const PAN      = 12;
+
+                function onWidgetMove(e) {
+                    if (document.body.classList.contains('is-dragging')) return;
+                    const r   = el.getBoundingClientRect();
+                    const cx  = r.left + r.width  / 2;
+                    const cy  = r.top  + r.height / 2;
+                    const dx  = e.clientX - cx;
+                    const dy  = e.clientY - cy;
+                    const maxD = Math.hypot(window.innerWidth, window.innerHeight) / 2;
+                    const rx  = -(Math.max(-1, Math.min(1, dy / maxD))) * TILT_MAX;
+                    const ry  =  (Math.max(-1, Math.min(1, dx / maxD))) * TILT_MAX;
+                    const tx  =  (Math.max(-1, Math.min(1, dx / maxD))) * PAN;
+                    const ty  =  (Math.max(-1, Math.min(1, dy / maxD))) * PAN;
+                    gsap.to(el, { rotateX: rx, rotateY: ry, x: tx, y: ty, transformPerspective: 800, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
+                }
+
+                document.addEventListener('mousemove', onWidgetMove, { passive: true });
             }
         }));
         return el;

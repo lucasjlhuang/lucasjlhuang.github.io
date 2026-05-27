@@ -127,10 +127,6 @@
     cursor: url('/images/wii-pointer-set/WiiPointer.cur'), pointer;
 }
 
-/* Non-user stamps get the open-hand cursor */
-.gb-stamp-cell:not([data-is-user-stamp]) {
-    cursor: url('/images/wii-pointer-set/WiiPointerOpenHand.cur'), grab;
-}
 .gb-stamp-cell:hover {
     filter:
         drop-shadow(0 6px 20px rgba(0,0,0,0.18))
