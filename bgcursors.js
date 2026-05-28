@@ -97,7 +97,6 @@
         "how long did this take to make",
         "i love all the little details",
         "has anyone played tic tac toe yet?",
-        "this is giving me nostalgia",
     ];
     const JENGA_ONLY_MSGS = [
         "someone play jenga with me",
@@ -967,6 +966,8 @@
             this._releaseClaimed();
             this.tttPick     = -1;
             this.deconTarget = null;
+            // If this is the Jenga NPC, clear any stuck placing flag
+            if (this.role === 'jenga') jengaTower.placing = false;
             if (!this.hasAppeared) {
                 this.el.style.opacity = '0';
                 this.state     = 'resting';
@@ -1250,6 +1251,8 @@
 
         jengaFetch() {
             if (jengaTower.falling) { this.state = 'jenga-waiting'; this.timer = performance.now() + 2000; return; }
+            // Guard: if placing flag is orphaned (no held or claimed block), clear it
+            if (jengaTower.placing && !this.held && !this.claimed) jengaTower.placing = false;
             if (jengaTower.placing) { this.state = 'jenga-waiting'; this.timer = performance.now() + rand(400, 1000); return; }
             if (this.visitCount >= this.visitGoal) { this.wander(); return; }
 
@@ -1281,18 +1284,20 @@
             this.img('Open');
             if (typeof gsap !== 'undefined') gsap.killTweensOf(this);
             this.heldSwayRot = 0;
-            if (!this.held) { this.state = 'jenga-fetch'; return; }
-            const { el, body } = this.held;
-            el.style.transformOrigin = '';
-            this.held = null;
-            if (body && physEngine && typeof Matter !== 'undefined') {
-                Matter.Body.setStatic(body, false);
-                Matter.Body.setVelocity(body, { x: rand(1, 3), y: -1 });
-                physBodies.push({ el, body });
-            } else {
-                scattered.push({ el, body: null, color: el.dataset?.blockColor || '#aaa', claimed: false });
+            if (this.held) {
+                const { el, body } = this.held;
+                el.style.transformOrigin = '';
+                this.held = null;
+                if (body && physEngine && typeof Matter !== 'undefined') {
+                    Matter.Body.setStatic(body, false);
+                    Matter.Body.setVelocity(body, { x: rand(1, 3), y: -1 });
+                    physBodies.push({ el, body });
+                } else {
+                    scattered.push({ el, body: null, color: el.dataset?.blockColor || '#aaa', claimed: false });
+                }
             }
-            this.state = 'jenga-fetch';
+            // Return to Jenga area so the NPC isn't stranded at the drop zone
+            this.journey(JENGA_CX + rand(40, 100), floorY() - 50, 'jenga-ready');
         }
 
         jengaGrab() {
@@ -1364,36 +1369,66 @@
 
         explorerWander() {
             this.img('Pointer');
-            const tipTarget = r => {
-                const px = r.left + rand(r.width * 0.55, r.width * 0.85);
-                const py = r.top  + rand(r.height * 0.55, r.height * 0.85);
-                return { x: px - 12, y: py };
+
+            // ~10% chance to grab a scattered block and relocate it instead of visiting a folder
+            if (Math.random() < 0.10) {
+                const avail = scattered.filter(b => !b.claimed && (!b.body ||
+                    (Math.abs(b.body.velocity.x) < 3 && Math.abs(b.body.velocity.y) < 3)));
+                if (avail.length) {
+                    const block = avail[randInt(0, avail.length - 1)];
+                    block.claimed = true;
+                    this.claimed = block;
+                    if (block.body && physEngine && typeof Matter !== 'undefined') {
+                        Matter.Body.setStatic(block.body, true);
+                        Matter.Body.setVelocity(block.body, { x: 0, y: 0 });
+                    }
+                    const { x, y } = this.blockCenter(block);
+                    this.journey(x, y, 'explorer-block-hover');
+                    return;
+                }
+            }
+
+            // Place cursor top-left in the bottom half of the image element
+            const imgBottomTarget = imgEl => {
+                const r = imgEl.getBoundingClientRect();
+                if (r.width <= 0 || r.height <= 0) return null;
+                const px = rand(r.left, r.right);
+                const py = rand(r.top + r.height * 0.5, r.bottom);
+                return { x: px, y: py };
             };
 
             // Use HOVER_CHAT_MAP key matching (same as npcHoverKey) to classify folders reliably
             const SECONDARY_KEYS = new Set(['pmc', 'NSL']);
 
-            const mainTargets = [];
+            const mainTargets   = [];
             const secondaryTargets = [];
-            const dockTargets = [];
+            const dockTargets   = [];
 
             document.querySelectorAll('.projectfolder').forEach(folder => {
-                const r = folder.getBoundingClientRect();
-                if (r.width <= 0 || r.height <= 0) return;
                 const img = folder.querySelector('.projectimage');
-                const src = img?.src || img?.getAttribute('src') || '';
-                const alt = img?.alt || '';
+                if (!img) return;
+                const t = imgBottomTarget(img);
+                if (!t) return;
+                const src = img.src || img.getAttribute('src') || '';
+                const alt = img.alt || '';
                 let key = null;
                 for (const k of Object.keys(HOVER_CHAT_MAP)) {
                     if (src.includes(k) || alt.includes(k)) { key = k; break; }
                 }
-                if (key && SECONDARY_KEYS.has(key)) secondaryTargets.push(tipTarget(r));
-                else                                 mainTargets.push(tipTarget(r));
+                // Tag each target with its key so we can filter the last-visited one
+                t._key = key || src;
+                if (key && SECONDARY_KEYS.has(key)) secondaryTargets.push(t);
+                else                                 mainTargets.push(t);
             });
 
             document.querySelectorAll('.dock li:not(.divider)').forEach(li => {
-                const r = li.getBoundingClientRect();
-                if (r.width > 0 && r.height > 0) dockTargets.push(tipTarget(r));
+                const img = li.querySelector('img');
+                if (!img) return;
+                const t = imgBottomTarget(img);
+                if (t) {
+                    t._key = li.dataset?.label || null;
+                    dockTargets.push(t);
+                }
             });
 
             // Weighted pick: 65% main, 20% dock, 15% secondary
@@ -1409,8 +1444,34 @@
                 this.timer = performance.now() + rand(1500, 3000);
                 return;
             }
-            const t = pool[randInt(0, pool.length - 1)];
-            this.journey(t.x, t.y, 'idle-pause');
+
+            // Filter out the last-visited target to avoid visiting the same folder twice in a row
+            const filtered = pool.filter(t => t._key !== this._lastVisitedKey);
+            const chosen   = (filtered.length ? filtered : pool)[randInt(0, (filtered.length ? filtered : pool).length - 1)];
+            this._lastVisitedKey = chosen._key || null;
+
+            this.journey(chosen.x, chosen.y, 'idle-pause');
+        }
+
+        explorerBlockDrop() {
+            this.img('Open');
+            if (typeof gsap !== 'undefined') gsap.killTweensOf(this);
+            this.heldSwayRot = 0;
+            if (this.held) {
+                const { el, body } = this.held;
+                el.style.transformOrigin = '';
+                this.held = null;
+                if (body && physEngine && typeof Matter !== 'undefined') {
+                    Matter.Body.setStatic(body, false);
+                    Matter.Body.setVelocity(body, { x: rand(-1, 1), y: -0.5 });
+                    physBodies.push({ el, body });
+                } else {
+                    scattered.push({ el, body: null, color: el.dataset?.blockColor || '#aaa', claimed: false });
+                }
+            }
+            // Resume exploring immediately
+            this.state = 'idle-waiting';
+            this.timer = performance.now();
         }
 
         /* ── Update ───────────────────────────────────────────────────────────── */
@@ -1494,6 +1555,12 @@
                 case 'decon-drop':
                     this.deconDrop();
                     break;
+                case 'explorer-block-hover':
+                    this.img('Open'); this.state = 'explorer-block-grab'; this.timer = now + rand(150, 350);
+                    break;
+                case 'explorer-block-drop':
+                    this.explorerBlockDrop();
+                    break;
                 case 'jenga-hover':
                     this.img('Open'); this.state = 'jenga-grabbing'; this.timer = now + rand(120, 350);
                     break;
@@ -1515,7 +1582,6 @@
                 case 'idle-pause':
                     this.img('Pointer');
                     this.state = 'idle-waiting';
-                    this.timer = now + (this.role === 'explorer' ? rand(2000, 4000) : rand(700, 2800));
                     if (this.role === 'explorer') {
                         const stack = document.elementsFromPoint(this.x + 12, this.y + 6);
                         const arrived = stack.find(e => e && e !== document.documentElement && e !== document.body &&
@@ -1523,8 +1589,12 @@
                             !NPCS.some(n => n.el === e));
                         const key = arrived ? npcHoverKey(arrived) : null;
                         if (key && HOVER_CHAT_MAP[key]) {
+                            // Landed on something interesting — brief pause then move on
+                            this.timer = now + rand(800, 1400);
+                            if (Math.random() < 0.70) {
                             const msgs = HOVER_CHAT_MAP[key];
                             npcChat(this.player, msgs[randInt(0, msgs.length - 1)]);
+                            }
                             const reactPool = HOVER_REACT_MAP[key];
                             if (reactPool?.length && Math.random() < 0.30) {
                                 const others = NPCS.filter(n => n !== this && n.el.style.opacity !== '0');
@@ -1535,7 +1605,12 @@
                                     }, rand(600, 1800));
                                 }
                             }
+                        } else {
+                            // Nothing interesting here — move on immediately
+                            this.timer = now;
                         }
+                    } else {
+                        this.timer = now + rand(700, 2800);
                     }
                     break;
             }
@@ -1710,6 +1785,25 @@
                     break;
                 case 'idle-pause':
                     // _onArrival transitions to idle-waiting with timer; nothing extra needed
+                    break;
+                case 'explorer-block-grab':
+                    if (now >= this.timer) {
+                        if (!this.claimed) { this.state = 'idle-waiting'; this.timer = now; break; }
+                        this.img('Closed');
+                        this.held    = this.claimed;
+                        this.claimed = null;
+                        const ci = scattered.indexOf(this.held);
+                        if (ci !== -1) scattered.splice(ci, 1);
+                        if (typeof gsap !== 'undefined') {
+                            this.heldSwayRot = 0;
+                            this.held.el.style.transformOrigin = 'center top';
+                            gsap.to(this, { heldSwayRot: 6, duration: 0.5, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+                        }
+                        // Drop somewhere on the page away from dock
+                        const dropX = rand(80, window.innerWidth - 80);
+                        const dropY = rand(window.innerHeight * 0.15, window.innerHeight - 160);
+                        this.journey(dropX, dropY, 'explorer-block-drop');
+                    }
                     break;
             }
         }
@@ -2040,9 +2134,12 @@
                     if (npc.hoveredEl) {
                         // Revert folder scale on leave
                         const oldFolder = npc.hoveredEl.closest?.('.projectfolder');
-                        if (oldFolder && typeof gsap !== 'undefined')
-                            gsap.to(oldFolder, { scale: 1, duration: 0.35, ease: 'power2.out', overwrite: 'auto',
-                                onComplete: () => gsap.set(oldFolder, { clearProps: 'scale' }) });
+                        if (oldFolder) {
+                            oldFolder.classList.remove('is-npc-hovered');
+                            if (typeof gsap !== 'undefined')
+                                gsap.to(oldFolder, { scale: 1, duration: 0.35, ease: 'power2.out', overwrite: 'auto',
+                                    onComplete: () => gsap.set(oldFolder, { clearProps: 'scale' }) });
+                        }
                         npc.hoveredEl.dispatchEvent(new MouseEvent('mouseout',   { bubbles: true,  cancelable: true }));
                         npc.hoveredEl.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false, cancelable: true }));
                         npc.hoveredEl = null;
@@ -2076,9 +2173,12 @@
                     // Leave old element
                     if (npc.hoveredEl) {
                         const oldFolder = npc.hoveredEl.closest?.('.projectfolder');
-                        if (oldFolder && typeof gsap !== 'undefined')
-                            gsap.to(oldFolder, { scale: 1, duration: 0.35, ease: 'power2.out', overwrite: 'auto',
-                                onComplete: () => gsap.set(oldFolder, { clearProps: 'scale' }) });
+                        if (oldFolder) {
+                            oldFolder.classList.remove('is-npc-hovered');
+                            if (typeof gsap !== 'undefined')
+                                gsap.to(oldFolder, { scale: 1, duration: 0.35, ease: 'power2.out', overwrite: 'auto',
+                                    onComplete: () => gsap.set(oldFolder, { clearProps: 'scale' }) });
+                        }
                         npc.hoveredEl.dispatchEvent(new MouseEvent('mouseout',   { bubbles: true,  cancelable: true, relatedTarget: pageEl }));
                         npc.hoveredEl.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false, cancelable: true, relatedTarget: pageEl }));
                     }
@@ -2087,10 +2187,13 @@
                         pageEl.dispatchEvent(new MouseEvent('mouseover',  { bubbles: true,  cancelable: true, relatedTarget: npc.hoveredEl }));
                         pageEl.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false, cancelable: true, relatedTarget: npc.hoveredEl }));
 
-                        // Scale up project folder
+                        // Scale up project folder + apply hover styling class
                         const newFolder = pageEl.closest?.('.projectfolder');
-                        if (newFolder && typeof gsap !== 'undefined')
-                            gsap.to(newFolder, { scale: 1.1, duration: 0.2, ease: 'power2.out', overwrite: 'auto' });
+                        if (newFolder) {
+                            newFolder.classList.add('is-npc-hovered');
+                            if (typeof gsap !== 'undefined')
+                                gsap.to(newFolder, { scale: 1.1, duration: 0.2, ease: 'power2.out', overwrite: 'auto' });
+                        }
 
                         // Chat bubble on hover (per-NPC cooldown)
                         // Only fire when NPC intentionally visits: explorer always; jenga/builder only while wandering

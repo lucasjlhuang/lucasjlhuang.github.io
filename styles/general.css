@@ -532,6 +532,24 @@ img.projectimage {
     transform: scale(1.1) translate(-5%, -5%);
 }
 
+/* NPC cursor hover — mirrors :hover rules since CSS :hover ignores JS-dispatched events */
+.projectfolder.is-npc-hovered {
+    z-index: 100;
+}
+
+.projectfolder.is-npc-hovered p {
+    padding: 3px 5px;
+    transform: translateY(3px);
+    background-color: #007afd;
+}
+
+.projectfolder.is-npc-hovered .projectimage {
+    padding: 5px;
+    background-color: #00000015;
+    border-color: #e4e4e450;
+    border-radius: 3px;
+}
+
 .projectfolder.is-dragging {
 
     transform: none !important;
@@ -2555,6 +2573,35 @@ main.window-about-me {
     position: fixed;
     left: 3rem;
     top: 1vh;
+}
+
+.name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#chinese-name-btn {
+    background: none;
+    border: none;
+    padding: 0 2px;
+    font-family: serif;
+    font-size: 0.75rem;
+    color: var(--text-color);
+    opacity: 0.4;
+    cursor: pointer;
+    line-height: 1;
+    transition: opacity 0.2s ease;
+}
+#chinese-name-btn:hover { opacity: 1; }
+
+#chinese-name-wrap {
+    display: none;
+}
+#chinese-name-wrap svg {
+    width: 160px;
+    height: auto;
+    display: block;
 }
 
 .sticky-logo {
