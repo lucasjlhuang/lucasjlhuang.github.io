@@ -48,6 +48,9 @@
         if (body.classList.contains('is-dragging') ||
             body.classList.contains('gb-is-dragging')) return IMG.grab;
 
+        // Hovering a grabbable physics block (bgcursors)
+        if (body.classList.contains('is-block-hovering')) return IMG.openhand;
+
         // Click state — but not inside typing field
         if (body.classList.contains('is-clicking')) {
             if (target.closest('.stamp-name-input')) return IMG.typing;

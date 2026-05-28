@@ -83,7 +83,7 @@ function initAboutCanvas(contentContainer, windowEl) {
     const ICON_W = 60, ICON_H = 60;
     const STAR_W = 44, STAR_H = 44;
     const EXP_IMG_W = 300, EXP_IMG_H = 175;
-    const EXP_IMG_W_FS = 700;
+    const EXP_IMG_W_FS = 500;
     const EXP_TEXT_W = 300, EXP_TEXT_H = 360;
 
     function getExpImgDims() {
@@ -158,8 +158,7 @@ function initAboutCanvas(contentContainer, windowEl) {
 
     // ── Tilt + parallax update on mousemove ───────────────────────────────────
     contentContainer.addEventListener('mousemove', e => {
-        const allEls = [...items, ...textPillEls];
-        allEls.forEach(el => {
+        items.forEach(el => {
             if (el === draggingItem || el.style.display === 'none') {
                 el._tiltTX = 0; el._tiltTY = 0; return;
             }
@@ -179,7 +178,7 @@ function initAboutCanvas(contentContainer, windowEl) {
         });
 
         overlays.forEach(ov => {
-            if (ov.phase === 'open' && ov.activeType === 'image') {
+            if (ov.phase === 'open') {
                 const r  = ov.el.getBoundingClientRect();
                 const cx = r.left + r.width  / 2;
                 const cy = r.top  + r.height / 2;
@@ -233,14 +232,10 @@ function initAboutCanvas(contentContainer, windowEl) {
                 if (pill === draggingItem || pill.style.display === 'none' || pill._popping) return;
                 pill.style.setProperty('--px', `${currentX * STRENGTH * 0.7}px`);
                 pill.style.setProperty('--py', `${currentY * STRENGTH * 0.7}px`);
-                pill._tiltCX += (pill._tiltTX - pill._tiltCX) * TILT_LERP;
-                pill._tiltCY += (pill._tiltTY - pill._tiltCY) * TILT_LERP;
-                pill.style.setProperty('--rx', `${pill._tiltCX}deg`);
-                pill.style.setProperty('--ry', `${pill._tiltCY}deg`);
             });
 
             overlays.forEach(ov => {
-                const active = ov.phase === 'open' && ov.activeType === 'image';
+                const active = ov.phase === 'open';
                 ov.tiltCX += ((active ? ov.tiltTX : 0) - ov.tiltCX) * TILT_LERP;
                 ov.tiltCY += ((active ? ov.tiltTY : 0) - ov.tiltCY) * TILT_LERP;
                 if (Math.abs(ov.tiltCX) > 0.001 || Math.abs(ov.tiltCY) > 0.001) {

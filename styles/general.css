@@ -1582,8 +1582,8 @@ main.window-about-me {
     box-shadow: none;
 }
 
-/* ── Tilt transform on expanded image overlay ────────────────────────────── */
-.canvas-expand-overlay.is-expanded:not(.is-text) {
+/* ── Tilt transform on expanded overlays (image + text) ─────────────────── */
+.canvas-expand-overlay.is-expanded {
     transform: perspective(600px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
 }
 

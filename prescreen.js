@@ -251,6 +251,7 @@
     let selectedImgDef     = DEFAULT_IMG;
     let stampNumber        = null;
     let paletteOpen        = false;
+    let stamp1Row          = null; // cached Supabase row for stamp #1
 
     function loadSavedCard() {
         try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; }
@@ -273,6 +274,19 @@
             const n = parseInt(range.split('/')[1], 10);
             return isNaN(n) ? 1 : n + 1;
         } catch { return 1; }
+    }
+
+    async function fetchStamp1() {
+        try {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/${TABLE}?stamp_number=eq.1&select=*&limit=1`,
+                { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+            );
+            if (res.ok) {
+                const rows = await res.json();
+                if (rows.length) stamp1Row = rows[0];
+            }
+        } catch { /* silent — stamp1Row stays null */ }
     }
 
     // ─── Apply image (colors stay independent) ────────────────────────────────
@@ -1062,7 +1076,7 @@
     function runRandomCycles(onDone) {
         const wrapper = document.getElementById('stamp-wrapper');
         const wordEl  = document.getElementById('stamp-cycle-word');
-        const words   = ['Make', 'a', 'stamp', 'please :)'];
+        const words   = ['Lucas', 'Lee', 'Huang'];
         let count = 0;
 
         // Suppress CSS transition so GSAP controls motion cleanly
@@ -1078,6 +1092,29 @@
                 randomizeStamp();
                 const nameEl = document.getElementById('stamp-name-input');
                 if (nameEl) nameEl.value = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+            } else if (mode === 'stamp1') {
+                // Apply Supabase stamp #1; fall back to random if fetch hasn't resolved
+                if (stamp1Row) {
+                    const foundImg = STAMP_IMAGES.find(img => img.full === stamp1Row.character_svg);
+                    if (foundImg) applyImageToStamp(foundImg);
+                    else {
+                        const imgEl = document.getElementById('stamp-selected-img');
+                        if (imgEl && stamp1Row.character_svg) imgEl.src = stamp1Row.character_svg;
+                    }
+                    if (stamp1Row.card_color)   applyInnerColor(stamp1Row.card_color);
+                    if (stamp1Row.border_color) applyOutlineColor(stamp1Row.border_color);
+                    applyPattern(stamp1Row.pattern_id ? PATTERNS.find(p => p.id === stamp1Row.pattern_id) || null : null);
+                    const nameEl = document.getElementById('stamp-name-input');
+                    if (nameEl) nameEl.value = stamp1Row.name || '';
+                } else {
+                    const img = STAMP_IMAGES[Math.floor(Math.random() * STAMP_IMAGES.length)];
+                    selectedImgDef = img;
+                    const imgEl = document.getElementById('stamp-selected-img');
+                    if (imgEl) imgEl.src = img.full;
+                    randomizeStamp();
+                    const nameEl = document.getElementById('stamp-name-input');
+                    if (nameEl) nameEl.value = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+                }
             } else if (mode === 'reset') {
                 // Blank white stamp — no image, no pattern, no name
                 const imgEl = document.getElementById('stamp-selected-img');
@@ -1109,12 +1146,13 @@
             if (count >= 3) {
                 gsap.set(wrapper, { clearProps: 'transform,opacity,filter' });
                 wrapper.style.transition = '';
-                setTimeout(() => animateCycle('please :)', 'reset', onDone), 300);
+                setTimeout(() => animateCycle(':)', 'reset', onDone), 300);
                 return;
             }
-            // Cycle 0 keeps the initial randomized stamp; cycles 1+ randomize
-            const mode = count === 0 ? 'none' : 'random';
+            // Cycle 0 keeps initial stamp; cycle 1 randomizes; cycle 2 restores stamp 1
+            const modeMap = ['none', 'random', 'stamp1'];
             const word = words[count];
+            const mode = modeMap[count];
             count++;
             animateCycle(word, mode, next);
         }
@@ -1237,7 +1275,7 @@
             // NPCs enter at t+1.5s
             setTimeout(() => document.dispatchEvent(new CustomEvent('prescreen:start-npcs')), 1500);
 
-            // Bubbles leave at t+3s; enter button after
+            // Bubbles leave at t+5s; enter button after
             setTimeout(() => {
                 gsap.to(bubbles, {
                     y: -6, opacity: 0, duration: 0.25, ease: 'power2.in', stagger: 0.05,
@@ -1246,7 +1284,7 @@
                         if (enterWrap) enterWrap.classList.add('enter-appear');
                     },
                 });
-            }, 3000);
+            }, 4250);
         }
 
         // Stamp is blank — scatter all images (no skip)
@@ -1470,27 +1508,6 @@
                 makeDraggable(el);
             }
 
-            if (typeof gsap !== 'undefined') {
-                const TILT_MAX = 20;
-                const PAN      = 12;
-
-                function onWidgetMove(e) {
-                    if (document.body.classList.contains('is-dragging')) return;
-                    const r   = el.getBoundingClientRect();
-                    const cx  = r.left + r.width  / 2;
-                    const cy  = r.top  + r.height / 2;
-                    const dx  = e.clientX - cx;
-                    const dy  = e.clientY - cy;
-                    const maxD = Math.hypot(window.innerWidth, window.innerHeight) / 2;
-                    const rx  = -(Math.max(-1, Math.min(1, dy / maxD))) * TILT_MAX;
-                    const ry  =  (Math.max(-1, Math.min(1, dx / maxD))) * TILT_MAX;
-                    const tx  =  (Math.max(-1, Math.min(1, dx / maxD))) * PAN;
-                    const ty  =  (Math.max(-1, Math.min(1, dy / maxD))) * PAN;
-                    gsap.to(el, { rotateX: rx, rotateY: ry, x: tx, y: ty, transformPerspective: 800, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
-                }
-
-                document.addEventListener('mousemove', onWidgetMove, { passive: true });
-            }
         }));
         return el;
     }
@@ -1676,6 +1693,7 @@
                 buildDesktopWidget(saved);
             }, { once: true });
         } else {
+            fetchStamp1(); // fire-and-forget; result ready before 'Huang' cycle plays
             fetchStampNumber().then(n => initPrescreen(n));
         }
     });
