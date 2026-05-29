@@ -289,18 +289,352 @@
         } catch { /* silent — stamp1Row stays null */ }
     }
 
+    // ─── Continuous-carousel constants & state ───────────────────────────────
+    const _CS_TILE      = 50;
+    const _CS_GAP       = 8;
+    const _CS_INNER_SQ  = 122;
+    const _CS_STEP      = _CS_TILE + _CS_GAP;               // 58px
+    const _CS_REEL_LEFT = (_CS_INNER_SQ - _CS_TILE) / 2;   // 36px — centres first tile
+    const _CS_RADIUS    = 8;
+    const _CS_BORDER    = '1.5px solid rgba(0,0,0,0.08)';
+    const _CS_BG        = '#FFFFFF';
+    const _CS_SPIN_DUR  = 0.28;                             // seconds per tile
+
+    let _carouselReel   = null;
+    let _carouselActive = false;
+    let _carouselPool   = [];    // shuffle pool — no repeat images
+    let _topoOverlay    = null;  // loading-topo SVG element while active
+
+    // ─── Topo SVG DrawSVG overlay ─────────────────────────────────────────────
+    // Fetches /images/loading-topo.svg, injects it into stamp-wrapper, and
+    // animates all paths drawing from 0→100% over totalDuration seconds.
+    function startTopoDrawing(totalDuration) {
+        if (typeof DrawSVGPlugin === 'undefined') return;
+        gsap.registerPlugin(DrawSVGPlugin);
+
+        fetch('/images/loading-topo.svg')
+            .then(r => r.text())
+            .then(text => {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = text;
+                const svg = tmp.querySelector('svg');
+                if (!svg) return;
+
+                // Remove white background rect (keep paths + defs intact)
+                svg.querySelectorAll('rect').forEach(r => {
+                    if (!r.closest('mask, clipPath') && r.getAttribute('fill') !== 'none')
+                        r.remove();
+                });
+
+
+                // Replace the outer clipPath with a donut so the topo only renders
+                // in the stamp's border frame + bottom section, never over the inner
+                // square where the carousel lives. Must use createElementNS — innerHTML
+                // on an SVG node uses the HTML parser and produces non-SVG elements
+                // that browsers silently ignore as clip geometry.
+                // stamp-inner-area: left:13 top:13 width:122 height:122 → x:13-135, y:13-135
+                const NS     = 'http://www.w3.org/2000/svg';
+                const clipEl = svg.querySelector('clipPath');
+                if (clipEl) {
+                    const donut = document.createElementNS(NS, 'path');
+                    donut.setAttribute('fill-rule', 'evenodd');
+                    donut.setAttribute('d', 'M0,0 H149 V200 H0 Z M13,13 H135 V135 H13 Z');
+                    while (clipEl.firstChild) clipEl.removeChild(clipEl.firstChild);
+                    clipEl.appendChild(donut);
+                }
+
+                // z-index 3, appended to stamp-wrapper after stamp-outline-svg:
+                //   • DOM order makes topo render above the outline fill (both z:3) → visible in frame ✓
+                //   • stamp-number / stamp-name-input are z:4 → render above topo ✓
+                //   • stamp-inner-area is z:1 → below topo, but the donut clip means
+                //     topo never paints over the inner square / carousel ✓
+                svg.style.cssText = 'position:absolute;top:0;left:0;width:149px;height:200px;pointer-events:none;z-index:3;';
+                const stampWrapper = document.getElementById('stamp-wrapper');
+                if (!stampWrapper) return;
+                stampWrapper.appendChild(svg);
+                _topoOverlay = svg;
+
+                // Target only the stroked topo paths (not the clip/mask helper geometry)
+                const maskedG   = svg.querySelector('g[mask]');
+                const drawPaths = maskedG
+                    ? maskedG.querySelectorAll('path')
+                    : svg.querySelectorAll('path');
+
+                gsap.set(drawPaths, { drawSVG: '0%' });
+
+                const n            = drawPaths.length;        // 20
+                const pathDuration = totalDuration * 0.6;
+                const staggerEach  = (totalDuration - pathDuration) / Math.max(n - 1, 1);
+
+                gsap.to(drawPaths, {
+                    drawSVG:  '100%',
+                    duration: pathDuration,
+                    ease:     'none',
+                    stagger:  { each: staggerEach, from: 'edges' },
+                });
+            })
+            .catch(e => console.warn('loading-topo.svg failed:', e));
+    }
+
+    function removeTopoOverlay() {
+        if (!_topoOverlay) return;
+        const el = _topoOverlay;
+        _topoOverlay = null;
+        gsap.to(el, {
+            opacity: 0, duration: 0.3, ease: 'power2.in',
+            onComplete() { if (el.parentNode) el.parentNode.removeChild(el); },
+        });
+    }
+
+    function reverseTopoDrawing(onComplete) {
+        if (!_topoOverlay) { if (onComplete) onComplete(); return; }
+        if (typeof DrawSVGPlugin === 'undefined') { removeTopoOverlay(); if (onComplete) onComplete(); return; }
+        const el = _topoOverlay;
+        _topoOverlay = null;
+
+        const maskedG   = el.querySelector('g[mask]');
+        const drawPaths = maskedG ? maskedG.querySelectorAll('path') : el.querySelectorAll('path');
+        const n         = drawPaths.length;
+        const revDur    = 0.2;
+        const staggerEa = 0.035;
+
+        gsap.to(drawPaths, {
+            drawSVG:  '0%',
+            duration: revDur,
+            ease:     'power2.in',
+            stagger:  { each: staggerEa, from: 'start' },
+            onComplete() {
+                if (el.parentNode) el.parentNode.removeChild(el);
+                if (onComplete) onComplete();
+            },
+        });
+    }
+
     // ─── Apply image (colors stay independent) ────────────────────────────────
-    function applyImageToStamp(imgDef) {
+    function applyImageToStamp(imgDef, skipAnim = false) {
         selectedImgDef = imgDef;
         const imgEl = document.getElementById('stamp-selected-img');
-        if (imgEl) imgEl.src = imgDef.full;
+        if (!imgEl) return;
+
+        if (skipAnim || typeof gsap === 'undefined') {
+            imgEl.src = imgDef.full;
+            return;
+        }
+
+        const wasEmpty = imgEl.getAttribute('src') === '';
+        stampCarouselSwap(imgEl, imgDef, wasEmpty);
+    }
+
+    // ─── Carousel animation ───────────────────────────────────────────────────
+    // Scrolls a reel of 50×50 tiles through the inner-area viewport.
+    function stampCarouselSwap(imgEl, targetDef, wasEmpty = false) {
+        const innerArea = document.getElementById('stamp-inner-area');
+        if (!innerArea) { imgEl.src = targetDef.full; return; }
+
+        // Clean up any hover-shrink state
+        const hoverTile = innerArea.querySelector('.hover-ready-tile');
+        if (hoverTile) hoverTile.remove();
+        gsap.killTweensOf(imgEl);
+        imgEl.style.opacity = '0';
+        gsap.set(imgEl, { clearProps: 'scale,borderRadius' });
+
+        const INNER_SQ  = 122;
+        const TILE      = 50;
+        const GAP       = 8;
+        const STEP      = TILE + GAP;              // 58px scroll per tile
+        const REEL_LEFT = (INNER_SQ - TILE) / 2;  // 36px — centers first tile in viewport
+        const RADIUS    = 8;
+        const BORDER    = '1.5px solid rgba(0,0,0,0.08)';
+        const BG        = '#f5f5f5';
+        const N_INTER   = 5;
+
+        const curSrc = imgEl.getAttribute('src') || '';
+        const pool = STAMP_IMAGES.filter(img => img.id !== targetDef.id && img.full !== curSrc);
+        const intermediates = [...pool].sort(() => Math.random() - 0.5).slice(0, N_INTER);
+
+        const items = [
+            wasEmpty ? { type: 'white' } : { type: 'img', src: curSrc },
+            ...intermediates.map(i => ({ type: 'img', src: i.full })),
+            { type: 'img', src: targetDef.full },
+        ];
+        const totalTiles = items.length;
+
+        // Build reel — tiles in a flex row; offset so tile 0 is centred in viewport
+        const reel = document.createElement('div');
+        reel.style.cssText = `
+            position:absolute;
+            top:0; left:${REEL_LEFT}px; height:${INNER_SQ}px;
+            display:flex; align-items:center; gap:${GAP}px;
+            z-index:10; pointer-events:none;
+            will-change:transform;
+        `;
+
+        const tileShared = `width:${TILE}px;height:${TILE}px;flex-shrink:0;box-sizing:border-box;border-radius:${RADIUS}px;border:${BORDER};background:${BG};`;
+        items.forEach(item => {
+            if (item.type === 'white') {
+                const sq = document.createElement('div');
+                sq.style.cssText = tileShared;
+                reel.appendChild(sq);
+            } else {
+                const img = document.createElement('img');
+                img.src = item.src;
+                img.style.cssText = tileShared + `object-fit:cover;display:block;`;
+                reel.appendChild(img);
+            }
+        });
+
+        innerArea.appendChild(reel);
+
+        const finalX = -(totalTiles - 1) * STEP;
+
+        gsap.fromTo(reel,
+            { x: 0 },
+            {
+                x: finalX,
+                duration: 0.72,
+                ease: 'power3.out',
+                onComplete() {
+                    if (reel.parentNode) reel.parentNode.removeChild(reel);
+                    imgEl.src = targetDef.full;
+                    imgEl.style.opacity = '1';
+                    // Spring from carousel tile size to full square
+                    gsap.fromTo(imgEl,
+                        { scale: TILE / INNER_SQ },  // ~0.41
+                        { scale: 1, duration: 0.3, ease: 'back.out(2)' }
+                    );
+                },
+            }
+        );
+    }
+
+    // ─── Continuous carousel (intro sequence) ────────────────────────────────
+    function _buildCarouselTile(src) {
+        const shared = `width:${_CS_TILE}px;height:${_CS_TILE}px;flex-shrink:0;box-sizing:border-box;border-radius:${_CS_RADIUS}px;border:${_CS_BORDER};background:${_CS_BG};`;
+        if (!src) {
+            const d = document.createElement('div');
+            d.style.cssText = shared;
+            return d;
+        }
+        const img = document.createElement('img');
+        img.src = src;
+        img.style.cssText = shared + `object-fit:cover;display:block;`;
+        return img;
+    }
+
+    function _initCarouselPool(excludeId) {
+        _carouselPool = STAMP_IMAGES
+            .filter(img => img.id !== excludeId)
+            .sort(() => Math.random() - 0.5);
+    }
+
+    function _carouselAppendRandom() {
+        if (!_carouselReel) return;
+        if (_carouselPool.length === 0) _initCarouselPool();
+        const def = _carouselPool.pop();
+        _carouselReel.appendChild(_buildCarouselTile(def.full));
+    }
+
+    function _carouselGetX() {
+        return _carouselReel ? (Number(gsap.getProperty(_carouselReel, 'x')) || 0) : 0;
+    }
+
+    function _carouselSpinStep() {
+        if (!_carouselActive || !_carouselReel) return;
+        const currentIdx = Math.round(Math.abs(_carouselGetX()) / _CS_STEP);
+        const tilesAhead = _carouselReel.children.length - currentIdx - 1;
+        if (tilesAhead < 8) {
+            for (let i = 0; i < 8; i++) _carouselAppendRandom();
+        }
+        gsap.to(_carouselReel, {
+            x: _carouselGetX() - _CS_STEP,
+            duration: _CS_SPIN_DUR,
+            ease: 'none',
+            onComplete: _carouselSpinStep,
+        });
+    }
+
+    function startContinuousCarousel(onSpinning) {
+        const innerArea = document.getElementById('stamp-inner-area');
+        if (!innerArea || typeof gsap === 'undefined') return;
+        _carouselActive = false;
+        if (_carouselReel) { _carouselReel.remove(); _carouselReel = null; }
+
+        // Initialise the no-repeat pool, excluding the landing image
+        _initCarouselPool('13');
+
+        // White overlay fills the inner square; border makes it visible against white background
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `position:absolute;inset:0;background:#FFFFFF;box-sizing:border-box;border-radius:${_CS_RADIUS}px;border:${_CS_BORDER};z-index:11;pointer-events:none;transform-origin:center;`;
+        innerArea.appendChild(overlay);
+
+        // Build reel behind the overlay using the pool
+        const reel = document.createElement('div');
+        reel.className = 'carousel-reel';
+        reel.style.cssText = `position:absolute;top:0;left:${_CS_REEL_LEFT}px;height:${_CS_INNER_SQ}px;display:flex;align-items:center;gap:${_CS_GAP}px;z-index:10;pointer-events:none;will-change:transform;`;
+        reel.appendChild(_buildCarouselTile(null)); // white tile slot 0
+        for (let i = 0; i < 12; i++) {
+            if (_carouselPool.length === 0) _initCarouselPool('13');
+            const def = _carouselPool.pop();
+            reel.appendChild(_buildCarouselTile(def.full));
+        }
+        innerArea.appendChild(reel);
+        gsap.set(reel, { x: 0 });
+        _carouselReel = reel;
+
+        // Slow, visible shrink so the white square is clearly seen contracting
+        gsap.to(overlay, {
+            scale: _CS_TILE / _CS_INNER_SQ, duration: 0.55, ease: 'power2.inOut',
+            onComplete() {
+                overlay.remove();
+                _carouselActive = true;
+                _carouselSpinStep();
+                if (onSpinning) onSpinning();
+            },
+        });
+    }
+
+    function landCarousel(imgDef, onComplete) {
+        _carouselActive = false;
+        if (!_carouselReel) {
+            const imgEl = document.getElementById('stamp-selected-img');
+            if (imgEl) { imgEl.src = imgDef.full; imgEl.style.opacity = '1'; }
+            if (onComplete) onComplete();
+            return;
+        }
+        gsap.killTweensOf(_carouselReel);
+        const fromX = _carouselGetX();
+        // Add slowdown buffer then target tile
+        for (let i = 0; i < 4; i++) _carouselAppendRandom();
+        _carouselReel.appendChild(_buildCarouselTile(imgDef.full));
+        const targetX = -(_carouselReel.children.length - 1) * _CS_STEP;
+
+        gsap.fromTo(_carouselReel, { x: fromX }, {
+            x: targetX, duration: 0.9, ease: 'power3.out',
+            onComplete() {
+                const reel = _carouselReel;
+                _carouselReel = null;
+                if (reel && reel.parentNode) reel.remove();
+                const imgEl = document.getElementById('stamp-selected-img');
+                if (imgEl) {
+                    imgEl.src = imgDef.full;
+                    imgEl.style.opacity = '1';
+                    gsap.fromTo(imgEl,
+                        { scale: _CS_TILE / _CS_INNER_SQ },
+                        { scale: 1, duration: 0.3, ease: 'back.out(2)',
+                          onComplete: () => { if (onComplete) onComplete(); } }
+                    );
+                } else {
+                    if (onComplete) onComplete();
+                }
+            },
+        });
     }
 
     // ─── Apply colors ─────────────────────────────────────────────────────────
     function applyInnerColor(color) {
         activeInnerColor = color;
         const sq = document.getElementById('stamp-inner-sq');
-        if (sq) sq.style.background = color;
+        if (sq) sq.style.background = '#FFFFFF'; // inner square is always white
         const btn = document.getElementById('color-swatch-btn');
         if (btn) btn.style.background = color;
     }
@@ -436,6 +770,7 @@
     function attachIconDrag(icon, imgDef, prescreen) {
         let dragging = false;
         let ox = 0, oy = 0;
+        let wasOver = false; // tracks drop-zone hover to fire enter/leave once
 
         function startDrag(clientX, clientY) {
             dragging = true;
@@ -456,21 +791,67 @@
             icon.style.left = (clientX - ox) + 'px';
             icon.style.top  = (clientY - oy) + 'px';
             const dropTarget = document.getElementById('stamp-inner-area');
-            if (dropTarget) {
-                const dr = dropTarget.getBoundingClientRect();
-                const over = clientX >= dr.left && clientX <= dr.right &&
-                             clientY >= dr.top  && clientY <= dr.bottom;
-                dropTarget.classList.toggle('drop-hover', over);
+            if (!dropTarget) return;
 
-                const preview     = document.getElementById('stamp-preview-img');
-                const selectedImg = document.getElementById('stamp-selected-img');
+            const dr   = dropTarget.getBoundingClientRect();
+            const over = clientX >= dr.left && clientX <= dr.right &&
+                         clientY >= dr.top  && clientY <= dr.bottom;
+            dropTarget.classList.toggle('drop-hover', over);
 
-                if (over) {
-                    if (preview) { if (preview.getAttribute('src') !== imgDef.full) preview.src = imgDef.full; preview.style.display = 'block'; }
-                    if (selectedImg) selectedImg.style.opacity = '0';
+            // Never show the large preview — we use shrink-to-tile instead
+            const preview = document.getElementById('stamp-preview-img');
+            if (preview) preview.style.display = 'none';
+
+            const selectedImg = document.getElementById('stamp-selected-img');
+
+            if (over && !wasOver) {
+                // ── Entered drop zone ── shrink current state to carousel tile
+                wasOver = true;
+                const hasImg = selectedImg && selectedImg.getAttribute('src') !== '';
+                if (hasImg) {
+                    gsap.to(selectedImg, {
+                        scale: 50 / 122, borderRadius: '8px',
+                        duration: 0.22, ease: 'back.out(1.8)', overwrite: true,
+                    });
                 } else {
-                    if (preview) preview.style.display = 'none';
-                    if (selectedImg) selectedImg.style.opacity = '1';
+                    // No image — pop in a white tile to show "ready to cycle"
+                    if (!dropTarget.querySelector('.hover-ready-tile')) {
+                        const hoverTile = document.createElement('div');
+                        hoverTile.className = 'hover-ready-tile';
+                        hoverTile.style.cssText = `
+                            position:absolute;inset:0;display:flex;
+                            align-items:center;justify-content:center;
+                            z-index:5;pointer-events:none;
+                        `;
+                        const sq = document.createElement('div');
+                        sq.style.cssText = `
+                            width:50px;height:50px;background:#f5f5f5;
+                            border-radius:8px;border:1.5px solid rgba(0,0,0,0.08);
+                        `;
+                        hoverTile.appendChild(sq);
+                        dropTarget.appendChild(hoverTile);
+                        gsap.fromTo(hoverTile,
+                            { opacity: 0, scale: 0.7 },
+                            { opacity: 1, scale: 1, duration: 0.2, ease: 'back.out(1.5)' }
+                        );
+                    }
+                }
+            } else if (!over && wasOver) {
+                // ── Left drop zone ── restore
+                wasOver = false;
+                const hasImg = selectedImg && selectedImg.getAttribute('src') !== '';
+                if (hasImg) {
+                    gsap.to(selectedImg, {
+                        scale: 1, borderRadius: '0px',
+                        duration: 0.22, ease: 'power2.out', overwrite: true,
+                    });
+                }
+                const hoverTile = dropTarget.querySelector('.hover-ready-tile');
+                if (hoverTile) {
+                    gsap.to(hoverTile, {
+                        opacity: 0, scale: 0.7, duration: 0.15, ease: 'power2.in',
+                        onComplete: () => hoverTile.remove(),
+                    });
                 }
             }
         }
@@ -478,28 +859,25 @@
         function endDrag(clientX, clientY) {
             if (!dragging) return;
             dragging = false;
+            wasOver  = false;
             document.body.classList.remove('is-dragging');
             icon.style.zIndex    = '50';
             icon.style.transform = 'scale(1)';
             icon.style.boxShadow = '';
 
-            const preview     = document.getElementById('stamp-preview-img');
-            const selectedImg = document.getElementById('stamp-selected-img');
-
-            // Always clean up preview and restore selected image
+            const preview = document.getElementById('stamp-preview-img');
             if (preview) preview.style.display = 'none';
-            if (selectedImg) selectedImg.style.opacity = '1';
 
-            const dropTarget = document.getElementById('stamp-inner-area');
+            const dropTarget  = document.getElementById('stamp-inner-area');
+            const selectedImg = document.getElementById('stamp-selected-img');
             if (dropTarget) {
-                const dr = dropTarget.getBoundingClientRect();
+                const dr   = dropTarget.getBoundingClientRect();
                 const over = clientX >= dr.left && clientX <= dr.right &&
                              clientY >= dr.top  && clientY <= dr.bottom;
                 if (over) {
-                    // Dropped — keep bubble hidden so it doesn't flash before icon fades
+                    // Dropped — carousel handles all state restoration
                     const bub = icon.querySelector('.icon-bubble');
                     if (bub) bub.style.display = 'none';
-                    // Apply image (hides hint inside applyImageToStamp)
                     if (activeIconEl && activeIconEl !== icon) {
                         respawnIcon(prescreen, activeIconEl);
                     }
@@ -509,7 +887,16 @@
                     activeImgDef = imgDef;
                     applyImageToStamp(imgDef);
                 } else {
-                    // Not dropped — restore icon bubble
+                    // Not dropped — restore hover state and icon
+                    const hoverTile = dropTarget.querySelector('.hover-ready-tile');
+                    if (hoverTile) hoverTile.remove();
+                    if (selectedImg) {
+                        gsap.killTweensOf(selectedImg);
+                        gsap.to(selectedImg, {
+                            scale: 1, borderRadius: '0px', opacity: 1,
+                            duration: 0.22, ease: 'power2.out',
+                        });
+                    }
                     const bub = icon.querySelector('.icon-bubble');
                     if (bub) bub.style.display = '';
                 }
@@ -572,6 +959,8 @@
             y + ICON_SIZE > exTop  && y < exBottom
         );
 
+        const bub = icon.querySelector('.icon-bubble');
+        if (bub) bub.style.display = '';
         icon.style.left         = x + 'px';
         icon.style.top          = y + 'px';
         icon.style.opacity      = '0';
@@ -1083,78 +1472,172 @@
         wrapper.style.transition = 'none';
         gsap.set(wordEl, { xPercent: -50, opacity: 0, scale: 1, y: 0 });
 
+        // Stamp stays white during the entire loading sequence (topo drawn via SVG overlay)
+        applyInnerColor('#FFFFFF');
+        applyOutlineColor(OUTLINE_COLORS[0]);
+        applyPattern(null);
+
         function applySwap(mode) {
-            if (mode === 'random') {
-                const img  = STAMP_IMAGES[Math.floor(Math.random() * STAMP_IMAGES.length)];
-                selectedImgDef = img;
-                const imgEl = document.getElementById('stamp-selected-img');
-                if (imgEl) imgEl.src = img.full;
-                randomizeStamp();
-                const nameEl = document.getElementById('stamp-name-input');
-                if (nameEl) nameEl.value = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
-            } else if (mode === 'stamp1') {
-                // Apply Supabase stamp #1; fall back to random if fetch hasn't resolved
-                if (stamp1Row) {
-                    const foundImg = STAMP_IMAGES.find(img => img.full === stamp1Row.character_svg);
-                    if (foundImg) applyImageToStamp(foundImg);
-                    else {
-                        const imgEl = document.getElementById('stamp-selected-img');
-                        if (imgEl && stamp1Row.character_svg) imgEl.src = stamp1Row.character_svg;
-                    }
-                    if (stamp1Row.card_color)   applyInnerColor(stamp1Row.card_color);
-                    if (stamp1Row.border_color) applyOutlineColor(stamp1Row.border_color);
-                    applyPattern(stamp1Row.pattern_id ? PATTERNS.find(p => p.id === stamp1Row.pattern_id) || null : null);
-                    const nameEl = document.getElementById('stamp-name-input');
-                    if (nameEl) nameEl.value = stamp1Row.name || '';
-                } else {
-                    const img = STAMP_IMAGES[Math.floor(Math.random() * STAMP_IMAGES.length)];
-                    selectedImgDef = img;
-                    const imgEl = document.getElementById('stamp-selected-img');
-                    if (imgEl) imgEl.src = img.full;
-                    randomizeStamp();
-                    const nameEl = document.getElementById('stamp-name-input');
-                    if (nameEl) nameEl.value = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
-                }
+            const numEl  = document.querySelector('.stamp-number');
+            const nameEl = document.getElementById('stamp-name-input');
+
+            if (mode === 'lucas') {
+                // Number spins down from invisible "0" to "1"; name fades in typing
+                if (numEl)  spinNumber(numEl, '1');
+                if (nameEl) { setTimeout(() => typewriteName(nameEl, 'Lucas', ''), 200); gsap.fromTo(nameEl, { opacity: 0 }, { opacity: 1, duration: 0.22, ease: 'power2.out', delay: 0.2 }); }
+            } else if (mode === 'lee') {
+                if (nameEl) typewriteName(nameEl, 'Lucas Lee', 'Lucas');
+            } else if (mode === 'huang') {
+                if (nameEl) typewriteName(nameEl, 'Lucas Lee Huang', 'Lucas Lee');
+                if (numEl)  numEl.textContent = '1';
             } else if (mode === 'reset') {
-                // Blank white stamp — no image, no pattern, no name
+                removeTopoOverlay();
                 const imgEl = document.getElementById('stamp-selected-img');
                 if (imgEl) imgEl.src = '';
                 applyInnerColor('#FFFFFF');
                 applyOutlineColor(OUTLINE_COLORS[0]);
                 applyPattern(null);
-                const nameEl = document.getElementById('stamp-name-input');
                 if (nameEl) nameEl.value = '';
+                if (numEl)  { numEl.textContent = stampNumber != null ? stampNumber : ''; numEl.style.opacity = '0'; }
+                if (nameEl) nameEl.style.opacity = '0';
+                const paletteBtn = document.getElementById('color-swatch-btn');
+                if (paletteBtn) { paletteBtn.style.opacity = '0'; }
             }
-            // mode === 'none': keep current stamp values as-is
         }
 
-        function animateCycle(word, mode, cb) {
+        let _typeTimer = null;
+        function typewriteName(el, target, from) {
+            if (_typeTimer) clearInterval(_typeTimer);
+            // Set first new character immediately so it's visible on the same frame
+            // that opacity becomes 1 — eliminates the empty-input flash
+            let i = from.length < target.length ? from.length + 1 : from.length;
+            el.value = target.slice(0, i);
+            if (i >= target.length) return;
+            _typeTimer = setInterval(() => {
+                if (i < target.length) {
+                    el.value = target.slice(0, ++i);
+                } else {
+                    clearInterval(_typeTimer);
+                    _typeTimer = null;
+                }
+            }, 55);
+        }
+
+        // Slot-machine spin: reel has "1" (top) and "0" invisible (bottom).
+        // Reel starts at y = -lineH (clip shows invisible "0"), scrolls down
+        // to y = 0 (clip shows "1"). "0" is never seen.
+        function spinNumber(el, target) {
+            const lineH = el.offsetHeight || 15;
+            el.style.overflow = 'hidden';
+            el.style.height   = lineH + 'px';
+            el.style.opacity  = '1';
+            el.innerHTML      = '';
+
+            const reel = document.createElement('div');
+            reel.style.willChange = 'transform';
+
+            const rowTarget = document.createElement('div');   // "1" — shown at end
+            rowTarget.textContent = target;
+            rowTarget.style.cssText = `height:${lineH}px;line-height:${lineH}px;`;
+
+            const rowFrom = document.createElement('div');     // "0" — invisible, shown at start
+            rowFrom.textContent = '0';
+            rowFrom.style.cssText = `height:${lineH}px;line-height:${lineH}px;opacity:0;`;
+
+            reel.appendChild(rowTarget);  // index 0 — enters from above when reel scrolls down
+            reel.appendChild(rowFrom);    // index 1 — starts in clip window (invisible)
+            el.appendChild(reel);
+
+            gsap.fromTo(reel,
+                { y: -lineH },   // clip shows row 1 ("0" invisible)
+                {
+                    y: 0,        // clip shows row 0 ("1")
+                    duration: 0.45,
+                    ease: 'power3.out',
+                    onComplete() {
+                        el.innerHTML   = '';
+                        el.textContent = target;
+                        el.style.overflow = '';
+                        el.style.height   = '';
+                    },
+                }
+            );
+        }
+
+        function animateCycle(word, mode, cb, postReveal) {
             const tl = gsap.timeline({ onComplete: cb });
-            tl.to(wrapper, { filter: 'blur(10px)', opacity: 0, duration: 0.22, ease: 'power2.in' })
-              .to(wordEl,   { opacity: 0, y: -5,               duration: 0.18, ease: 'power2.in' }, '<')
-              .call(() => { applySwap(mode); wordEl.textContent = word; })
-              .to(wrapper,  { filter: 'blur(0px)', opacity: 1, duration: 0.32, ease: 'power2.out' })
-              .fromTo(wordEl,
-                  { opacity: 0, y: 6 },
-                  { opacity: 1, y: 0, duration: 0.26, ease: 'back.out(1.4)' },
-                  '<'
-              )
-              .to({}, { duration: 0.1 });
+            if (mode === 'reset') {
+                // ':)' — show word label, then reveal
+                tl.call(() => { applySwap(mode); wordEl.textContent = word; })
+                  .fromTo(wordEl,
+                      { opacity: 0, y: 6 },
+                      { opacity: 1, y: 0, duration: 0.26, ease: 'back.out(1.4)' }
+                  )
+                  .call(() => { if (postReveal) postReveal(); })
+                  .to({}, { duration: 0.1 });
+            } else {
+                // Lucas / Lee / Huang — seamless, no words; carousel+topo do the visual work
+                tl.call(() => applySwap(mode))
+                  .call(() => { if (postReveal) postReveal(); })
+                  .to({}, { duration: 0.8 });
+            }
+        }
+
+        function runResetAnimations() {
+            const numEl      = document.querySelector('.stamp-number');
+            const nameEl     = document.getElementById('stamp-name-input');
+            const paletteBtn = document.getElementById('color-swatch-btn');
+            const FROM = { opacity: 0, y: 7 };
+            if (numEl)  gsap.fromTo(numEl,  FROM, { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out' });
+            if (nameEl) gsap.fromTo(nameEl, FROM, { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out', delay: 0.08 });
+            if (paletteBtn) {
+                gsap.fromTo(paletteBtn,
+                    FROM,
+                    { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', delay: 0.16,
+                      onComplete() { paletteBtn.style.pointerEvents = ''; } }
+                );
+            }
+        }
+
+        function getLandingImgDef() {
+            return STAMP_IMAGES.find(img => img.id === '13') || STAMP_IMAGES[0];
         }
 
         function next() {
             if (count >= 3) {
                 gsap.set(wrapper, { clearProps: 'transform,opacity,filter' });
                 wrapper.style.transition = '';
-                setTimeout(() => animateCycle(':)', 'reset', onDone), 300);
+
+                // Gate scatter icons until both ':)' timeline and reverse draw finish
+                let reverseDone = false;
+                let cycleDone   = false;
+                function checkBothDone() { if (reverseDone && cycleDone && onDone) onDone(); }
+
+                reverseTopoDrawing(() => { reverseDone = true; checkBothDone(); });
+                setTimeout(() => animateCycle(':)', 'reset',
+                    () => { cycleDone = true; checkBothDone(); },
+                    runResetAnimations
+                ), 300);
                 return;
             }
-            // Cycle 0 keeps initial stamp; cycle 1 randomizes; cycle 2 restores stamp 1
-            const modeMap = ['none', 'random', 'stamp1'];
+            const modeMap = ['lucas', 'lee', 'huang'];
             const word = words[count];
             const mode = modeMap[count];
             count++;
-            animateCycle(word, mode, next);
+            if (mode === 'huang') {
+                const savedCard = loadSavedCard();
+                if (savedCard) {
+                    animateCycle(word, mode, () => {
+                        landCarousel(getLandingImgDef(), () => bootZoom(savedCard));
+                    });
+                } else {
+                    animateCycle(word, mode, () => {
+                        landCarousel(getLandingImgDef(), () => setTimeout(next, 300));
+                    });
+                }
+            } else {
+                animateCycle(word, mode, next);
+            }
         }
         next();
     }
@@ -1197,18 +1680,34 @@
     function setupStampTilt(prescreen) {
         if (typeof gsap === 'undefined') return;
 
-        const TILT_MAX = 20;
-        const PAN      = 12;
+        const TILT_MAX      = 20;
+        const PAN           = 12;
+        const SHADOW_FACTOR = 0.22;
+        const SHADOW_BLUR   = 12;
+        const SHADOW_BASE_Y = 4;
+        const SHADOW_COLOR  = 'rgba(0,0,0,0.11)';
+
+        const wrapper = document.getElementById('stamp-wrapper');
 
         function getTargets() {
             return [
-                document.getElementById('stamp-wrapper'),
+                wrapper,
                 document.getElementById('stamp-enter-wrap'),
                 ...document.querySelectorAll('.stamp-hint-bubble'),
             ].filter(Boolean);
         }
 
+        function applyShadow(rx, ry) {
+            if (!wrapper) return;
+            const tiltMag = Math.sqrt(rx * rx + ry * ry) / TILT_MAX;
+            const sx   = (-ry * SHADOW_FACTOR).toFixed(2);
+            const sy   = (rx * SHADOW_FACTOR + SHADOW_BASE_Y).toFixed(2);
+            const blur = (SHADOW_BLUR + tiltMag * 4).toFixed(1);
+            wrapper.style.filter = `drop-shadow(${sx}px ${sy}px ${blur}px ${SHADOW_COLOR})`;
+        }
+
         function onMove(e) {
+            wrapper && (wrapper.style.transition = '');
             const hw = window.innerWidth  / 2;
             const hh = window.innerHeight / 2;
             const dx = e.clientX - hw;
@@ -1218,11 +1717,18 @@
             const tx =  (Math.max(-1, Math.min(1, dx / hw))) * PAN;
             const ty =  (Math.max(-1, Math.min(1, dy / hh))) * PAN;
             gsap.to(getTargets(), { rotateX: rx, rotateY: ry, x: tx, y: ty, transformPerspective: 800, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
+            applyShadow(rx, ry);
         }
 
         function onLeave() {
             gsap.to(getTargets(), { rotateX: 0, rotateY: 0, x: 0, y: 0, duration: 0.7, ease: 'power2.out', overwrite: 'auto' });
+            if (wrapper) {
+                wrapper.style.transition = 'filter 0.7s ease';
+                wrapper.style.filter = `drop-shadow(0px ${SHADOW_BASE_Y}px ${SHADOW_BLUR}px ${SHADOW_COLOR})`;
+            }
         }
+
+        applyShadow(0, 0);
 
         prescreen.addEventListener('mousemove', onMove, { passive: true });
         prescreen.addEventListener('mouseleave', onLeave, { passive: true });
@@ -1231,7 +1737,40 @@
             prescreen.removeEventListener('mousemove', onMove);
             prescreen.removeEventListener('mouseleave', onLeave);
             gsap.set(getTargets(), { clearProps: 'rotateX,rotateY,x,y,transformPerspective' });
+            if (wrapper) { wrapper.style.filter = ''; wrapper.style.transition = ''; }
         }, { once: true });
+    }
+
+    function bootZoom(savedCard) {
+        const prescreen = document.getElementById('prescreen');
+        const wrapper   = document.getElementById('stamp-wrapper');
+        if (!wrapper) { signalBoot(); return; }
+
+        _topoOverlay = null;
+
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position:fixed;inset:0;z-index:100000;
+            background-image:url('/images/lightmode.jpg');
+            background-size:cover;background-position:center;
+            opacity:0;pointer-events:none;
+        `;
+        document.body.appendChild(overlay);
+        overlay.getBoundingClientRect();
+
+        // Brief pause, then stamp fades; wallpaper follows 0.3s later
+        gsap.to(wrapper, { scale: 0.93, opacity: 0, duration: 1.0, ease: 'sine.inOut', transformOrigin: '50% 50%', delay: 0.3 });
+        overlay.style.transition = 'opacity 1.0s 0.6s ease';
+        overlay.style.opacity    = '1';
+
+        setTimeout(() => {
+            prescreen.style.display = 'none';
+            overlay.remove();
+            signalBoot();
+            document.addEventListener('system:ready', () => {
+                buildDesktopWidget(savedCard);
+            }, { once: true });
+        }, 1700);
     }
 
     function showStampBubbles() {
@@ -1311,14 +1850,17 @@
     function revealPrescreen() {
         const wrapper = document.getElementById('stamp-wrapper');
 
-        // Apply initial randomized stamp before animating in
-        const initImg  = STAMP_IMAGES[Math.floor(Math.random() * STAMP_IMAGES.length)];
-        selectedImgDef = initImg;
+        // Stamp starts blank — image, name, colours applied on first cycle ('Lucas')
         const initImgEl = document.getElementById('stamp-selected-img');
-        if (initImgEl) initImgEl.src = initImg.full;
-        randomizeStamp();
-        const initNameEl = document.getElementById('stamp-name-input');
-        if (initNameEl) initNameEl.value = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+        if (initImgEl) initImgEl.src = '';
+
+        // Hide number, name, and palette button — they reveal in the ':)' cycle
+        const initNumEl = document.querySelector('.stamp-number');
+        if (initNumEl)  initNumEl.style.opacity  = '0';
+        const initNameEl2 = document.getElementById('stamp-name-input');
+        if (initNameEl2) { initNameEl2.value = ''; initNameEl2.style.opacity = '0'; }
+        const initPaletteBtn = document.getElementById('color-swatch-btn');
+        if (initPaletteBtn) { initPaletteBtn.style.opacity = '0'; initPaletteBtn.style.pointerEvents = 'none'; }
 
         if (typeof gsap !== 'undefined') {
             gsap.fromTo(wrapper,
@@ -1331,8 +1873,15 @@
                     onComplete() {
                         wrapper.classList.add('stamp-appear');
                         gsap.set(wrapper, { clearProps: 'scale,opacity' });
-                        // Brief pause then randomize 3 times, then show bubbles
-                        setTimeout(() => runRandomCycles(showStampBubbles), 200);
+                        // Begin drawing topo lines. Duration covers stamp-appear → end of Huang:
+                        // 550ms pause + 550ms shrink + 300ms delay + 3×0.8s cycles + 0.9s land ≈ 4.7s
+                        startTopoDrawing(4.7);
+                        // Brief pause on blank stamp, then shrink+spin, then cycles
+                        setTimeout(() => {
+                            startContinuousCarousel(() => {
+                                setTimeout(() => runRandomCycles(showStampBubbles), 300);
+                            });
+                        }, 550);
                     },
                 }
             );
@@ -1680,22 +2229,10 @@
     // ─── Entry point ─────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         const saved = loadSavedCard();
-        if (saved) {
-            // Returning visitor: fade shield away, no prescreen shown
-            const s = document.getElementById('prescreen-init-shield');
-            if (s) {
-                s.style.transition = 'opacity 0.35s ease';
-                s.style.opacity    = '0';
-                setTimeout(() => s.remove(), 380);
-            }
-            signalBoot();
-            document.addEventListener('system:ready', () => {
-                buildDesktopWidget(saved);
-            }, { once: true });
-        } else {
-            fetchStamp1(); // fire-and-forget; result ready before 'Huang' cycle plays
-            fetchStampNumber().then(n => initPrescreen(n));
-        }
+        // Both new and returning users play the loading sequence.
+        // For returning users, bootZoom handles the exit after 'Huang'.
+        fetchStamp1();
+        fetchStampNumber().then(n => initPrescreen(n));
     });
 
     window.__stampRenderer = { makeOutlineSVG, PATTERNS };
