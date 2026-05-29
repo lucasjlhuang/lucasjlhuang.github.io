@@ -23,6 +23,10 @@
     let filterPillEl       = null;  // inner .gb-filter-bar pill (for palette Y position)
     let draggableInstances = [];    // GSAP Draggable instances — killed on close
 
+    // ─── Stamp counter ───────────────────────────────────────────────────────
+    let counterEl    = null;
+    let counterCount = 0;
+
     // ─── Edit button SVG tracing ─────────────────────────────────────────────
     function initEditButton(btn) {
         requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -80,7 +84,9 @@
 
     function stampTextColors(card) {
         const outlineLight = isLightColor(card.border_color);
-        const onLight = card.pattern_id === 'v-stripes' ? !outlineLight : outlineLight;
+        const onLight = card.pattern_id === 'v-stripes' ? !outlineLight
+                      : (card.pattern_id === 'dots' && outlineLight) ? false
+                      : outlineLight;
         return {
             num:  onLight ? '#000'             : '#fff',
             name: onLight ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.85)',
@@ -190,6 +196,8 @@
         const visible = originalOrder.filter(c =>  matchesAllFilters(c));
         const hidden  = originalOrder.filter(c => !matchesAllFilters(c));
 
+        setCounterValue(visible.length);
+
         const ordered = sortByNumber
             ? [...visible].sort((a, b) =>
                 (parseInt(a.dataset.stampNumber) || 0) - (parseInt(b.dataset.stampNumber) || 0))
@@ -252,6 +260,48 @@
         }
         updateGrid(grid);
         updateFilterBtnStates();
+    }
+
+    // ─── Stamp counter ───────────────────────────────────────────────────────
+    function buildCounter(overlay, total) {
+        counterCount = total;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'gb-counter';
+        overlay.appendChild(wrap);
+        counterEl = wrap;
+
+        const clip = document.createElement('div');
+        clip.className = 'gb-counter-clip';
+        wrap.appendChild(clip);
+
+        const numEl = document.createElement('span');
+        numEl.className   = 'gb-counter-number';
+        numEl.textContent = String(total);
+        clip.appendChild(numEl);
+    }
+
+    // Odometer-style flip on filter change
+    function setCounterValue(newCount) {
+        if (!counterEl) return;
+        const numEl = counterEl.querySelector('.gb-counter-number');
+        if (!numEl) { counterCount = newCount; return; }
+
+        const prev = counterCount;
+        counterCount = newCount;
+        const dir = newCount < prev ? 1 : -1; // fewer → roll down; more → roll up
+
+        if (typeof gsap !== 'undefined') {
+            gsap.timeline()
+                .to(numEl,  { y: dir * -12, opacity: 0, duration: 0.12, ease: 'power2.in' })
+                .call(()  => { numEl.textContent = String(newCount); })
+                .fromTo(numEl,
+                    { y: dir * 12, opacity: 0 },
+                    { y: 0,        opacity: 1, duration: 0.16, ease: 'power2.out' }
+                );
+        } else {
+            numEl.textContent = String(newCount);
+        }
     }
 
     // ─── Active filter button — fill the whole pill ──────────────────────────
@@ -641,6 +691,7 @@
             });
 
             buildFilterBar(overlay, ordered, grid);
+            buildCounter(overlay, ordered.length);
 
             if (typeof gsap !== 'undefined') {
                 const PAN_STRENGTH  = 8;
@@ -689,6 +740,8 @@
         sortByNumber  = false;
         filterBarEl   = null;
         filterPillEl  = null;
+        counterEl     = null;
+        counterCount  = 0;
 
         // Kill all Draggable instances — fresh ones are created on next open
         draggableInstances.forEach(d => d.kill());

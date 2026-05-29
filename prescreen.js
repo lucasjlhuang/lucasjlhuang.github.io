@@ -1008,7 +1008,9 @@
         // For the vertical split pattern the text is on the RIGHT half (markColor),
         // so contrast logic must be inverted relative to the fill.
         const outlineLight = isLightColor(activeOutlineColor);
-        const textOnLight  = activePattern?.id === 'v-stripes' ? !outlineLight : outlineLight;
+        const textOnLight  = activePattern?.id === 'v-stripes' ? !outlineLight
+                           : (activePattern?.id === 'dots' && outlineLight) ? false
+                           : outlineLight;
 
         const numEl  = document.querySelector('.stamp-number');
         const nameEl = document.querySelector('.stamp-name-input');
@@ -2028,7 +2030,9 @@
 
         // Adaptive text colors — same logic as updateStampTextColor
         const outlineLight = isLightColor(outline);
-        const textOnLight  = cardData.patternId === 'v-stripes' ? !outlineLight : outlineLight;
+        const textOnLight  = cardData.patternId === 'v-stripes' ? !outlineLight
+                           : (cardData.patternId === 'dots' && outlineLight) ? false
+                           : outlineLight;
         const numColor     = textOnLight ? '#000' : '#fff';
         const nameColor    = textOnLight ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.85)';
 
