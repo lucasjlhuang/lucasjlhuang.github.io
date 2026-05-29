@@ -1877,6 +1877,7 @@
         btn.addEventListener('click', () => {
             running = !running;
             if (running) {
+                document.dispatchEvent(new CustomEvent('bgcursors:start'));
                 scene.style.display = '';
                 // Randomize which player (P2/P3/P4) does each role this session
                 const players = ['P2', 'P3', 'P4'].sort(() => Math.random() - 0.5);

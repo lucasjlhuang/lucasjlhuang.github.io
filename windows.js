@@ -482,9 +482,11 @@ targetFolders.forEach(folder => {
 
     function runBootSequence() {
         const wallpaper = document.querySelector('.wallpaper');
-        if (wallpaper) {
+        if (wallpaper && wallpaper.style.opacity !== '1') {
             wallpaper.style.transition = 'opacity 0.5s ease';
             wallpaper.style.opacity    = '1';
+        } else if (wallpaper) {
+            wallpaper.style.transition = '';
         }
 
         const folders = Array.from(document.querySelectorAll('.projectfolder'));
@@ -616,6 +618,134 @@ targetFolders.forEach(folder => {
     } else {
         document.addEventListener('prescreen:done', runBootSequence, { once: true });
     }
+
+    // ── Hiring bubble ─────────────────────────────────────────────────────────
+    function spawnHiringBubble() {
+        if (document.getElementById('hiring-bubble')) return;
+
+        const resumeItem = document.querySelector('.dock li[data-label="Resume"]');
+        if (!resumeItem) return;
+
+        // Target the actual icon image for accurate genie origin
+        const iconEl   = resumeItem.querySelector('img') || resumeItem;
+        const iconRect = iconEl.getBoundingClientRect();
+
+        const bubble = document.createElement('div');
+        bubble.id = 'hiring-bubble';
+        // Place off-screen first so we can measure natural size
+        // No overflow:hidden — tail triangles extend below the bubble edge
+        bubble.style.cssText = `
+            position:fixed; z-index:999; background:#fff; border-radius:16px;
+            padding:8px 30px 8px 11px; max-width:260px;
+            border:1.5px solid rgba(0,0,0,0.08);
+            box-shadow:0 1px 6px rgba(0,0,0,0.08);
+            font-family:'SFRegular',sans-serif; font-size:10.5px;
+            line-height:1.55; color:rgba(0,0,0,0.75);
+            box-sizing:border-box;
+            pointer-events:none; opacity:0;
+            left:-9999px; top:-9999px;
+        `;
+
+        // Text (hidden during genie open so content doesn't reflow while morphing)
+        const text = document.createElement('span');
+        text.innerHTML = 'Bound for Paris 🇫🇷 & Milan 🇮🇹 for a MSc in Product Management & UX Design, Sept 2026.';
+        text.style.opacity = '0';
+        bubble.appendChild(text);
+
+        // Center-bottom tail (two triangles: border + fill)
+        const tailBorder = document.createElement('div');
+        tailBorder.style.cssText = `position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
+            width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;
+            border-top:9px solid rgba(0,0,0,0.08);`;
+        const tailFill = document.createElement('div');
+        tailFill.style.cssText = `position:absolute;bottom:-7.5px;left:50%;transform:translateX(-50%);
+            width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;
+            border-top:8px solid #fff;`;
+        bubble.appendChild(tailBorder);
+        bubble.appendChild(tailFill);
+
+        // × button
+        const x = document.createElement('button');
+        x.textContent = '×';
+        x.style.cssText = `position:absolute;top:5px;right:7px;background:none;border:none;
+            cursor:pointer;font-size:13px;line-height:1;padding:0;color:rgba(0,0,0,0.3);opacity:0;`;
+        bubble.appendChild(x);
+
+        document.body.appendChild(bubble);
+
+        // Measure natural size while off-screen (no explicit width set yet)
+        const bW = bubble.offsetWidth;
+        const bH = bubble.offsetHeight;
+
+        const genieTrans = `left ${TRANSITION_DURATION} ${GENIE_EASING}, top ${TRANSITION_DURATION} ${GENIE_EASING}, width ${TRANSITION_DURATION} ${GENIE_EASING}, height ${TRANSITION_DURATION} ${GENIE_EASING}, opacity ${TRANSITION_DURATION} ease-out, transform ${TRANSITION_DURATION} ease-out`;
+
+        function dismiss() {
+            bubble.style.pointerEvents = 'none';
+            bubble.style.zIndex = '999'; // drop behind dock before animating back
+            // Re-measure icon — dock is settled so this is always accurate
+            const iR = iconEl.getBoundingClientRect();
+            bubble.getBoundingClientRect(); // force reflow before transition
+            bubble.style.transition = genieTrans;
+            bubble.style.left      = `${iR.left}px`;
+            bubble.style.top       = `${iR.top}px`;
+            bubble.style.width     = `${iR.width}px`;
+            bubble.style.height    = `${iR.height}px`;
+            bubble.style.transform = 'scale(0.1)';
+            bubble.style.opacity   = '0';
+            setTimeout(() => bubble.remove(), 520);
+        }
+
+        // Genie open after 0.75s — measure icon fresh so dock has finished its entry animation
+        setTimeout(() => {
+            const iR        = iconEl.getBoundingClientRect();
+            const centerX   = iR.left + iR.width  / 2;
+            const finalLeft = centerX - bW / 2;
+            const finalTop  = iR.top  - bH - 10;
+
+            // Snap to icon start state (bubble is invisible at -9999 until now)
+            bubble.style.transition = 'none';
+            bubble.style.left      = `${iR.left}px`;
+            bubble.style.top       = `${iR.top}px`;
+            bubble.style.width     = `${iR.width}px`;
+            bubble.style.height    = `${iR.height}px`;
+            bubble.style.transform = 'scale(0.1)';
+
+            bubble.getBoundingClientRect(); // commit start state before transition
+
+            bubble.style.pointerEvents = '';
+            bubble.style.transition = genieTrans;
+            bubble.style.left      = `${finalLeft}px`;
+            bubble.style.top       = `${finalTop}px`;
+            bubble.style.width     = `${bW}px`;
+            bubble.style.height    = `${bH}px`;
+            bubble.style.transform = 'scale(1)';
+            bubble.style.opacity   = '1';
+
+            // Start fading in text 200ms before genie lands (genie = 0.5s, fade starts at 0.3s)
+            setTimeout(() => {
+                text.style.transition = 'opacity 0.25s ease';
+                text.style.opacity    = '1';
+                x.style.transition    = 'opacity 0.25s ease';
+                x.style.opacity       = '1';
+            }, 300);
+
+            // Raise above dock once fully open
+            bubble.addEventListener('transitionend', function onOpen(e) {
+                if (e.propertyName === 'width') {
+                    bubble.style.zIndex = '10000';
+                    bubble.removeEventListener('transitionend', onOpen);
+                }
+            });
+        }, 750);
+
+        // Auto-close 10s after opening
+        const autoClose = setTimeout(dismiss, 750 + 10000);
+
+        x.addEventListener('click', () => { clearTimeout(autoClose); dismiss(); });
+        document.addEventListener('bgcursors:start', () => { clearTimeout(autoClose); dismiss(); }, { once: true });
+    }
+
+    document.addEventListener('system:ready', spawnHiringBubble, { once: true });
 
     // Global click cursor — adds body class on mousedown, removes on mouseup
     document.addEventListener('mousedown', () => document.body.classList.add('is-clicking'));

@@ -1764,6 +1764,8 @@
         overlay.style.opacity    = '1';
 
         setTimeout(() => {
+            const wp = document.querySelector('.wallpaper');
+            if (wp) { wp.style.transition = 'none'; wp.style.opacity = '1'; }
             prescreen.style.display = 'none';
             overlay.remove();
             signalBoot();
@@ -2001,6 +2003,8 @@
                 overlay.style.transition = 'opacity 0.8s ease';
                 overlay.style.opacity    = '1';
                 setTimeout(() => {
+                    const wp = document.querySelector('.wallpaper');
+                    if (wp) { wp.style.transition = 'none'; wp.style.opacity = '1'; }
                     prescreen.style.display = 'none';
                     overlay.remove();
                     signalBoot();
