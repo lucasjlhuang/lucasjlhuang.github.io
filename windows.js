@@ -481,6 +481,12 @@ targetFolders.forEach(folder => {
     const isMobile = () => window.innerWidth <= 768;
 
     function runBootSequence() {
+        const wallpaper = document.querySelector('.wallpaper');
+        if (wallpaper) {
+            wallpaper.style.transition = 'opacity 0.5s ease';
+            wallpaper.style.opacity    = '1';
+        }
+
         const folders = Array.from(document.querySelectorAll('.projectfolder'));
         const staticFolders = folders.filter(f =>  f.classList.contains('system-static'));
         const randomFolders = folders.filter(f => !f.classList.contains('system-static'));
