@@ -94,12 +94,12 @@
     // Slot configs — borderRadius as numbers (px) for smooth lerping
     const CSLOT = {
         center:       { x:    0, rotateY:   0, scale: 0.64, opacity: 1.00, z:    0, borderRadius:  3, transformPerspective: 1200, blur: 0   },
-        left:         { x: -340, rotateY:  12, scale: 0.68, opacity: 0.85, z:   20, borderRadius:  8, transformPerspective:  900, blur: 0.5 },
-        right:        { x:  340, rotateY: -12, scale: 0.68, opacity: 0.85, z:   20, borderRadius:  8, transformPerspective:  900, blur: 0.5 },
-        'far-left':   { x: -640, rotateY:  24, scale: 0.75, opacity: 0.55, z:   70, borderRadius: 16, transformPerspective:  500, blur: 2   },
-        'far-right':  { x:  640, rotateY: -24, scale: 0.75, opacity: 0.55, z:   70, borderRadius: 16, transformPerspective:  500, blur: 2   },
-        'off-left':   { x: -940, rotateY:  38, scale: 0.80, opacity: 0.00, z:  120, borderRadius: 26, transformPerspective:  320, blur: 4   },
-        'off-right':  { x:  940, rotateY: -38, scale: 0.80, opacity: 0.00, z:  120, borderRadius: 26, transformPerspective:  320, blur: 4   },
+        left:         { x: -340, rotateY:  12, scale: 0.68, opacity: 0.85, z:   20, borderRadius:  8, transformPerspective:  900, blur: 0.3 },
+        right:        { x:  340, rotateY: -12, scale: 0.68, opacity: 0.85, z:   20, borderRadius:  8, transformPerspective:  900, blur: 0.3 },
+        'far-left':   { x: -640, rotateY:  24, scale: 0.75, opacity: 0.55, z:   70, borderRadius: 16, transformPerspective:  500, blur: 1   },
+        'far-right':  { x:  640, rotateY: -24, scale: 0.75, opacity: 0.55, z:   70, borderRadius: 16, transformPerspective:  500, blur: 1   },
+        'off-left':   { x: -940, rotateY:  38, scale: 0.80, opacity: 0.00, z:  120, borderRadius: 26, transformPerspective:  320, blur: 2   },
+        'off-right':  { x:  940, rotateY: -38, scale: 0.80, opacity: 0.00, z:  120, borderRadius: 26, transformPerspective:  320, blur: 2   },
     };
 
     // d = -3..3 → CSLOT entry (indexed by d + 3)
