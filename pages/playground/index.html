@@ -71,5 +71,23 @@
 
 </body>
 
-<script src="/components/navbar.js"></script>
-<html>
+<script>
+    document.querySelectorAll('.grid > div').forEach(card => {
+        card.classList.add('card-stack');
+
+        // Wrap existing content in card-inner
+        const inner = document.createElement('div');
+        inner.className = 'card-inner';
+        while (card.firstChild) inner.appendChild(card.firstChild);
+        card.appendChild(inner);
+
+        // Inject ghost cards behind the main card
+        const ghost1 = document.createElement('div');
+        ghost1.className = 'card-ghost card-ghost-1';
+        const ghost2 = document.createElement('div');
+        ghost2.className = 'card-ghost card-ghost-2';
+
+        card.insertBefore(ghost1, inner);
+        card.insertBefore(ghost2, inner);
+    });
+</script>

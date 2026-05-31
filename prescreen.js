@@ -220,11 +220,14 @@
                      <rect width="9" height="9" fill="${f}"/>
                      <circle cx="4.5" cy="4.5" r="4.5" fill="${markColor}"/>
                    </pattern>`,
-            'v-stripes': `<pattern id="${id}" width="124" height="167" patternUnits="userSpaceOnUse">
+            // objectBoundingBox: tile = 100% of bounding box → always exactly 1 tile,
+            // immune to GPU compositing-layer rasterisation at fractional scales.
+            // Content coords remain in user space (0–124 × 0–167) — no visual change.
+            'v-stripes': `<pattern id="${id}" width="1" height="1" patternUnits="objectBoundingBox">
                      <rect width="62" height="167" fill="${f}"/>
                      <rect x="62" y="0" width="62" height="167" fill="${markColor}"/>
                    </pattern>`,
-            'h-stripes': `<pattern id="${id}" width="124" height="167" patternUnits="userSpaceOnUse">
+            'h-stripes': `<pattern id="${id}" width="1" height="1" patternUnits="objectBoundingBox">
                      <rect width="124" height="66.8" fill="${hMarkColor}"/>
                      <rect y="66.8" width="124" height="100.2" fill="${f}"/>
                    </pattern>`,

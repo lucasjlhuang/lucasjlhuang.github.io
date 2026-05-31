@@ -27,6 +27,20 @@
     let counterEl    = null;
     let counterCount = 0;
 
+    // ─── Carousel state ──────────────────────────────────────────────────────
+    let viewMode             = 'carousel'; // 'grid' | 'carousel'
+    let carouselEl           = null;
+    let carouselCards        = [];
+    let carouselKeyHandler   = null;
+    let carouselWheelHandler = null;
+
+    // Continuous position model — carouselPos is a float; integer = card at center
+    let carouselPos      = 0;    // current center position (unbounded float)
+    let carouselVel      = 0;    // cards/second (user momentum)
+    let carouselRafId    = null; // requestAnimationFrame handle for momentum loop
+    let carouselLastTime = null; // timestamp of last rAF tick
+    let carouselTween    = null; // active GSAP tween for programmatic spins
+
     // ─── Edit button SVG tracing ─────────────────────────────────────────────
     function initEditButton(btn) {
         requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -67,6 +81,66 @@
                 path.style.strokeDashoffset = String(PL);
             });
         }));
+    }
+
+    // ─── Carousel slot configs ───────────────────────────────────────────────
+    // Stamps are rendered at 2× native size (298×400) so center scale stays ≤ 1
+    // — avoids the browser rasterizing at small size then scaling up (blurry text/images)
+    const CAROUSEL_STAMP_W = STAMP_W * 2; // 298
+    const CAROUSEL_STAMP_H = STAMP_H * 2; // 400
+
+    // Inside-sphere carousel — larger sphere radius means gentler curvature:
+    // smaller rotateY, less z variation, higher transformPerspective (less foreshortening per card).
+    // Slot configs — borderRadius as numbers (px) for smooth lerping
+    const CSLOT = {
+        center:       { x:    0, rotateY:   0, scale: 0.64, opacity: 1.00, z:    0, borderRadius:  3, transformPerspective: 1200, blur: 0   },
+        left:         { x: -340, rotateY:  12, scale: 0.68, opacity: 0.85, z:   20, borderRadius:  8, transformPerspective:  900, blur: 0.5 },
+        right:        { x:  340, rotateY: -12, scale: 0.68, opacity: 0.85, z:   20, borderRadius:  8, transformPerspective:  900, blur: 0.5 },
+        'far-left':   { x: -640, rotateY:  24, scale: 0.75, opacity: 0.55, z:   70, borderRadius: 16, transformPerspective:  500, blur: 2   },
+        'far-right':  { x:  640, rotateY: -24, scale: 0.75, opacity: 0.55, z:   70, borderRadius: 16, transformPerspective:  500, blur: 2   },
+        'off-left':   { x: -940, rotateY:  38, scale: 0.80, opacity: 0.00, z:  120, borderRadius: 26, transformPerspective:  320, blur: 4   },
+        'off-right':  { x:  940, rotateY: -38, scale: 0.80, opacity: 0.00, z:  120, borderRadius: 26, transformPerspective:  320, blur: 4   },
+    };
+
+    // d = -3..3 → CSLOT entry (indexed by d + 3)
+    const CSLOT_BY_D = [
+        CSLOT['off-left'],  // d = -3
+        CSLOT['far-left'],  // d = -2
+        CSLOT['left'],      // d = -1
+        CSLOT['center'],    // d =  0
+        CSLOT['right'],     // d =  1
+        CSLOT['far-right'], // d =  2
+        CSLOT['off-right'], // d =  3
+    ];
+
+    function lerpCfg(a, b, t) {
+        const L = (x, y) => x + (y - x) * t;
+        return {
+            x:                   L(a.x,                   b.x),
+            rotateY:             L(a.rotateY,             b.rotateY),
+            scale:               L(a.scale,               b.scale),
+            opacity:             L(a.opacity,             b.opacity),
+            z:                   L(a.z,                   b.z),
+            borderRadius:        L(a.borderRadius,        b.borderRadius),
+            transformPerspective: L(a.transformPerspective, b.transformPerspective),
+            blur:                L(a.blur,                b.blur),
+        };
+    }
+
+    // Interpolates CSLOT for any continuous relative position
+    function slotConfigAt(relPos) {
+        const clamped = Math.max(-3, Math.min(3, relPos));
+        const lo = Math.floor(clamped);
+        const hi = Math.ceil(clamped);
+        if (lo === hi) return CSLOT_BY_D[lo + 3];
+        return lerpCfg(CSLOT_BY_D[lo + 3], CSLOT_BY_D[hi + 3], clamped - lo);
+    }
+
+    // Modular card access — wraps around for infinite scrolling
+    function getCardAt(i) {
+        const N = carouselCards.length;
+        if (!N) return null;
+        return carouselCards[((i % N) + N) % N];
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -138,6 +212,52 @@
         `;
     }
 
+    // ─── Render stamp at 2× size for carousel (prevents blur from scale > 1) ──
+    function renderCarouselStampHTML(card) {
+        const S           = 2;
+        const renderer    = window.__stampRenderer;
+        const borderColor = card.border_color || '#FDFCFC';
+        const innerColor  = card.card_color   || '#FFFFFF';
+
+        let outlineSVG = '';
+        if (renderer) {
+            const pat = card.pattern_id
+                ? renderer.PATTERNS.find(p => p.id === card.pattern_id) || null
+                : null;
+            outlineSVG = renderer.makeOutlineSVG(CAROUSEL_STAMP_W, CAROUSEL_STAMP_H, borderColor, pat);
+        }
+
+        const txt     = stampTextColors(card);
+        const imgHTML = card.character_svg
+            ? `<img src="${escHtml(card.character_svg)}" loading="lazy"
+                    style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;">`
+            : '';
+
+        return `
+            <div class="gb-stamp-body" style="width:${CAROUSEL_STAMP_W}px;height:${CAROUSEL_STAMP_H}px;">
+                <div style="position:absolute;
+                     left:${INNER_L*S}px;top:${INNER_T*S}px;
+                     width:${INNER_W*S}px;height:${INNER_H*S}px;overflow:hidden;">
+                    <div style="position:absolute;inset:0;background:${escHtml(innerColor)};"></div>
+                    ${imgHTML}
+                </div>
+                <div style="position:absolute;inset:0;pointer-events:none;">${outlineSVG}</div>
+                <div style="position:absolute;bottom:${25*S}px;right:${14*S}px;
+                     font-family:'SFMedium',sans-serif;font-size:${15*S}px;font-weight:700;
+                     color:${txt.num};line-height:1;pointer-events:none;">
+                    ${escHtml(String(card.stamp_number || '?'))}
+                </div>
+                <div style="position:absolute;bottom:${12*S}px;right:${14*S}px;
+                     font-family:'SFMedium',sans-serif;font-size:${10*S}px;
+                     color:${txt.name};line-height:1;
+                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+                     max-width:${116*S}px;pointer-events:none;">
+                    ${escHtml(card.name || '')}
+                </div>
+            </div>
+        `;
+    }
+
     // ─── Organize cards ───────────────────────────────────────────────────────
     function organizeCards(cards) {
         if (!cards || !cards.length) return [];
@@ -196,12 +316,18 @@
         const visible = originalOrder.filter(c =>  matchesAllFilters(c));
         const hidden  = originalOrder.filter(c => !matchesAllFilters(c));
 
-        setCounterValue(visible.length);
-
         const ordered = sortByNumber
             ? [...visible].sort((a, b) =>
                 (parseInt(a.dataset.stampNumber) || 0) - (parseInt(b.dataset.stampNumber) || 0))
             : visible;
+
+        // Carousel mode — spin into filtered data, skip grid logic
+        if (viewMode === 'carousel') {
+            filterSpinCarousel(ordered.map(c => c._cardData));
+            return;
+        }
+
+        setCounterValue(visible.length);
 
         if (typeof gsap !== 'undefined') {
             const nowVisible      = originalOrder.filter(c => c.style.display !== 'none');
@@ -352,6 +478,294 @@
         });
         const sortBtn = filterBarEl.querySelector('.gb-filter-123-btn');
         if (sortBtn) sortBtn.classList.toggle('gb-filter-btn-active', sortByNumber);
+    }
+
+    // ─── Carousel ────────────────────────────────────────────────────────────
+    function buildCarousel(overlay) {
+        const el = document.createElement('div');
+        el.className = 'gb-carousel';
+        carouselEl = el;
+        overlay.appendChild(el);
+    }
+
+    // Continuous render — positions every visible card from the current carouselPos float.
+    // Called every rAF tick and from GSAP tween onUpdate. Uses gsap.set() only (no tweens).
+    function renderCarousel() {
+        if (!carouselEl || !carouselCards.length) return;
+
+        const LO = Math.floor(carouselPos) - 3;
+        const HI = Math.ceil(carouselPos)  + 3;
+
+        // Remove items that have drifted outside the visible window
+        Array.from(carouselEl.children).forEach(item => {
+            const idx = parseInt(item.dataset.idx);
+            if (idx < LO || idx > HI) item.remove();
+        });
+
+        for (let i = LO; i <= HI; i++) {
+            const card    = getCardAt(i);
+            if (!card) continue;
+
+            const relPos  = i - carouselPos;
+            const cfg     = slotConfigAt(relPos);
+            const isCenter = Math.abs(relPos) < 0.5;
+
+            let item = carouselEl.querySelector(`.gb-carousel-item[data-idx="${i}"]`);
+            if (!item) {
+                item = document.createElement('div');
+                item.className   = 'gb-carousel-item';
+                item.dataset.idx = String(i);
+                item.innerHTML   = renderCarouselStampHTML(card);
+                carouselEl.appendChild(item);
+
+                item.addEventListener('click', () => {
+                    const idx2      = parseInt(item.dataset.idx);
+                    const clickRel  = idx2 - carouselPos;
+                    if (Math.abs(clickRel) > 0.35) navigateToCard(idx2);
+                });
+            }
+
+            item.classList.toggle('is-center', isCenter);
+            item.style.zIndex = String(10 - Math.min(3, Math.round(Math.abs(relPos))));
+
+            if (typeof gsap !== 'undefined') {
+                const { blur: blurVal, ...itemCfg } = cfg;
+                gsap.set(item, itemCfg);
+
+                gsap.set(item, { filter: blurVal > 0.05 ? `blur(${blurVal.toFixed(2)}px)` : 'none' });
+
+                // Center-facing tilt on stamp body — edges lean inward, center is flat.
+                // Uses a power curve (^1.6) so far-slots tilt noticeably more than adjacent.
+                // Fade deferred to relPos ±2.5→±3.5 so tilt holds through the visible range.
+                const body = item.querySelector('.gb-stamp-body');
+                if (body) {
+                    const absDist  = Math.abs(relPos);
+                    const tiltFade = Math.max(0, 1 - Math.max(0, absDist - 2.5) * 2);
+                    const norm     = Math.min(absDist, 2) / 2;               // 0→1 over visible range
+                    const tiltY    = -Math.sign(relPos) * Math.pow(norm, 1.6) * 22 * tiltFade;
+                    gsap.set(body, {
+                        rotateY:             tiltY,
+                        transformPerspective: 900,
+                    });
+                }
+            }
+        }
+    }
+
+    // Smooth click-to-center navigation
+    function navigateToCard(targetIdx) {
+        stopCarouselSpin();
+        if (typeof gsap !== 'undefined') {
+            const proxy = { pos: carouselPos };
+            carouselTween = gsap.to(proxy, {
+                pos: targetIdx, duration: 0.65, ease: 'expo.out',
+                onUpdate()  { carouselPos = proxy.pos; renderCarousel(); },
+                onComplete(){ carouselPos = targetIdx; carouselTween = null; },
+            });
+        } else {
+            carouselPos = targetIdx;
+            renderCarousel();
+        }
+    }
+
+    // ─── Momentum loop (user scrolling) ──────────────────────────────────────
+    const CAROUSEL_FRICTION   = 0.97;  // per 16.67ms frame — ~2s natural coast
+    const CAROUSEL_SNAP_VEL   = 0.05;  // cards/sec → trigger snap
+
+    function startMomentumTick() {
+        if (carouselRafId !== null) return;
+        carouselLastTime = null;
+
+        function tick(ts) {
+            if (!carouselLastTime) carouselLastTime = ts;
+            const dt      = Math.min(ts - carouselLastTime, 50);
+            carouselLastTime = ts;
+
+            const friction = Math.pow(CAROUSEL_FRICTION, dt / 16.67);
+            carouselPos += carouselVel * (dt / 1000);
+            carouselVel *= friction;
+
+            renderCarousel();
+
+            if (Math.abs(carouselVel) < CAROUSEL_SNAP_VEL) {
+                carouselVel   = 0;
+                carouselRafId = null;
+                snapCarousel();
+                return;
+            }
+
+            carouselRafId = requestAnimationFrame(tick);
+        }
+
+        carouselRafId = requestAnimationFrame(tick);
+    }
+
+    function snapCarousel() {
+        if (!carouselEl) return;
+        const target = Math.round(carouselPos);
+        if (carouselPos === target) return;
+        if (typeof gsap !== 'undefined') {
+            const proxy = { pos: carouselPos };
+            carouselTween = gsap.to(proxy, {
+                pos: target, duration: 0.35, ease: 'power2.out',
+                onUpdate()  { carouselPos = proxy.pos; renderCarousel(); },
+                onComplete(){ carouselPos = target; carouselTween = null; },
+            });
+        } else {
+            carouselPos = target;
+            renderCarousel();
+        }
+    }
+
+    function stopCarouselSpin() {
+        if (carouselRafId !== null) { cancelAnimationFrame(carouselRafId); carouselRafId = null; }
+        if (carouselTween)          { carouselTween.kill(); carouselTween = null; }
+        carouselVel = 0;
+    }
+
+    // ─── Filter spin (two-phase: accelerate through old → coast into new) ────
+    function filterSpinCarousel(newCards) {
+        stopCarouselSpin();
+
+        if (!carouselEl || !newCards.length) {
+            carouselCards = newCards;
+            carouselPos   = 0;
+            if (carouselEl) { carouselEl.innerHTML = ''; renderCarousel(); }
+            setCounterValue(newCards.length);
+            return;
+        }
+
+        // Phase 1 — accelerate through current cards (+8 positions)
+        const phase1Target = carouselPos + 8;
+        const proxy        = { pos: carouselPos };
+
+        carouselTween = gsap.to(proxy, {
+            pos: phase1Target, duration: 0.75, ease: 'power2.in',
+            onUpdate() { carouselPos = proxy.pos; renderCarousel(); },
+            onComplete() {
+                // Swap to new cards; continue same direction, coast in from -4 → 0
+                carouselCards = newCards;
+                carouselPos   = -4;
+                proxy.pos     = -4;
+                if (carouselEl) carouselEl.innerHTML = '';
+                renderCarousel();
+                setCounterValue(newCards.length);
+
+                carouselTween = gsap.to(proxy, {
+                    pos: 0, duration: 1.1, ease: 'power3.out',
+                    onUpdate() { carouselPos = proxy.pos; renderCarousel(); },
+                    onComplete() { carouselPos = 0; carouselTween = null; },
+                });
+            },
+        });
+    }
+
+    // ─── Input ───────────────────────────────────────────────────────────────
+    function setupCarouselInput() {
+        carouselKeyHandler = e => {
+            if (!isOpen || viewMode !== 'carousel') return;
+            if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); carouselVel -= 5; startMomentumTick(); }
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); carouselVel += 5; startMomentumTick(); }
+        };
+        carouselWheelHandler = e => {
+            if (!isOpen || viewMode !== 'carousel') return;
+            e.preventDefault();
+            const delta = e.deltaY || e.deltaX;
+            carouselVel += (delta / 100) * 1.5;
+            carouselVel  = Math.max(-22, Math.min(22, carouselVel));
+            // Let user input override any programmatic tween
+            if (carouselTween) { carouselTween.kill(); carouselTween = null; }
+            startMomentumTick();
+        };
+        document.addEventListener('keydown', carouselKeyHandler);
+        document.addEventListener('wheel',   carouselWheelHandler, { passive: false });
+    }
+
+    function teardownCarouselInput() {
+        if (carouselKeyHandler)   { document.removeEventListener('keydown', carouselKeyHandler);   carouselKeyHandler   = null; }
+        if (carouselWheelHandler) { document.removeEventListener('wheel',   carouselWheelHandler); carouselWheelHandler = null; }
+    }
+
+    // ─── View toggle — grid ↔ carousel ──────────────────────────────────────
+    function buildViewToggle(overlay, scrollEl) {
+        const wrap = document.createElement('div');
+        wrap.className = 'gb-view-toggle';
+        overlay.appendChild(wrap);
+
+        const gridBtn = document.createElement('button');
+        gridBtn.className = 'gb-view-btn';
+        gridBtn.title     = 'Grid view';
+        gridBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <rect x="0" y="0" width="5" height="5" rx="1"/><rect x="7" y="0" width="5" height="5" rx="1"/>
+            <rect x="0" y="7" width="5" height="5" rx="1"/><rect x="7" y="7" width="5" height="5" rx="1"/>
+        </svg>`;
+
+        const carouselBtn = document.createElement('button');
+        carouselBtn.className = 'gb-view-btn gb-view-btn-active';
+        carouselBtn.title     = 'Carousel view';
+        carouselBtn.innerHTML = `<svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor">
+            <rect x="4" y="0" width="6" height="10" rx="1"/>
+            <rect x="0" y="2" width="3" height="6"  rx="1" opacity="0.4"/>
+            <rect x="11" y="2" width="3" height="6" rx="1" opacity="0.4"/>
+        </svg>`;
+
+        gridBtn.addEventListener('click', () => {
+            if (viewMode === 'grid') return;
+            viewMode = 'grid';
+            gridBtn.classList.add('gb-view-btn-active');
+            carouselBtn.classList.remove('gb-view-btn-active');
+            stopCarouselSpin();
+            teardownCarouselInput();
+            scrollEl.style.display = '';
+            if (carouselEl) carouselEl.style.display = 'none';
+            const visCount = originalOrder.filter(c => matchesAllFilters(c)).length;
+            setCounterValue(visCount);
+            if (typeof gsap !== 'undefined') {
+                const vis = originalOrder.filter(c => matchesAllFilters(c));
+                vis.forEach((cell, i) => {
+                    const body     = cell.querySelector('.gb-stamp-body');
+                    const targetOp = cell.dataset.isUserStamp === '1' ? 0.4 : 1;
+                    if (body) gsap.fromTo(body,
+                        { opacity: 0, y: 6 },
+                        { opacity: targetOp, y: 0, duration: 0.45, ease: 'power2.out',
+                          delay: i * 0.02, overwrite: 'auto' });
+                });
+            }
+        });
+
+        carouselBtn.addEventListener('click', () => {
+            if (viewMode === 'carousel') return;
+            viewMode = 'carousel';
+            carouselBtn.classList.add('gb-view-btn-active');
+            gridBtn.classList.remove('gb-view-btn-active');
+            scrollEl.style.display = 'none';
+            if (carouselEl) {
+                carouselEl.style.display = '';
+                const vis    = originalOrder.filter(c => matchesAllFilters(c));
+                const sorted = sortByNumber
+                    ? [...vis].sort((a,b) => (parseInt(a.dataset.stampNumber)||0) - (parseInt(b.dataset.stampNumber)||0))
+                    : vis;
+                carouselCards = sorted.map(c => c._cardData);
+                carouselEl.innerHTML = '';
+                setCounterValue(carouselCards.length);
+                carouselPos = -4;
+                renderCarousel();
+                if (typeof gsap !== 'undefined') {
+                    const proxy = { pos: -4 };
+                    carouselTween = gsap.to(proxy, {
+                        pos: 0, duration: 1.8, ease: 'power4.out',
+                        onUpdate()  { carouselPos = proxy.pos; renderCarousel(); },
+                        onComplete(){ carouselPos = 0; carouselTween = null; },
+                    });
+                } else {
+                    carouselPos = 0; renderCarousel();
+                }
+            }
+            setupCarouselInput();
+        });
+
+        wrap.appendChild(gridBtn);
+        wrap.appendChild(carouselBtn);
     }
 
     // ─── Filter bar ───────────────────────────────────────────────────────────
@@ -637,6 +1051,7 @@
                 if (isUserStamp) cell.dataset.isUserStamp = '1';
 
                 cell.innerHTML = renderStampHTML(card);
+                cell._cardData = card;
 
                 if (isUserStamp) {
                     const editBtn = document.createElement('button');
@@ -645,6 +1060,7 @@
 
                     // Hover: user's stamp body fades to 100%, then back to 40%
                     const body = cell.querySelector('.gb-stamp-body');
+                    if (body) body.style.opacity = '0.4';
                     editBtn.addEventListener('mouseenter', () => {
                         if (body && typeof gsap !== 'undefined')
                             gsap.to(body, { opacity: 1, duration: 0.2, overwrite: 'auto' });
@@ -668,65 +1084,32 @@
 
                 grid.appendChild(cell);
                 originalOrder.push(cell);
-
-                // GSAP load-in: y on cell, opacity on stamp body
-                // (keeps edit button outside the opacity context → always 100%)
-                if (typeof gsap !== 'undefined') {
-                    const body     = cell.querySelector('.gb-stamp-body');
-                    const targetOp = isUserStamp ? 0.4 : 1;
-                    const d        = 0.08 + i * 0.035;
-                    gsap.fromTo(cell,
-                        { y: 10 },
-                        { y: 0, duration: 0.6, ease: 'power2.out', delay: d, overwrite: 'auto',
-                          onComplete() { gsap.set(cell, { clearProps: 'y' }); } }
-                    );
-                    if (body) {
-                        gsap.fromTo(body,
-                            { opacity: 0 },
-                            { opacity: targetOp, duration: 0.6, ease: 'power2.out', delay: d, overwrite: 'auto' }
-                        );
-                    }
-
-                }
             });
 
             buildFilterBar(overlay, ordered, grid);
             buildCounter(overlay, ordered.length);
+            buildCarousel(overlay);
+            buildViewToggle(overlay, scroll);
 
+            // Default to carousel mode — hide grid scroll, spin in from right
+            scroll.style.display = 'none';
+            carouselCards = ordered;
+            setCounterValue(ordered.length);
+            carouselPos = -4;
+            renderCarousel();
             if (typeof gsap !== 'undefined') {
-                const PAN_STRENGTH  = 8;
-                const TILT_MAX      = 30;
-                const RADIUS        = Math.hypot(window.innerWidth, window.innerHeight);
-
-                scroll.addEventListener('mousemove', (e) => {
-                    if (document.body.classList.contains('gb-is-dragging')) return;
-                    scroll.querySelectorAll('.gb-stamp-cell').forEach(cell => {
-                        if (cell.style.zIndex === '100') return;
-                        const r    = cell.getBoundingClientRect();
-                        const cx   = r.left + r.width  / 2;
-                        const cy   = r.top  + r.height / 2;
-                        const dx   = e.clientX - cx;
-                        const dy   = e.clientY - cy;
-                        const dist = Math.hypot(dx, dy);
-                        if (dist < RADIUS && dist > 0) {
-                            const t  = 1 - dist / RADIUS;
-                            const rx = -(Math.max(-1, Math.min(1, dy / (r.height / 2)))) * TILT_MAX * t;
-                            const ry =  (Math.max(-1, Math.min(1, dx / (r.width  / 2)))) * TILT_MAX * t;
-                            const tx =  (dx / dist) * PAN_STRENGTH * t;
-                            const ty =  (dy / dist) * PAN_STRENGTH * t;
-                            gsap.to(cell, { x: tx, y: ty, rotateX: rx, rotateY: ry, transformPerspective: 600, duration: 0.3, ease: 'power2.out', overwrite: 'auto' });
-                        } else {
-                            gsap.to(cell, { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
-                        }
-                    });
-                }, { passive: true });
-
-                scroll.addEventListener('mouseleave', () => {
-                    scroll.querySelectorAll('.gb-stamp-cell').forEach(cell => {
-                        gsap.to(cell, { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
-                    });
-                }, { passive: true });
+                const proxy = { pos: -4 };
+                carouselTween = gsap.to(proxy, {
+                    pos: 0, duration: 1.8, ease: 'power4.out',
+                    onUpdate()  { carouselPos = proxy.pos; renderCarousel(); },
+                    onComplete(){ carouselPos = 0; carouselTween = null; },
+                });
+            } else {
+                carouselPos = 0; renderCarousel();
             }
+            setupCarouselInput();
+
+            // (carousel tilt is handled per-frame inside renderCarousel — no listeners needed)
         }
     }
 
@@ -736,12 +1119,28 @@
         isOpen = false;
 
         closePalette();
-        activeFilters = {};
-        sortByNumber  = false;
-        filterBarEl   = null;
-        filterPillEl  = null;
-        counterEl     = null;
-        counterCount  = 0;
+        teardownCarouselInput();
+        stopCarouselSpin();
+
+        // Capture what to animate before resetting state
+        const closingInCarousel = viewMode === 'carousel';
+        const animateEls = closingInCarousel && carouselEl
+            ? Array.from(carouselEl.querySelectorAll('.gb-carousel-item'))
+            : Array.from(overlayEl.querySelectorAll('.gb-stamp-cell')).filter(c => c.style.display !== 'none');
+
+        activeFilters      = {};
+        sortByNumber       = false;
+        filterBarEl        = null;
+        filterPillEl       = null;
+        counterEl          = null;
+        counterCount       = 0;
+        viewMode      = 'carousel';
+        carouselEl    = null;
+        carouselCards = [];
+        carouselPos   = 0;
+        carouselVel   = 0;
+        carouselRafId = null;
+        carouselTween = null;
 
         // Kill all Draggable instances — fresh ones are created on next open
         draggableInstances.forEach(d => d.kill());
@@ -771,16 +1170,11 @@
             setTimeout(() => el.remove(), 400);
         }
 
-        // Animate stamps out first — reverse of load-in (stagger from last to first)
-        const visibleCells = Array.from(el.querySelectorAll('.gb-stamp-cell'))
-            .filter(c => c.style.display !== 'none');
-
-        if (typeof gsap !== 'undefined' && visibleCells.length > 0) {
-            // Use timeline so onComplete fires once after ALL cells finish (not per cell)
+        if (typeof gsap !== 'undefined' && animateEls.length > 0) {
             gsap.timeline({ onComplete: doOverlayFade })
-                .to(visibleCells, {
+                .to(animateEls, {
                     opacity: 0, y: 10, duration: 0.2, ease: 'power2.in',
-                    stagger: { amount: 0.15, from: 'end' },
+                    stagger: { amount: 0.12, from: closingInCarousel ? 'center' : 'end' },
                     overwrite: 'auto',
                 });
         } else {

@@ -1,0 +1,162 @@
+/* playground-styles.css */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'SFRegular', sans-serif;
+    background: #FAFAF8;
+    color: #1a1a1a;
+    min-height: 100vh;
+}
+
+/* ─── Nav ─── */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 48px;
+}
+
+#logo .logo-link {
+    font-family: 'SFMedium', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    color: #1a1a1a;
+}
+
+nav .links {
+    display: flex;
+    gap: 28px;
+}
+
+.nav-link a {
+    font-family: 'SFRegular', sans-serif;
+    font-size: 13px;
+    text-decoration: none;
+    color: rgba(0,0,0,0.45);
+    transition: color 0.2s ease;
+}
+
+.nav-link a:hover,
+.nav-link a#focus {
+    color: #1a1a1a;
+}
+
+/* ─── Grid ─── */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    padding: 32px 48px 80px;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+/* ─── Card stack container ─── */
+.card-stack {
+    position: relative;
+    cursor: pointer;
+}
+
+/* ─── Ghost cards (paper stack behind main card) ─── */
+.card-ghost {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    transform-origin: bottom center;
+    transition: transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+    will-change: transform;
+}
+
+.card-ghost-1 {
+    background: #EAE5DC;
+    border: 1px solid rgba(0,0,0,0.06);
+    transform: rotate(-5deg) translateY(6px);
+    z-index: 0;
+}
+
+.card-ghost-2 {
+    background: #DDD8CE;
+    border: 1px solid rgba(0,0,0,0.05);
+    transform: rotate(-9deg) translateY(10px);
+    z-index: -1;
+    transition-delay: 0.04s;
+}
+
+/* ─── Main card ─── */
+.card-inner {
+    position: relative;
+    z-index: 1;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.07);
+    transition: transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+    will-change: transform;
+}
+
+/* ─── Hover: fan out ─── */
+.card-stack:hover .card-ghost-1 {
+    transform: rotate(-22deg) translateX(-60px) translateY(22px);
+}
+
+.card-stack:hover .card-ghost-2 {
+    transform: rotate(15deg) translateX(52px) translateY(16px);
+    transition-delay: 0s;
+}
+
+.card-stack:hover .card-inner {
+    transform: translateY(-10px) scale(1.02);
+}
+
+/* ─── Image ─── */
+.project-image {
+    width: 100%;
+    display: block;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+}
+
+/* ─── Title ─── */
+.tags {
+    padding: 10px 14px 13px;
+    font-family: 'SFMedium', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: rgba(0,0,0,0.6);
+    background: #fff;
+    font-weight: normal;
+}
+
+/* ─── Footer ─── */
+footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 48px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    font-size: 13px;
+    color: rgba(0,0,0,0.4);
+}
+
+footer .links {
+    display: flex;
+    gap: 24px;
+}
+
+.footer-link a {
+    text-decoration: none;
+    color: rgba(0,0,0,0.4);
+    font-family: 'SFRegular', sans-serif;
+    font-size: 13px;
+    transition: color 0.2s ease;
+}
+
+.footer-link a:hover {
+    color: #1a1a1a;
+}

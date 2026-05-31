@@ -648,7 +648,7 @@ targetFolders.forEach(folder => {
 
         // Text (hidden during genie open so content doesn't reflow while morphing)
         const text = document.createElement('span');
-        text.innerHTML = 'Bound for Paris 🇫🇷 & Milan 🇮🇹 for a MSc in Product Management & UX Design, Sept 2026.';
+        text.innerHTML = 'Incoming Paris 🇫🇷 and Milan 🇮🇹, MSc Product Management & UX Design, Sept 2026.';
         text.style.opacity = '0';
         bubble.appendChild(text);
 
@@ -1723,7 +1723,6 @@ window.toggleInProgress = function() {
         }, 500); // Title reappears as dock is halfway "sucked in"
     }
 };
-
 
 
 
