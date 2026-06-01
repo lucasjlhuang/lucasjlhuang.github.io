@@ -31,8 +31,11 @@
     let viewMode             = 'carousel'; // 'grid' | 'carousel'
     let carouselEl           = null;
     let carouselCards        = [];
-    let carouselKeyHandler   = null;
-    let carouselWheelHandler = null;
+    let carouselKeyHandler        = null;
+    let carouselWheelHandler      = null;
+    let carouselTouchStartHandler = null;
+    let carouselTouchMoveHandler  = null;
+    let carouselTouchEndHandler   = null;
 
     // Continuous position model — carouselPos is a float; integer = card at center
     let carouselPos      = 0;    // current center position (unbounded float)
@@ -679,11 +682,59 @@
         };
         document.addEventListener('keydown', carouselKeyHandler);
         document.addEventListener('wheel',   carouselWheelHandler, { passive: false });
+
+        // ── Mobile: touch swipe ──────────────────────────────────────────────
+        let touchLastX = null;
+        let touchVelX  = 0;
+        let touchLastT = null;
+
+        carouselTouchStartHandler = e => {
+            if (!isOpen || viewMode !== 'carousel') return;
+            touchLastX = e.touches[0].clientX;
+            touchLastT = performance.now();
+            touchVelX  = 0;
+            if (carouselTween) { carouselTween.kill(); carouselTween = null; }
+            if (carouselRafId !== null) { cancelAnimationFrame(carouselRafId); carouselRafId = null; }
+            carouselVel = 0;
+        };
+        carouselTouchMoveHandler = e => {
+            if (!isOpen || viewMode !== 'carousel' || touchLastX === null) return;
+            e.preventDefault();
+            const x   = e.touches[0].clientX;
+            const now = performance.now();
+            const dt  = Math.max(now - touchLastT, 1);
+            const dx  = x - touchLastX;
+            touchLastX = x;
+            touchLastT = now;
+            touchVelX  = dx / dt; // px/ms
+            carouselPos -= dx / 300; // 300px ≈ 1 card swipe
+            renderCarousel();
+        };
+        carouselTouchEndHandler = () => {
+            if (touchLastX === null) return;
+            touchLastX = null;
+            // Convert px/ms velocity → cards/sec
+            carouselVel = -(touchVelX * 1000 / 300);
+            carouselVel = Math.max(-22, Math.min(22, carouselVel));
+            startMomentumTick();
+        };
+
+        if (overlayEl) {
+            overlayEl.addEventListener('touchstart', carouselTouchStartHandler, { passive: true });
+            overlayEl.addEventListener('touchmove',  carouselTouchMoveHandler,  { passive: false });
+            overlayEl.addEventListener('touchend',   carouselTouchEndHandler,   { passive: true });
+        }
     }
 
     function teardownCarouselInput() {
         if (carouselKeyHandler)   { document.removeEventListener('keydown', carouselKeyHandler);   carouselKeyHandler   = null; }
         if (carouselWheelHandler) { document.removeEventListener('wheel',   carouselWheelHandler); carouselWheelHandler = null; }
+        if (overlayEl && carouselTouchStartHandler) {
+            overlayEl.removeEventListener('touchstart', carouselTouchStartHandler);
+            overlayEl.removeEventListener('touchmove',  carouselTouchMoveHandler);
+            overlayEl.removeEventListener('touchend',   carouselTouchEndHandler);
+        }
+        carouselTouchStartHandler = carouselTouchMoveHandler = carouselTouchEndHandler = null;
     }
 
     // ─── View toggle — grid ↔ carousel ──────────────────────────────────────
@@ -1129,7 +1180,7 @@
             : Array.from(overlayEl.querySelectorAll('.gb-stamp-cell')).filter(c => c.style.display !== 'none');
 
         activeFilters      = {};
-        sortByNumber       = false;
+        sortByNumber       = window.innerWidth <= 768;
         filterBarEl        = null;
         filterPillEl       = null;
         counterEl          = null;

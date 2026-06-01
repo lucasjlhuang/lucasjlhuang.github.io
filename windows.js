@@ -1560,28 +1560,51 @@ if (toggleBtn) {
         });
         
         folder.addEventListener('click', (e) => {
-            e.stopPropagation(); 
-            
+            e.stopPropagation();
+
             if (isMoving) {
-                isMoving = false; 
+                isMoving = false;
                 return;
             } else if (folder.classList.contains('is-tooltip-only')){
-                return 
+                return
             }
-            
+
             const projectTitleElement = folder.querySelector('.ProjectText');
             // Normalize the text to match the key in WINDOW_CONTENT_MAP
             const windowTitle = projectTitleElement.innerText.replace(/\s+/g, ' ').trim();
-            
+
             // Logic: Check for existing windows.
             const existingWindowsCount = bringWindowsToFront(windowTitle);
-            
+
             if (existingWindowsCount === 0) {
                 // No windows found for this project, open a new one with the Genie effect
                 // IMPORTANT: Pass the folder element to trigger the Genie open animation
                 openNewWindow(windowTitle, {}, folder);
-            } 
+            }
         });
+
+        // Mobile: touch tap to open non-tooltip folders (mousedown/click don't fire reliably on touch)
+        if (isMobile() && !folder.classList.contains('is-tooltip-only')) {
+            let touchMoved = false;
+            let touchStartXF = 0, touchStartYF = 0;
+            folder.addEventListener('touchstart', e => {
+                touchMoved = false;
+                touchStartXF = e.touches[0].clientX;
+                touchStartYF = e.touches[0].clientY;
+            }, { passive: true });
+            folder.addEventListener('touchmove', e => {
+                if (Math.abs(e.touches[0].clientX - touchStartXF) > 8 ||
+                    Math.abs(e.touches[0].clientY - touchStartYF) > 8) touchMoved = true;
+            }, { passive: true });
+            folder.addEventListener('touchend', e => {
+                if (touchMoved) return;
+                e.preventDefault();
+                const titleEl = folder.querySelector('.ProjectText');
+                if (!titleEl) return;
+                const windowTitle = titleEl.innerText.replace(/\s+/g, ' ').trim();
+                if (bringWindowsToFront(windowTitle) === 0) openNewWindow(windowTitle, {}, folder);
+            });
+        }
     });
     
   // --- NEW: Spotify Player Toggle Logic (Direct on Desktop) ---
@@ -1849,7 +1872,7 @@ window.toggleInProgress = function() {
     preloadHobbyImages();
 
     // ── macOS Dock magnification ──────────────────────────────────────────────
-    if (typeof gsap !== 'undefined') {
+    if (typeof gsap !== 'undefined' && !isMobile()) {
         const dockEl    = document.querySelector('.dock');
         const MAX_SCALE = 1.3;
         const RADIUS    = 110; // px — half-width of influence
