@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playground Overlay — Concept</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 100vw; height: 100vh;
+    background: #1a1a2e;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    overflow: hidden;
+  }
+
+  .wallpaper-hint {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.15);
+    font-size: 18px; letter-spacing: 0.08em;
+    user-select: none;
+  }
+
+  /* ── Trigger ── */
+  .playground-trigger {
+    position: fixed;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; cursor: pointer; z-index: 10; user-select: none;
+  }
+  .playground-label {
+    color: rgba(255,255,255,0.6);
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .playground-arrow {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.7); font-size: 18px; line-height: 1;
+  }
+
+  /* ── Overlay ── */
+  .playground-overlay {
+    position: fixed;
+    left: 0; top: 100vh;
+    width: 100%; height: 100%;
+    background: #fff;
+    z-index: 1000;
+    /* overflow:hidden removed — it kills preserve-3d on child elements */
+  }
+  .overlay-close {
+    position: absolute; top: 28px; right: 32px;
+    width: 36px; height: 36px;
+    border: none; background: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; font-size: 22px; color: #333;
+    border-radius: 50%; transition: background 0.2s; z-index: 10;
+  }
+  .overlay-close:hover { background: rgba(0,0,0,0.06); }
+  .overlay-title {
+    position: absolute; top: 32px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #aaa; opacity: 0; white-space: nowrap; z-index: 10;
+  }
+
+  /* ── Carousel ──
+     perspective is on the anchor so it's always centred exactly on the ring  */
+  .carousel-stage {
+    position: absolute; inset: 0;
+  }
+  .carousel-ring-anchor {
+    position: absolute;
+    top: 40%; left: 50%;
+    /* perspective here = origin is always this exact point */
+    perspective: 1100px;
+    perspective-origin: 50% 50%;
+    transform: translate(-50%, -50%);
+  }
+  .carousel-ring {
+    position: relative;
+    width: 0; height: 0;
+    transform-style: preserve-3d;
+  }
+
+  /* ── Album ── */
+  .album {
+    position: absolute;
+    width: 160px; height: 160px;
+    border-radius: 8px;
+    transform-style: preserve-3d;
+    cursor: pointer;
+    transition: opacity 0.4s ease;
+  }
+  .album-face {
+    position: absolute; inset: 0;
+    border-radius: 8px; overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .album-placeholder {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+    padding: 14px;
+  }
+  .album-placeholder-label {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
+  /* ── Detail panel that slides out ── */
+  .album-detail-wrap {
+    position: fixed;
+    z-index: 3000;
+    pointer-events: none;
+  }
+  .album-detail-sleeve {
+    /* the "horizontal album" cover */
+    width: 200px; height: 200px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.28);
+  }
+  .album-detail-record {
+    /* the "record" that slides out */
+    position: absolute;
+    bottom: -8px; left: 50%;
+    transform: translateX(-50%) translateY(0%);
+    width: 180px; height: 220px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.18);
+    padding: 28px 24px;
+    pointer-events: all;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .album-detail-record-title {
+    font-size: 20px; font-weight: 700; color: #111;
+    letter-spacing: -0.02em;
+    text-transform: capitalize;
+  }
+  .album-detail-record-sub {
+    font-size: 12px; color: #aaa; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .album-detail-close {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: #888; cursor: pointer;
+    border: none; background: none; padding: 0;
+    letter-spacing: 0.04em;
+  }
+  .album-detail-close:hover { color: #333; }
+
+  /* ── Drag hint ── */
+  .drag-hint {
+    position: absolute; bottom: 36px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px; letter-spacing: 0.1em; color: #bbb;
+    opacity: 0; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="wallpaper-hint">desktop wallpaper</div>
+
+<div class="playground-trigger" id="playgroundTrigger">
+  <span class="playground-label">playground</span>
+  <div class="playground-arrow" id="playgroundArrow">↑</div>
+</div>
+
+<div class="playground-overlay" id="playgroundOverlay">
+  <button class="overlay-close" id="overlayClose">✕</button>
+  <div class="overlay-title" id="overlayTitle">playground</div>
+  <div class="carousel-stage">
+    <div class="carousel-ring-anchor">
+      <div class="carousel-ring" id="carouselRing"></div>
+    </div>
+  </div>
+  <div class="drag-hint" id="dragHint">drag to spin</div>
+</div>
+
+<script>
+const ALBUMS = [
+  { label: 'web design',   color: ['#667eea','#764ba2'] },
+  { label: 'motion',       color: ['#f093fb','#f5576c'] },
+  { label: '3d',           color: ['#4facfe','#00f2fe'] },
+  { label: 'illustration', color: ['#43e97b','#38f9d7'] },
+  { label: 'photography',  color: ['#fa709a','#fee140'] },
+  { label: 'code',         color: ['#a18cd1','#fbc2eb'] },
+  { label: 'branding',     color: ['#ffecd2','#fcb69f'] },
+  { label: 'ux research',  color: ['#96fbc4','#f9f586'] },
+];
+
+const RADIUS   = 230;
+const AUTO_SPIN = 0.15;
+
+let ringAngle    = 0;
+let spinning     = false;
+let dragStartX   = 0;
+let dragStartAngle = 0;
+let velocity     = 0;
+let lastX        = 0;
+let lastTime     = 0;
+let overlayOpen  = false;
+let spinRAF      = null;
+let selectedEl   = null;  // currently expanded album
+
+const ring    = document.getElementById('carouselRing');
+const overlay = document.getElementById('playgroundOverlay');
+
+/* ─── Build carousel ─────────────────────────────────────────────────── */
+const albumEls = [];
+
+ALBUMS.forEach((album, i) => {
+  const theta = (i / ALBUMS.length) * 360;
+  const el    = document.createElement('div');
+  el.className = 'album';
+  el.dataset.index = i;
+  el.style.transform = `rotateY(${theta}deg) translateZ(${RADIUS}px) rotateY(90deg)`;
+
+  el.innerHTML = `
+    <div class="album-face">
+      <div class="album-placeholder"
+           style="background:linear-gradient(135deg,${album.color[0]},${album.color[1]})">
+        <span class="album-placeholder-label">${album.label}</span>
+      </div>
+    </div>`;
+
+  el.addEventListener('click', () => onAlbumClick(el, album, i));
+  ring.appendChild(el);
+  albumEls.push(el);
+});
+
+ring.style.transform = 'rotateX(-18deg) rotateY(0deg)';
+
+/* ─── Arrow bounce ────────────────────────────────────────────────────── */
+function arrowBounce(onDone) {
+  const arrow = document.getElementById('playgroundArrow');
+  gsap.killTweensOf(arrow);
+  gsap.fromTo(arrow, { y: 0 }, {
+    keyframes: [
+      { y: -10, duration: 0.18, ease: 'power2.out' },
+      { y:   4, duration: 0.14, ease: 'power2.in'  },
+      { y:  -5, duration: 0.12, ease: 'power2.out' },
+      { y:   0, duration: 0.10, ease: 'power2.in'  },
+    ],
+    onComplete: onDone,
+  });
+}
+
+/* ─── Open overlay ────────────────────────────────────────────────────── */
+function openOverlay() {
+  if (overlayOpen) return;
+  overlayOpen = true;
+
+  const closeBtn = document.getElementById('overlayClose');
+  const title    = document.getElementById('overlayTitle');
+  const hint     = document.getElementById('dragHint');
+
+  ring.style.transform = 'rotateX(-18deg) rotateY(0deg)';
+  ringAngle = 0;
+  albumEls.forEach(a => { gsap.set(a, { opacity: 0, scale: 0.7 }); });
+
+  arrowBounce(() => {
+    gsap.to(overlay, {
+      top: 0, duration: 0.72, ease: 'power4.out',
+      onComplete() {
+        gsap.to([closeBtn, title], { opacity: 1, duration: 0.3, stagger: 0.08 });
+        gsap.to(hint, { opacity: 1, duration: 0.4, delay: 0.8 });
+
+        albumEls.forEach((a, i) => {
+          const theta = (i / ALBUMS.length) * 360;
+          const base  = `rotateY(${theta}deg) translateZ(${RADIUS}px) rotateY(90deg)`;
+          gsap.to(a, {
+            opacity: 1, scale: 1,
+            duration: 0.5, delay: i * 0.06, ease: 'back.out(1.3)',
+            onComplete() { a.style.transform = base; }
+          });
+        });
+
+        startAutoSpin();
+      }
+    });
+  });
+}
+
+/* ─── Close overlay ──────────────────────────────────────────────────── */
+function closeOverlay() {
+  if (!overlayOpen) return;
+  overlayOpen = false;
+  stopAutoSpin();
+  const closeBtn = document.getElementById('overlayClose');
+  const title    = document.getElementById('overlayTitle');
+  const hint     = document.getElementById('dragHint');
+  gsap.to([closeBtn, title, hint], { opacity: 0, duration: 0.2 });
+  gsap.to(overlay, { top: '100vh', duration: 0.55, ease: 'power3.in' });
+}
+
+/* ─── Auto spin (constant axis = always rotateX(-18) + ringAngle) ────── */
+function startAutoSpin() {
+  let lastTs = null;
+  function tick(ts) {
+    if (!lastTs) lastTs = ts;
+    const dt = ts - lastTs; lastTs = ts;
+    if (!spinning) {
+      velocity *= 0.96;
+      ringAngle += velocity + AUTO_SPIN * (dt / 16);
+      ring.style.transform = `rotateX(-18deg) rotateY(${ringAngle}deg)`;
+    }
+    spinRAF = requestAnimationFrame(tick);
+  }
+  spinRAF = requestAnimationFrame(tick);
+}
+
+function stopAutoSpin() {
+  if (spinRAF) { cancelAnimationFrame(spinRAF); spinRAF = null; }
+}
+
+/* ─── Drag to spin ───────────────────────────────────────────────────── */
+overlay.addEventListener('pointerdown', e => {
+  if (!overlayOpen || selectedEl) return;
+  spinning = true;
+  dragStartX    = e.clientX;
+  dragStartAngle = ringAngle;
+  lastX = e.clientX; lastTime = performance.now();
+  velocity = 0;
+  overlay.setPointerCapture(e.pointerId);
+});
+overlay.addEventListener('pointermove', e => {
+  if (!spinning) return;
+  const dx = e.clientX - dragStartX;
+  ringAngle = dragStartAngle + dx * 0.35;
+  ring.style.transform = `rotateX(-18deg) rotateY(${ringAngle}deg)`;
+  const now = performance.now();
+  if (now - lastTime > 0) velocity = (e.clientX - lastX) * 0.35 / ((now - lastTime) / 16);
+  lastX = e.clientX; lastTime = now;
+});
+overlay.addEventListener('pointerup',     () => { spinning = false; });
+overlay.addEventListener('pointercancel', () => { spinning = false; });
+
+/* ─── Album click: stop → turn horizontal → record slides out ────────── */
+function onAlbumClick(el, album, i) {
+  if (selectedEl) return;
+  selectedEl = el;
+
+  // 1. Stop spinning
+  stopAutoSpin();
+
+  // 2. Dim all other albums
+  albumEls.forEach((a, j) => {
+    if (j !== i) gsap.to(a, { opacity: 0.08, duration: 0.4 });
+  });
+
+  // 3. Get screen position of this album
+  const rect = el.getBoundingClientRect();
+  const cx   = window.innerWidth  / 2;
+  const cy   = window.innerHeight * 0.38; // matches ring anchor top: 40%
+
+  // 4. Create fixed hero clone
+  const ALBUM_SZ = 200;
+  const hero = document.createElement('div');
+  hero.style.cssText = `
+    position: fixed;
+    left: ${rect.left + rect.width / 2 - ALBUM_SZ / 2}px;
+    top:  ${rect.top  + rect.height / 2 - ALBUM_SZ / 2}px;
+    width: ${ALBUM_SZ}px; height: ${ALBUM_SZ}px;
+    border-radius: 10px; overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.28);
+    z-index: 2000; pointer-events: none;
+  `;
+  const inner = document.createElement('div');
+  inner.style.cssText = `
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, ${album.color[0]}, ${album.color[1]});
+  `;
+  hero.appendChild(inner);
+  document.body.appendChild(hero);
+  el.style.opacity = '0';
+
+  // 5. Fly hero to centre
+  gsap.to(hero, {
+    left: cx - ALBUM_SZ / 2,
+    top:  cy - ALBUM_SZ / 2,
+    duration: 0.6, ease: 'power3.inOut',
+    onComplete() {
+
+      // 6. Turn horizontal — rotate around X so it lies flat
+      gsap.to(hero, {
+        rotationX: 65,
+        transformPerspective: 700,
+        transformOrigin: '50% 50%',
+        duration: 0.5, ease: 'power2.inOut',
+        onComplete() {
+
+          // 7. "Album slides out" — content card rises from beneath
+          showRecord(album, hero, cx, cy, ALBUM_SZ);
+        }
+      });
+    }
+  });
+}
+
+function showRecord(album, hero, cx, cy, albumSz) {
+  const record = document.createElement('div');
+  record.className = 'album-detail-record';
+  record.style.cssText = `
+    position: fixed;
+    width: 200px;
+    left: ${cx - 100}px;
+    top: ${cy + albumSz * 0.55}px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.14);
+    padding: 28px 24px 20px;
+    z-index: 2001;
+    display: flex; flex-direction: column; gap: 12px;
+    opacity: 0;
+    pointer-events: all;
+  `;
+  record.innerHTML = `
+    <div style="font-size:22px;font-weight:700;color:#111;letter-spacing:-0.02em;text-transform:capitalize">
+      ${album.label}
+    </div>
+    <div style="font-size:12px;color:#bbb;letter-spacing:0.06em;text-transform:uppercase;margin-top:-4px">
+      playground
+    </div>
+    <div style="font-size:13px;color:#666;line-height:1.6;margin-top:4px">
+      A collection of work and experiments.
+    </div>
+    <button style="margin-top:8px;border:none;background:none;padding:0;
+                   font-size:12px;color:#aaa;cursor:pointer;text-align:left;
+                   letter-spacing:0.04em;" id="recordClose">← back</button>
+  `;
+  document.body.appendChild(record);
+
+  // Slide up from just below the album
+  gsap.fromTo(record,
+    { opacity: 0, y: 24 },
+    { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out', delay: 0.05 }
+  );
+
+  record.querySelector('#recordClose').addEventListener('click', () => {
+    closeRecord(hero, record);
+  });
+}
+
+function closeRecord(hero, record) {
+  // Slide record back down
+  gsap.to(record, { opacity: 0, y: 16, duration: 0.3, ease: 'power2.in',
+    onComplete: () => record.remove()
+  });
+  // Flip album back upright and fly away
+  gsap.to(hero, { rotationX: 0, duration: 0.35, ease: 'power2.in',
+    onComplete() {
+      gsap.to(hero, { opacity: 0, scale: 0.85, duration: 0.25, ease: 'power2.in',
+        onComplete() {
+          hero.remove();
+          if (selectedEl) { selectedEl.style.opacity = ''; selectedEl = null; }
+          albumEls.forEach(a => gsap.to(a, { opacity: 1, duration: 0.35 }));
+          startAutoSpin();
+        }
+      });
+    }
+  });
+}
+
+/* ─── Wire ────────────────────────────────────────────────────────────── */
+document.getElementById('playgroundTrigger').addEventListener('click', openOverlay);
+document.getElementById('overlayClose').addEventListener('click', closeOverlay);
+</script>
+</body>
+</html>

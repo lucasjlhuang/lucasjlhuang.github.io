@@ -143,32 +143,25 @@
     flex-shrink: 0;
 }
 
-/* ─── Edit button — centred on user's own stamp, solid blue pill ─── */
+/* ─── Edit button — bottom-left of stamp, inline with name ─── */
 .gb-edit-btn {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    bottom: 10px;
+    left: 10px;
     background: #2d64ff;
     border: none;
     border-radius: 20px;
-    padding: 5px 13px;
+    padding: 5px 10px;
     font-family: 'SFMedium', sans-serif;
     font-size: 9px;
     letter-spacing: 0.5px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #fff;
     cursor: url('/images/wii-pointer-set/WiiPointerHelp.cur'), help;
     outline: none;
     z-index: 10;
     white-space: nowrap;
-    transition: transform 0.15s ease, background 0.2s ease;
 }
-.gb-edit-btn:hover {
-    background: #2d64ff;
-    color: #fff;
-    transform: translate(-50%, -50%) scale(1.08);
-}
-.gb-edit-btn:active { transform: translate(-50%, -50%) scale(0.96); }
+.gb-edit-btn:active { transform: scale(0.94); }
 
 /* ─── Empty state ─── */
 .gb-empty {

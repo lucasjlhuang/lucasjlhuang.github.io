@@ -1415,6 +1415,9 @@
     function buildPrescreen(number) {
         stampNumber = number;
 
+        // Remove any stale prescreen element so a second edit visit starts clean
+        document.querySelectorAll('#prescreen').forEach(existing => existing.remove());
+
         const el = document.createElement('div');
         el.id = 'prescreen';
         el.innerHTML = `
@@ -1953,6 +1956,15 @@
             const rowId = loadSavedCard()?.rowId;
             saveCard({ ...cardData, rowId });
             if (rowId) updateCardInSupabase(rowId, cardData);
+            // Cache locally — applied to all guestbook opens until Supabase propagates the update
+            window.__gbUserCardOverride = {
+                stamp_number:  cardData.stampNumber,
+                card_color:    cardData.innerColor   || null,
+                border_color:  cardData.outlineColor || null,
+                character_svg: cardData.selectedImg  || null,
+                pattern_id:    cardData.patternId    ?? null,
+                name:          cardData.name         || null,
+            };
         } else {
             saveCard(cardData);
             saveCardToSupabase(cardData).then(id => {
@@ -1972,6 +1984,90 @@
 
         // Close palette
         closePalette();
+
+        if (editMode && typeof gsap !== 'undefined' && window.__openGuestBookFromEdit) {
+            // ── Edit → guestbook grid transition ──────────────────────────────
+            const FADE = '0.4s ease';
+            document.querySelectorAll('.scatter-icon').forEach(icon => {
+                icon.style.transition = `opacity ${FADE}`;
+                icon.style.opacity    = '0';
+            });
+            if (enterWrap) { enterWrap.style.transition = `opacity ${FADE}`; enterWrap.style.opacity = '0'; }
+
+            // Start fetch immediately so cards are ready by the time ghost is created
+            let pendingFirstCell = null;
+            let pendingFlight    = null;
+            window.__openGuestBookFromEdit(firstCell => {
+                pendingFirstCell = firstCell;
+                if (pendingFlight) pendingFlight(firstCell);
+            }, cardData);
+
+            // Build ghost after icons have faded
+            setTimeout(() => {
+                const stampW = STAMP_W, stampH = STAMP_H;
+                const startX = window.innerWidth  / 2 - stampW / 2;
+                const startY = window.innerHeight / 2 - stampH / 2;
+
+                const ghost = document.createElement('div');
+                ghost.style.cssText = `
+                    position:fixed;
+                    left:${startX}px; top:${startY}px;
+                    width:${stampW}px; height:${stampH}px;
+                    z-index:100020; pointer-events:none;
+                `;
+
+                // Use guestbook rendering so ghost matches the destination cell exactly
+                if (window.__gbRenderer?.renderStampHTML) {
+                    const gbCard = {
+                        border_color:  activeOutlineColor,
+                        card_color:    activeInnerColor,
+                        character_svg: activeImgDef?.full || null,
+                        stamp_number:  cardData.stampNumber || loadSavedCard()?.stampNumber,
+                        name:          cardData.name || '',
+                        pattern_id:    activePattern?.id || null,
+                    };
+                    ghost.innerHTML = window.__gbRenderer.renderStampHTML(gbCard);
+                } else if (wrapper) {
+                    const clone = wrapper.cloneNode(true);
+                    clone.removeAttribute('id');
+                    clone.style.cssText = `
+                        position:absolute; left:50%; top:50%;
+                        transform:translate(-50%,-50%);
+                        width:${stampW}px; height:${stampH}px;
+                        opacity:1; filter:none;
+                    `;
+                    ghost.appendChild(clone);
+                }
+                if (wrapper) wrapper.style.opacity = '0';
+                document.body.appendChild(ghost);
+
+                const startFlight = firstCell => {
+                    const body     = firstCell.querySelector('.gb-stamp-body');
+                    const destRect = (body || firstCell).getBoundingClientRect();
+                    gsap.to(ghost, {
+                        left: destRect.left, top: destRect.top,
+                        duration: 0.75, ease: 'power3.inOut',
+                        onComplete() {
+                            // Show first cell instantly before removing ghost — seamless swap, no blink
+                            if (body) gsap.set(body, { opacity: 1, y: 0 });
+                            ghost.remove();
+                            if (window.__triggerGuestBookGridStagger) window.__triggerGuestBookGridStagger();
+                            // Keep prescreen alive until guestbook overlay is fully opaque
+                            setTimeout(() => {
+                                prescreen.remove();
+                                const old = document.getElementById('desktop-id-card');
+                                if (old) old.remove();
+                                buildDesktopWidget(cardData);
+                            }, 560);
+                        },
+                    });
+                };
+
+                if (pendingFirstCell) startFlight(pendingFirstCell);
+                else                  pendingFlight = startFlight;
+            }, 420);
+            return;
+        }
 
         // Everything fades simultaneously
         const FADE = '0.4s ease';
@@ -2216,21 +2312,118 @@
         });
 
         initEnterButton();
-        requestAnimationFrame(() => setTimeout(revealPrescreen, 80));
+        requestAnimationFrame(() => setTimeout(editData ? revealPrescreenForEdit : revealPrescreen, 80));
+    }
+
+    // ─── Edit-mode reveal — skip loading carousel, jump straight to interactive ─
+    function revealPrescreenForEdit() {
+        const wrapper    = document.getElementById('stamp-wrapper');
+        const enterWrap  = document.getElementById('stamp-enter-wrap');
+        const numEl      = document.querySelector('.stamp-number');
+        const nameInput  = document.getElementById('stamp-name-input');
+        const paletteBtn = document.getElementById('color-swatch-btn');
+        const prescreen  = document.getElementById('prescreen');
+
+        if (numEl) numEl.style.opacity = '1';
+
+        // Apply full stamp state before revealing
+        applyOutlineColor(activeOutlineColor);
+        applyInnerColor(activeInnerColor);
+        applyImageToStamp(activeImgDef, true);
+
+        // Interactive elements hidden until ghost arrives at center
+        if (nameInput)  { nameInput.style.opacity  = '0'; nameInput.style.pointerEvents  = 'none'; }
+        if (paletteBtn) { paletteBtn.style.opacity = '0'; paletteBtn.style.pointerEvents = 'none'; }
+
+        const afterReveal = () => {
+            // setupStampTilt is called HERE — after stamp-appear is already applied.
+            // GSAP must not touch the wrapper before stamp-appear, because GSAP caches
+            // the transform it reads on first contact. If it reads scale(0.5) during the
+            // ghost animation, its inline transform overrides stamp-appear and the stamp
+            // stays small permanently on that visit.
+            setupStampTilt(prescreen);
+            if (nameInput)  { nameInput.style.pointerEvents  = ''; gsap.to(nameInput,  { opacity: 1, duration: 0.2 }); }
+            if (paletteBtn) { paletteBtn.style.pointerEvents = ''; gsap.to(paletteBtn, { opacity: 1, duration: 0.2 }); }
+            if (enterWrap) enterWrap.classList.add('enter-appear');
+            setTimeout(() => scatterIcons(prescreen, null, () => setupIconProximity(prescreen)), 100);
+            // NOTE: prescreen:start-npcs is intentionally NOT dispatched here.
+            // NPCs only belong on the initial prescreen, not the edit page.
+        };
+
+        const td = window.__editTransition;
+        if (td && typeof gsap !== 'undefined' && wrapper) {
+            window.__editTransition = null;
+
+            // Ghost was pre-created at click time so it's already covering the stamp position.
+            // Fall back to creating it here if needed.
+            const ghost = td.ghost || (() => {
+                const g = document.createElement('div');
+                g.style.cssText = `position:fixed;left:${td.rect.left}px;top:${td.rect.top}px;
+                    width:${td.rect.width}px;height:${td.rect.height}px;
+                    z-index:100020;pointer-events:none;`;
+                g.innerHTML = td.html;
+                document.body.appendChild(g);
+                return g;
+            })();
+
+            const targetX = window.innerWidth  / 2 - STAMP_W / 2;
+            const targetY = window.innerHeight / 2 - STAMP_H / 2;
+
+            gsap.to(ghost, {
+                left: targetX, top: targetY,
+                duration: 0.7, ease: 'power3.inOut',
+                onComplete() {
+                    // Commit transition:none before adding stamp-appear so no CSS transition fires.
+                    // Ghost still covers the stamp position during the reflow — no visible flash.
+                    wrapper.style.transition = 'none';
+                    void wrapper.offsetHeight; // force reflow to apply transition:none
+                    wrapper.classList.add('stamp-appear'); // instant: opacity:1, scale:1
+                    ghost.remove(); // stamp revealed — ghost no longer needed
+                    requestAnimationFrame(() => {
+                        wrapper.style.transition = ''; // restore CSS transition for future animations
+                        afterReveal();
+                    });
+                },
+            });
+        } else {
+            // No transition data — snap stamp to center
+            if (wrapper) {
+                wrapper.style.transition = 'none';
+                wrapper.style.opacity    = '1';
+                wrapper.style.transform  = 'translate(-50%,-50%) scale(1)';
+                wrapper.classList.add('stamp-appear');
+                requestAnimationFrame(() => {
+                    wrapper.style.opacity    = '';
+                    wrapper.style.transform  = '';
+                    wrapper.style.transition = '';
+                });
+            }
+            if (nameInput)  { nameInput.style.opacity = '1'; }
+            if (paletteBtn) { paletteBtn.style.opacity = '1'; paletteBtn.style.pointerEvents = ''; }
+            if (enterWrap) enterWrap.classList.add('enter-appear');
+            setTimeout(() => scatterIcons(prescreen, null, () => setupIconProximity(prescreen)), 280);
+            // NOTE: prescreen:start-npcs is intentionally NOT dispatched here (edit page, no NPCs).
+        }
     }
 
     // ─── Edit mode entry point (called from guestbook gallery) ────────────────
-    window.__openEditPrescreen = function () {
+    // gbCard — the Supabase card object passed from the guestbook click handler.
+    // Using it as the display source of truth avoids localhost/Supabase drift.
+    window.__openEditPrescreen = function (gbCard) {
         const saved = loadSavedCard();
         if (!saved) return;
 
-        // Pre-set all active state variables from saved card
+        // Colors and pattern from localStorage (reflects latest edits)
         activeInnerColor   = saved.innerColor   || '#FFFFFF';
         activeOutlineColor = saved.outlineColor || OUTLINE_COLORS[0];
         activePattern      = saved.patternId
             ? PATTERNS.find(p => p.id === saved.patternId) || null
             : null;
-        const foundImg = STAMP_IMAGES.find(img => img.full === saved.selectedImg);
+
+        // Image: prefer the Supabase value (matches what the guestbook displayed);
+        // fall back to localStorage if unavailable
+        const imgPath = gbCard?.character_svg || saved.selectedImg;
+        const foundImg = STAMP_IMAGES.find(img => img.full === imgPath);
         activeImgDef   = foundImg || DEFAULT_IMG;
         selectedImgDef = activeImgDef;
 

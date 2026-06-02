@@ -349,7 +349,7 @@
                 ordered.forEach((cell, i) => {
                     cell.style.display = '';
                     const body     = cell.querySelector('.gb-stamp-body');
-                    const targetOp = cell.dataset.isUserStamp === '1' ? 0.4 : 1;
+                    const targetOp = 1;
                     const d        = i * 0.04;
                     gsap.fromTo(cell,
                         { y: 10, x: 0 },
@@ -719,20 +719,21 @@
             startMomentumTick();
         };
 
-        if (overlayEl) {
-            overlayEl.addEventListener('touchstart', carouselTouchStartHandler, { passive: true });
-            overlayEl.addEventListener('touchmove',  carouselTouchMoveHandler,  { passive: false });
-            overlayEl.addEventListener('touchend',   carouselTouchEndHandler,   { passive: true });
+        // Attach to carouselEl (not overlayEl) so grid-mode buttons are never affected
+        if (carouselEl) {
+            carouselEl.addEventListener('touchstart', carouselTouchStartHandler, { passive: true });
+            carouselEl.addEventListener('touchmove',  carouselTouchMoveHandler,  { passive: false });
+            carouselEl.addEventListener('touchend',   carouselTouchEndHandler,   { passive: true });
         }
     }
 
     function teardownCarouselInput() {
         if (carouselKeyHandler)   { document.removeEventListener('keydown', carouselKeyHandler);   carouselKeyHandler   = null; }
         if (carouselWheelHandler) { document.removeEventListener('wheel',   carouselWheelHandler); carouselWheelHandler = null; }
-        if (overlayEl && carouselTouchStartHandler) {
-            overlayEl.removeEventListener('touchstart', carouselTouchStartHandler);
-            overlayEl.removeEventListener('touchmove',  carouselTouchMoveHandler);
-            overlayEl.removeEventListener('touchend',   carouselTouchEndHandler);
+        if (carouselEl && carouselTouchStartHandler) {
+            carouselEl.removeEventListener('touchstart', carouselTouchStartHandler);
+            carouselEl.removeEventListener('touchmove',  carouselTouchMoveHandler);
+            carouselEl.removeEventListener('touchend',   carouselTouchEndHandler);
         }
         carouselTouchStartHandler = carouselTouchMoveHandler = carouselTouchEndHandler = null;
     }
@@ -775,7 +776,7 @@
                 const vis = originalOrder.filter(c => matchesAllFilters(c));
                 vis.forEach((cell, i) => {
                     const body     = cell.querySelector('.gb-stamp-body');
-                    const targetOp = cell.dataset.isUserStamp === '1' ? 0.4 : 1;
+                    const targetOp = 1;
                     if (body) gsap.fromTo(body,
                         { opacity: 0, y: 6 },
                         { opacity: targetOp, y: 0, duration: 0.45, ease: 'power2.out',
@@ -1035,6 +1036,7 @@
     async function openGuestBook() {
         if (isOpen) return;
         isOpen = true;
+        if (window.innerWidth <= 768) sortByNumber = true;
 
         // Register Club GSAP plugins if available (safe to call multiple times)
         if (typeof gsap !== 'undefined') {
@@ -1076,7 +1078,26 @@
         requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('gb-overlay-in')));
 
         const cards   = await fetchCards();
-        const ordered = organizeCards(cards);
+        let ordered   = organizeCards(cards);
+
+        // Always prefer localStorage for the user's own stamp — it reflects the latest edits
+        // and survives page refresh (unlike the runtime __gbUserCardOverride).
+        try {
+            const lsSaved = JSON.parse(localStorage.getItem('lh_id_card_v1') || 'null');
+            if (lsSaved?.stampNumber) {
+                ordered = ordered.map(card => {
+                    if (card.stamp_number !== lsSaved.stampNumber) return card;
+                    return {
+                        ...card,
+                        card_color:    lsSaved.innerColor   || card.card_color,
+                        border_color:  lsSaved.outlineColor || card.border_color,
+                        character_svg: lsSaved.selectedImg  || card.character_svg,
+                        pattern_id:    lsSaved.patternId    != null ? lsSaved.patternId : card.pattern_id,
+                        name:          lsSaved.name         || card.name,
+                    };
+                });
+            }
+        } catch {}
 
         if (ordered.length === 0) {
             const empty = document.createElement('div');
@@ -1109,27 +1130,39 @@
                     editBtn.className = 'gb-edit-btn';
                     editBtn.textContent = 'edit';
 
-                    // Hover: user's stamp body fades to 100%, then back to 40%
-                    const body = cell.querySelector('.gb-stamp-body');
-                    if (body) body.style.opacity = '0.4';
+                    // Hover: button bg flips white ↔ blue via GSAP
                     editBtn.addEventListener('mouseenter', () => {
-                        if (body && typeof gsap !== 'undefined')
-                            gsap.to(body, { opacity: 1, duration: 0.2, overwrite: 'auto' });
+                        if (typeof gsap !== 'undefined')
+                            gsap.to(editBtn, { backgroundColor: '#fff', color: '#2d64ff', duration: 0.18, overwrite: 'auto' });
                     });
                     editBtn.addEventListener('mouseleave', () => {
-                        if (body && typeof gsap !== 'undefined')
-                            gsap.to(body, { opacity: 0.4, duration: 0.2, overwrite: 'auto' });
+                        if (typeof gsap !== 'undefined')
+                            gsap.to(editBtn, { backgroundColor: '#2d64ff', color: '#fff', duration: 0.18, overwrite: 'auto' });
                     });
 
                     editBtn.addEventListener('click', e => {
                         e.stopPropagation();
-                        closeGuestBook();
-                        setTimeout(() => {
-                            if (window.__openEditPrescreen) window.__openEditPrescreen();
-                        }, 450);
+                        const stampBody = cell.querySelector('.gb-stamp-body');
+                        if (stampBody && typeof gsap !== 'undefined') {
+                            const rect = stampBody.getBoundingClientRect();
+                            const html = stampBody.outerHTML;
+                            // Create ghost immediately so it covers the stamp before the overlay fades
+                            const ghost = document.createElement('div');
+                            ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;
+                                width:${rect.width}px;height:${rect.height}px;
+                                z-index:100020;pointer-events:none;`;
+                            ghost.innerHTML = html;
+                            document.body.appendChild(ghost);
+                            window.__editTransition = { rect, html, ghost };
+                        } else if (stampBody) {
+                            window.__editTransition = {
+                                rect: stampBody.getBoundingClientRect(),
+                                html: stampBody.outerHTML,
+                            };
+                        }
+                        if (window.__openEditPrescreen) window.__openEditPrescreen(cell._cardData);
+                        closeGuestBookFast();
                     });
-                    // Button is a sibling of stamp-body (not inside it) so it's
-                    // unaffected by the body's 0.4 opacity and stays at 100% always
                     cell.appendChild(editBtn);
                 }
 
@@ -1233,6 +1266,219 @@
         }
     }
 
+    // ─── Fast-close for edit transition (no stamp stagger, instant fade) ────────
+    function closeGuestBookFast() {
+        if (!isOpen || !overlayEl) return;
+        isOpen = false;
+
+        closePalette();
+        teardownCarouselInput();
+        stopCarouselSpin();
+
+        activeFilters  = {};
+        sortByNumber   = window.innerWidth <= 768;
+        filterBarEl    = filterPillEl = counterEl = null;
+        counterCount   = 0;
+        viewMode       = 'carousel';
+        carouselEl     = null;
+        carouselCards  = [];
+        carouselPos    = carouselVel = 0;
+        carouselRafId  = carouselTween = null;
+        draggableInstances.forEach(d => d.kill());
+        draggableInstances = [];
+
+        const el = overlayEl;
+        overlayEl    = null;
+        originalOrder = [];
+
+        el.style.transition = 'opacity 0.55s ease';
+        el.style.opacity    = '0';
+        setTimeout(() => el.remove(), 570);
+    }
+
+    // ─── Open from edit — grid mode, cells start hidden, callback on first cell ─
+    // updatedCardData: localStorage-format card that was just saved (overrides stale Supabase fetch)
+    window.__openGuestBookFromEdit = async function (onFirstCellReady, updatedCardData) {
+        if (isOpen) return;
+        isOpen = true;
+        if (window.innerWidth <= 768) sortByNumber = true;
+
+        if (typeof gsap !== 'undefined') {
+            if (typeof Draggable     !== 'undefined') gsap.registerPlugin(Draggable);
+            if (typeof InertiaPlugin !== 'undefined') gsap.registerPlugin(InertiaPlugin);
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id    = 'gb-overlay';
+        overlayEl     = overlay;
+        overlay.style.cssText = 'opacity:0;transition:none;'; // reveal controlled by caller
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('click', e => { if (e.target === overlay) closeGuestBook(); });
+
+        const closeBtn = document.createElement('div');
+        closeBtn.className = 'gb-close-btn';
+        closeBtn.setAttribute('role', 'button');
+        closeBtn.setAttribute('tabindex', '0');
+        closeBtn.innerHTML = `
+            <img class="gb-crate-back"   src="/images/crate/crate-back.svg"   alt="" draggable="false">
+            <img class="gb-crate-stamps" src="/images/crate/crate-stamps.svg" alt="" draggable="false">
+            <img class="gb-crate-front"  src="/images/crate/crate-front.svg"  alt="" draggable="false">
+        `;
+        closeBtn.addEventListener('click', closeGuestBook);
+        closeBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') closeGuestBook(); });
+        overlay.appendChild(closeBtn);
+
+        const scroll = document.createElement('div');
+        scroll.className = 'gb-grid-scroll';
+        overlay.appendChild(scroll);
+
+        const grid = document.createElement('div');
+        grid.className = 'gb-grid';
+        scroll.appendChild(grid);
+
+        // Build carousel container (needed if user switches view later)
+        buildCarousel(overlay);
+        if (carouselEl) carouselEl.style.display = 'none';
+
+        const cards   = await fetchCards();
+        let ordered = organizeCards(cards);
+
+        let userStampNumber = null;
+        try {
+            const saved = localStorage.getItem('lh_id_card_v1');
+            if (saved) userStampNumber = JSON.parse(saved)?.stampNumber ?? null;
+        } catch {}
+
+        // Override stale Supabase data with the card that was just saved locally
+        if (updatedCardData && userStampNumber) {
+            ordered = ordered.map(card => {
+                if (card.stamp_number !== userStampNumber) return card;
+                return {
+                    ...card,
+                    card_color:    updatedCardData.innerColor   || card.card_color,
+                    border_color:  updatedCardData.outlineColor || card.border_color,
+                    character_svg: updatedCardData.selectedImg  || card.character_svg,
+                    pattern_id:    updatedCardData.patternId    ?? card.pattern_id,
+                    name:          updatedCardData.name         ?? card.name,
+                };
+            });
+        }
+
+        ordered.forEach((card) => {
+            const cell = document.createElement('div');
+            cell.className = 'gb-stamp-cell';
+
+            const isUserStamp = !!(userStampNumber && card.stamp_number === userStampNumber);
+            cell.dataset.borderColor  = (card.border_color  || '').toLowerCase();
+            cell.dataset.characterSvg = card.character_svg  || '';
+            cell.dataset.patternId    = card.pattern_id     || '';
+            cell.dataset.stampNumber  = String(card.stamp_number || 0);
+            if (isUserStamp) cell.dataset.isUserStamp = '1';
+
+            cell.innerHTML = renderStampHTML(card);
+            cell._cardData = card;
+
+            // All bodies start hidden — staggered in by __triggerGuestBookGridStagger
+            const body = cell.querySelector('.gb-stamp-body');
+            if (body) body.style.opacity = '0';
+
+            if (isUserStamp) {
+                const editBtn = document.createElement('button');
+                editBtn.className   = 'gb-edit-btn';
+                editBtn.textContent = 'edit';
+                editBtn.addEventListener('mouseenter', () => {
+                    if (typeof gsap !== 'undefined')
+                        gsap.to(editBtn, { backgroundColor: '#fff', color: '#2d64ff', duration: 0.18, overwrite: 'auto' });
+                });
+                editBtn.addEventListener('mouseleave', () => {
+                    if (typeof gsap !== 'undefined')
+                        gsap.to(editBtn, { backgroundColor: '#2d64ff', color: '#fff', duration: 0.18, overwrite: 'auto' });
+                });
+                editBtn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const stampBody = cell.querySelector('.gb-stamp-body');
+                    if (stampBody && typeof gsap !== 'undefined') {
+                        const rect = stampBody.getBoundingClientRect();
+                        const html = stampBody.outerHTML;
+                        const ghost = document.createElement('div');
+                        ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;
+                            width:${rect.width}px;height:${rect.height}px;
+                            z-index:100020;pointer-events:none;`;
+                        ghost.innerHTML = html;
+                        document.body.appendChild(ghost);
+                        window.__editTransition = { rect, html, ghost };
+                    } else if (stampBody) {
+                        window.__editTransition = {
+                            rect: stampBody.getBoundingClientRect(),
+                            html: stampBody.outerHTML,
+                        };
+                    }
+                    if (window.__openEditPrescreen) window.__openEditPrescreen(cell._cardData);
+                    closeGuestBookFast();
+                });
+                cell.appendChild(editBtn);
+            }
+
+            grid.appendChild(cell);
+            originalOrder.push(cell);
+        });
+
+        buildFilterBar(overlay, ordered, grid);
+        buildCounter(overlay, ordered.length);
+        buildViewToggle(overlay, scroll);
+
+        // Activate grid toggle button
+        const toggleWrap = overlay.querySelector('.gb-view-toggle');
+        if (toggleWrap) {
+            const btns = toggleWrap.querySelectorAll('.gb-view-btn');
+            if (btns[0]) btns[0].classList.add('gb-view-btn-active');    // grid
+            if (btns[1]) btns[1].classList.remove('gb-view-btn-active'); // carousel
+        }
+
+        viewMode = 'grid';
+        setCounterValue(ordered.length);
+
+        // Signal first cell ready (after layout tick so getBoundingClientRect works)
+        const firstCell = grid.firstElementChild;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (onFirstCellReady && firstCell) onFirstCellReady(firstCell);
+        }));
+
+        // Stagger trigger — called by prescreen when ghost arrives
+        window.__triggerGuestBookGridStagger = function () {
+            // Snap overlay to full opacity instantly — both overlay and prescreen are #FCFCFC white,
+            // so no visible change, but this prevents the fading-overlay showing white prescreen behind it.
+            // Then in the next frame hand control back to CSS so closeGuestBook's doOverlayFade works.
+            overlay.style.transition = 'none';
+            overlay.style.opacity    = '1';
+            requestAnimationFrame(() => {
+                overlay.classList.add('gb-overlay-in'); // CSS: opacity:1
+                overlay.style.opacity    = '';           // clear inline — CSS takes over
+                overlay.style.transition = '';           // restore transition for close animation
+            });
+            setTimeout(() => closeBtn.classList.add('gb-close-ready'), 600);
+
+            let staggerIdx = 0;
+            originalOrder.forEach((cell, i) => {
+                // Skip first cell — ghost already snapped it in at full opacity
+                if (i === 0) return;
+                const body = cell.querySelector('.gb-stamp-body');
+                if (!body) return;
+                if (typeof gsap !== 'undefined') {
+                    gsap.fromTo(body,
+                        { opacity: 0, y: 8 },
+                        { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out',
+                          delay: staggerIdx * 0.03, overwrite: 'auto' });
+                } else {
+                    body.style.opacity = '1';
+                }
+                staggerIdx++;
+            });
+            window.__triggerGuestBookGridStagger = null;
+        };
+    };
+
     // ─── Crate button ─────────────────────────────────────────────────────────
     function buildCrateButton() {
         if (document.getElementById('gb-crate-btn')) return;
@@ -1261,4 +1507,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', buildCrateButton);
+
+    // Expose renderer so prescreen.js can build matching ghost HTML for edit→grid transition
+    window.__gbRenderer = { renderStampHTML };
 })();
