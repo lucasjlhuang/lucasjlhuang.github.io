@@ -1591,7 +1591,7 @@
                         if (key && HOVER_CHAT_MAP[key]) {
                             // Landed on something interesting — brief pause then move on
                             this.timer = now + rand(800, 1400);
-                            if (Math.random() < 0.70) {
+                            if (Math.random() < 0.50) {
                             const msgs = HOVER_CHAT_MAP[key];
                             npcChat(this.player, msgs[randInt(0, msgs.length - 1)]);
                             }
@@ -2148,12 +2148,17 @@
                     return;
                 }
 
-                // Dock magnification — skip if user's cursor is already near the dock
+                // Dock magnification — skip if user's cursor is already near the dock,
+                // or if a project window is covering the dock at the NPC's position
                 const tipX = npc.x + 12;
                 const tipY = npc.y + 6;
                 if (!userNearDock && tipY > window.innerHeight - DOCK_H - 70) {
-                    anyNpcNearDock = true;
-                    npcMagnifyDock(tipX);
+                    const tipTop = document.elementFromPoint(tipX, tipY);
+                    const dockCovered = tipTop && !!(tipTop.closest('.window') || tipTop.closest('#gb-overlay') || tipTop.closest('#playground-window'));
+                    if (!dockCovered) {
+                        anyNpcNearDock = true;
+                        npcMagnifyDock(tipX);
+                    }
                 }
 
                 // Use elementsFromPoint (plural) to skip blocks/scene/NPC images

@@ -2,6 +2,39 @@
    GUEST BOOK — Crate + Stamp Grid
    ============================================= */
 
+/* ─── Crate layers inside the guestbook project folder ─── */
+.gb-folder-crate {
+    position: relative;
+    width: 6vh;
+    height: 6vh;
+    min-width: 50px;
+    min-height: 50px;
+    flex-shrink: 0;
+}
+.gb-folder-crate-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+}
+/* Allow stamps to peek above the crate — override the header's overflow:hidden */
+#guestbook-folder .projectfolderheader {
+    overflow: visible;
+}
+
+/* On folder hover, stamps peek up out of the crate */
+.projectfolder:hover .gb-folder-crate-stamps,
+.projectfolder.is-npc-hovered .gb-folder-crate-stamps {
+    transform: translateY(-15%);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.gb-folder-crate-stamps {
+    transition: transform 0.2s ease;
+}
+
 /* ─── Crate button — 18% of natural SVG size, anchored bottom-right with dock ─── */
 #gb-crate-btn {
     position: fixed;
@@ -49,57 +82,74 @@
     transform: translateY(-16px);
 }
 
-/* ─── Full-screen white overlay ─── */
+/* ─── Full-screen overlay — position/size/opacity controlled by JS genie ─── */
 #gb-overlay {
     position: fixed;
-    inset: 0;
     z-index: 100010;
-    background: #FCFCFC;
-    opacity: 0;
-    transition: opacity 0.35s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+/* window-box — transparent so header can composite against the real desktop */
+#gb-overlay .window-box {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
 }
-#gb-overlay.gb-overlay-in  { opacity: 1; }
-#gb-overlay.gb-overlay-out { opacity: 0; pointer-events: none; }
 
-/* ─── Close button — crate with stamps animating in ─── */
-.gb-close-btn {
-    position: fixed;
-    bottom: 5vh;
-    right: 18px;
-    z-index: 100011;
-    user-select: none;
-    isolation: isolate;
-    transform-origin: bottom right;
-    transform: scale(0.18) translateY(0);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 0.15s ease, opacity 0.6s ease;
+/* Header is a direct child of #gb-overlay (not inside window-box) so it composites
+   cleanly against the desktop wallpaper without stacking-context interference. */
+#gb-overlay .window-header {
+    position: relative;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
 }
-.gb-close-btn.gb-close-ready {
-    opacity: 1;
-    pointer-events: auto;
-}
-.gb-close-btn.gb-close-ready:hover  { transform: scale(0.19) translateY(0); }
-.gb-close-btn.gb-close-ready:active { transform: scale(0.15) translateY(0); }
 
-/* Stamps hidden above — slide down and fade in on hover */
-.gb-close-btn .gb-crate-stamps {
-    opacity: 0;
-    transform: translateY(-40px);
-    transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+/* White canvas below the header */
+#gb-overlay .gb-grid-scroll,
+#gb-overlay .gb-carousel {
+    background: #ffffff;
 }
-.gb-close-btn:hover .gb-crate-stamps {
+
+/* Extra top padding to clear the tall top bar (header 36px + bar ~101px + gap) */
+#gb-overlay .gb-grid-scroll {
+    padding-top: 115px;
+}
+
+/* Solid white canvas in carousel mode — covers mask-fade bleed-through to desktop */
+#gb-overlay.gb-mode-carousel .window-box {
+    background: #ffffff !important;
+}
+
+#gb-overlay.gb-mode-carousel .gb-top-bar {
+    background: #ffffff;
+}
+
+/* window-title always visible in guestbook header */
+#gb-overlay .window-title {
     opacity: 1;
-    transform: translateY(0);
 }
 
 /* ─── Scrollable grid area ─── */
 .gb-grid-scroll {
-    position: absolute;
-    inset: 0;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    overscroll-behavior: none;
     scrollbar-width: thin;
     scrollbar-color: rgba(0,0,0,0.12) transparent;
     padding: 96px 0 60px;
@@ -174,14 +224,13 @@
 }
 
 /* ─── Stamp counter ─── */
-.gb-counter {
-    position: fixed;
-    top: 28px;
-    right: 28px;
-    height: 30px;
-    z-index: 100012;
+/* ─── Header counter — "## and counting" in the window header ─── */
+.gb-header-counter {
     display: flex;
     align-items: center;
+    margin-left: auto;
+    padding-right: 16px;
+    gap: 0;
     pointer-events: none;
     user-select: none;
 }
@@ -198,13 +247,61 @@
     color: rgba(0,0,0,0.45);
 }
 
-/* ─── Filter wrap — outer container (All circle + pill) ─── */
-.gb-filter-wrap {
+.gb-header-count-suffix {
+    font-family: 'SFRegular', sans-serif;
+    font-size: 11px;
+    color: rgba(0,0,0,0.45);
+}
+
+/* ─── Top bar — full-width bar below window header ─── */
+.gb-top-bar {
     position: fixed;
-    top: 28px;
+    top: 36px;
+    left: 0;
+    right: 0;
+    z-index: 100012;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0 15px;
+}
+
+/* Left: "The collection" title */
+.gb-top-left {
+    flex-shrink: 0;
+    padding-left: calc((100vw - 1192px) / 9);
+}
+
+/* Centre: filter controls — always true screen-centre */
+.gb-top-center {
+    position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 100012;
+    display: flex;
+    align-items: center;
+}
+
+/* Right: grid/carousel toggle — aligned to stamp right edge */
+.gb-top-right {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding-right: calc((100vw - 1192px) / 9);
+}
+
+.gb-collection-title {
+    font-family: 'SFRegular', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 76px;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    color: #484848;
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+}
+
+/* ─── Filter wrap — outer container (All circle + pill) ─── */
+.gb-filter-wrap {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -409,12 +506,8 @@
     cursor: default;
 }
 
-/* ─── View toggle — top left ─── */
+/* ─── View toggle — inline in top bar ─── */
 .gb-view-toggle {
-    position: fixed;
-    top: 28px;
-    left: 28px;
-    z-index: 100012;
     display: flex;
     gap: 4px;
     align-items: center;

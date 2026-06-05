@@ -197,6 +197,38 @@ targetFolders.forEach(folder => {
         return capitalizedWords.join(' ');
     }
     
+    function refreshFolderCoverage() {
+        const folders = document.querySelectorAll('.projectfolder');
+        const coverRects = [];
+
+        document.querySelectorAll('.window').forEach(w => {
+            if (w.style.display === 'none') return;
+            const r = w.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0) coverRects.push(r);
+        });
+
+        // Full-screen guestbook overlay (dynamically created — present = open)
+        const gbOverlay = document.getElementById('gb-overlay');
+        if (gbOverlay) coverRects.push({ left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight });
+
+        // Full-screen playground window
+        const pgWin = document.getElementById('playground-window');
+        if (pgWin && pgWin.style.display !== 'none') {
+            coverRects.push({ left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight });
+        }
+
+        folders.forEach(folder => {
+            if (coverRects.length === 0) { folder.style.pointerEvents = ''; return; }
+            const fr = folder.getBoundingClientRect();
+            const covered = coverRects.some(wr =>
+                fr.left < wr.right && fr.right > wr.left &&
+                fr.top  < wr.bottom && fr.bottom > wr.top
+            );
+            folder.style.pointerEvents = covered ? 'none' : '';
+        });
+    }
+    window.__refreshFolderCoverage = refreshFolderCoverage;
+
     function getNextZIndex() {
         // Include hobby images in z-index calculation
         let maxZ = 1001; 
@@ -345,18 +377,19 @@ targetFolders.forEach(folder => {
                     if (e.propertyName === 'opacity') {
                         windowToClose.removeEventListener('transitionend', removeAfterTransition);
                         windowToClose.remove();
-                        
+                        refreshFolderCoverage();
                         // If it was NOT a NAV swap ('X' button close), delete the map entry here.
                         if (!isNavSwap) {
                            openWindowsMap.delete(title);
                         }
                     }
                 });
-                
+
             } else {
                 // Default close behavior (for all other apps or nav-link swaps *that bypass animation*)
                 windowToClose.remove();
                 openWindowsMap.delete(title);
+                refreshFolderCoverage();
             }
         }
     }
@@ -820,9 +853,10 @@ targetFolders.forEach(folder => {
                               defaultTemplate;
                               
         const newWindow = templateToUse.cloneNode(true);
-        newWindow.id = ''; 
-        newWindow.style.display = 'flex'; 
-        newWindow.style.zIndex = getNextZIndex(); 
+        newWindow.id = '';
+        newWindow.style.display = 'flex';
+        newWindow.style.zIndex = getNextZIndex();
+        refreshFolderCoverage();
         
         // Disable transitions initially for correct positioning/sizing
         newWindow.style.transition = 'none';
@@ -1339,12 +1373,13 @@ if (toggleBtn) {
             if (!isDragging) return;
             let newX = e.clientX - offset.x;
             let newY = e.clientY - offset.y;
-            
+
             newX = Math.max(0, newX);
             newY = Math.max(0, newY);
 
             win.style.left = `${newX}px`;
             win.style.top = `${newY}px`;
+            refreshFolderCoverage();
         };
 
         const onStopDrag = () => {
@@ -1352,6 +1387,7 @@ if (toggleBtn) {
             document.body.classList.remove('is-dragging');
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', onStopDrag);
+            refreshFolderCoverage();
         };
         
         const content = win.querySelector('.window-content');
@@ -1881,6 +1917,16 @@ window.toggleInProgress = function() {
             const EXPAND = 17.5;
             let dockInZone = false;
 
+            const dockCont = document.querySelector('.dock-container');
+            function isDockCovered(x, y) {
+                const top = document.elementFromPoint(x, y);
+                if (!top) return false;
+                // If the topmost element is inside the dock itself, it's not covered
+                if (dockEl.contains(top) || (dockCont && dockCont.contains(top))) return false;
+                // If it's a project window or full-screen overlay, the dock is covered
+                return !!(top.closest('.window') || top.closest('#gb-overlay') || top.closest('#playground-window'));
+            }
+
             document.addEventListener('mousemove', e => {
                 const dr = dockEl.getBoundingClientRect();
                 const inZone = e.clientX >= dr.left   - EXPAND &&
@@ -1888,7 +1934,7 @@ window.toggleInProgress = function() {
                                e.clientY >= dr.top    - EXPAND &&
                                e.clientY <= dr.bottom + EXPAND;
 
-                if (inZone) {
+                if (inZone && !isDockCovered(e.clientX, e.clientY)) {
                     dockInZone = true;
                     const mx = e.clientX;
                     dockEl.querySelectorAll('li:not(.divider)').forEach(item => {

@@ -6,6 +6,145 @@
     const SB_URL  = 'https://szzuffjmcrckyipgsquq.supabase.co';
     const SB_ANON = 'sb_publishable_aIS1KXvtPNOimEnzsQ84PQ_2uYvA-Qz';
 
+    // ─── Genie animation constants ───────────────────────────────────────────
+    const GENIE_EASE  = 'cubic-bezier(0.7, -0.01, 0.4, 1)';
+    const GENIE_DUR   = '0.5s';
+    const GENIE_TRANS = `left ${GENIE_DUR} ${GENIE_EASE}, top ${GENIE_DUR} ${GENIE_EASE}, width ${GENIE_DUR} ${GENIE_EASE}, height ${GENIE_DUR} ${GENIE_EASE}, opacity ${GENIE_DUR} ease-out, transform ${GENIE_DUR} ease-out`;
+
+    function getGbFolderRect() {
+        const folder = document.getElementById('guestbook-folder');
+        if (folder) return folder.getBoundingClientRect();
+        return { left: window.innerWidth - 80, top: window.innerHeight - 80, width: 60, height: 60 };
+    }
+
+    function buildGbWindowStructure(overlay) {
+        const windowBox = document.createElement('div');
+        windowBox.className = 'window-box';
+
+        const header = document.createElement('div');
+        header.className = 'window-header';
+
+        const controls = document.createElement('div');
+        controls.className = 'window-controls';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'window-close-btn';
+        closeBtn.addEventListener('click', closeGuestBook);
+        controls.appendChild(closeBtn);
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'window-title title-visible';
+        titleSpan.textContent = 'Stamps';
+
+        const headerCounter = document.createElement('div');
+        headerCounter.className = 'gb-header-counter';
+        const headerClip = document.createElement('span');
+        headerClip.className = 'gb-counter-clip';
+        const headerNum = document.createElement('span');
+        headerNum.className = 'gb-counter-number';
+        const headerSuffix = document.createElement('span');
+        headerSuffix.className = 'gb-header-count-suffix';
+        headerSuffix.textContent = '';
+        headerClip.appendChild(headerNum);
+        headerCounter.appendChild(headerClip);
+        headerCounter.appendChild(headerSuffix);
+
+        header.appendChild(controls);
+        header.appendChild(titleSpan);
+        header.appendChild(headerCounter);
+        overlay.appendChild(header);
+        overlay.appendChild(windowBox);
+        return windowBox;
+    }
+
+    function genieOpenOverlay(overlay) {
+        const rect = getGbFolderRect();
+        overlay.style.transition = 'none';
+        overlay.style.overflow   = 'hidden';
+        overlay.style.left       = rect.left   + 'px';
+        overlay.style.top        = rect.top    + 'px';
+        overlay.style.width      = rect.width  + 'px';
+        overlay.style.height     = rect.height + 'px';
+        overlay.style.opacity    = '0';
+        overlay.style.transform  = 'scale(0.1)';
+        overlay.getBoundingClientRect();
+        overlay.style.transition = GENIE_TRANS;
+        overlay.style.left       = '0px';
+        overlay.style.top        = '0px';
+        overlay.style.width      = '100vw';
+        overlay.style.height     = '100vh';
+        overlay.style.opacity    = '1';
+        overlay.style.transform  = 'scale(1)';
+        overlay.addEventListener('transitionend', function onOpen(e) {
+            if (e.propertyName !== 'width') return;
+            overlay.removeEventListener('transitionend', onOpen);
+            overlay.style.transition = '';
+            overlay.style.overflow   = '';
+            if (window.__refreshFolderCoverage) window.__refreshFolderCoverage();
+        });
+    }
+
+    function genieCloseOverlay(el, onDone) {
+        const rect = getGbFolderRect();
+        el.style.overflow   = 'hidden';
+        el.style.transition = 'none';
+        el.getBoundingClientRect();
+        el.style.transition = GENIE_TRANS;
+        el.style.left       = rect.left   + 'px';
+        el.style.top        = rect.top    + 'px';
+        el.style.width      = rect.width  + 'px';
+        el.style.height     = rect.height + 'px';
+        el.style.opacity    = '0';
+        el.style.transform  = 'scale(0.1)';
+        setTimeout(() => {
+            el.remove();
+            if (window.__refreshFolderCoverage) window.__refreshFolderCoverage();
+            // If edit mode deferred the widget rebuild, fire it now that the guestbook is gone
+            if (window.__pendingDesktopWidget && window.__buildDesktopWidget) {
+                const data = window.__pendingDesktopWidget;
+                window.__pendingDesktopWidget = null;
+                window.__buildDesktopWidget(data);
+            }
+            if (onDone) onDone();
+        }, 550);
+    }
+
+function animateTopBarIn(overlay, delay = 0) {
+        if (typeof gsap === 'undefined') return;
+        const title      = overlay.querySelector('.gb-collection-title');
+        const filterEls  = Array.from(overlay.querySelectorAll('.gb-filter-all-btn, .gb-filter-btn, .gb-filter-123-btn'));
+        const toggleBtns = Array.from(overlay.querySelectorAll('.gb-view-btn'));
+
+        const els = [title, ...toggleBtns, ...filterEls].filter(Boolean);
+        gsap.set(els, { opacity: 0, y: 12 });
+        gsap.to(els, {
+            opacity: 1, y: 0,
+            duration: 0.45, ease: 'power2.out',
+            stagger: 0.055,
+            delay,
+            overwrite: 'auto',
+        });
+    }
+
+    function setupTopBarScroll(overlay, scrollEl) {
+        if (typeof gsap === 'undefined') return;
+        const title = overlay.querySelector('.gb-collection-title');
+        if (!title) return;
+
+        let isScrolled = false;
+        scrollHandler = () => {
+            const shouldScroll = scrollEl.scrollTop > 10;
+            if (shouldScroll === isScrolled) return;
+            isScrolled = shouldScroll;
+            if (shouldScroll) {
+                gsap.to(title, { opacity: 0, y: -20, duration: 0.28, ease: 'power2.in', overwrite: 'auto' });
+            } else {
+                gsap.to(title, { opacity: 1, y: 0, duration: 0.32, ease: 'power2.out', overwrite: 'auto' });
+            }
+        };
+        scrollEl.addEventListener('scroll', scrollHandler, { passive: true });
+    }
+
     const STAMP_W = 149, STAMP_H = 200;
     const INNER_L = 13, INNER_T = 13, INNER_W = 122, INNER_H = 122;
 
@@ -22,13 +161,15 @@
     let filterBarEl        = null;  // outer .gb-filter-wrap
     let filterPillEl       = null;  // inner .gb-filter-bar pill (for palette Y position)
     let draggableInstances = [];    // GSAP Draggable instances — killed on close
+    let escKeyHandler      = null;
+    let scrollHandler      = null;
 
     // ─── Stamp counter ───────────────────────────────────────────────────────
     let counterEl    = null;
     let counterCount = 0;
 
     // ─── Carousel state ──────────────────────────────────────────────────────
-    let viewMode             = 'carousel'; // 'grid' | 'carousel'
+    let viewMode             = 'grid'; // 'grid' | 'carousel'
     let carouselEl           = null;
     let carouselCards        = [];
     let carouselKeyHandler        = null;
@@ -394,20 +535,10 @@
     // ─── Stamp counter ───────────────────────────────────────────────────────
     function buildCounter(overlay, total) {
         counterCount = total;
-
-        const wrap = document.createElement('div');
-        wrap.className = 'gb-counter';
-        overlay.appendChild(wrap);
-        counterEl = wrap;
-
-        const clip = document.createElement('div');
-        clip.className = 'gb-counter-clip';
-        wrap.appendChild(clip);
-
-        const numEl = document.createElement('span');
-        numEl.className   = 'gb-counter-number';
-        numEl.textContent = String(total);
-        clip.appendChild(numEl);
+        counterEl = overlay.querySelector('.gb-header-counter');
+        if (!counterEl) return;
+        const numEl = counterEl.querySelector('.gb-counter-number');
+        if (numEl) numEl.textContent = String(total);
     }
 
     // Odometer-style flip on filter change
@@ -484,11 +615,11 @@
     }
 
     // ─── Carousel ────────────────────────────────────────────────────────────
-    function buildCarousel(overlay) {
+    function buildCarousel(container) {
         const el = document.createElement('div');
         el.className = 'gb-carousel';
         carouselEl = el;
-        overlay.appendChild(el);
+        container.appendChild(el);
     }
 
     // Continuous render — positions every visible card from the current carouselPos float.
@@ -745,7 +876,7 @@
         overlay.appendChild(wrap);
 
         const gridBtn = document.createElement('button');
-        gridBtn.className = 'gb-view-btn';
+        gridBtn.className = 'gb-view-btn gb-view-btn-active';
         gridBtn.title     = 'Grid view';
         gridBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
             <rect x="0" y="0" width="5" height="5" rx="1"/><rect x="7" y="0" width="5" height="5" rx="1"/>
@@ -753,7 +884,7 @@
         </svg>`;
 
         const carouselBtn = document.createElement('button');
-        carouselBtn.className = 'gb-view-btn gb-view-btn-active';
+        carouselBtn.className = 'gb-view-btn';
         carouselBtn.title     = 'Carousel view';
         carouselBtn.innerHTML = `<svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor">
             <rect x="4" y="0" width="6" height="10" rx="1"/>
@@ -766,23 +897,14 @@
             viewMode = 'grid';
             gridBtn.classList.add('gb-view-btn-active');
             carouselBtn.classList.remove('gb-view-btn-active');
+            if (overlayEl) overlayEl.classList.remove('gb-mode-carousel');
             stopCarouselSpin();
             teardownCarouselInput();
             scrollEl.style.display = '';
             if (carouselEl) carouselEl.style.display = 'none';
-            const visCount = originalOrder.filter(c => matchesAllFilters(c)).length;
-            setCounterValue(visCount);
-            if (typeof gsap !== 'undefined') {
-                const vis = originalOrder.filter(c => matchesAllFilters(c));
-                vis.forEach((cell, i) => {
-                    const body     = cell.querySelector('.gb-stamp-body');
-                    const targetOp = 1;
-                    if (body) gsap.fromTo(body,
-                        { opacity: 0, y: 6 },
-                        { opacity: targetOp, y: 0, duration: 0.45, ease: 'power2.out',
-                          delay: i * 0.02, overwrite: 'auto' });
-                });
-            }
+            // updateGrid handles showing/hiding cells per active filters and animating them in
+            const grid = scrollEl.querySelector('.gb-grid');
+            if (grid) updateGrid(grid);
         });
 
         carouselBtn.addEventListener('click', () => {
@@ -790,6 +912,7 @@
             viewMode = 'carousel';
             carouselBtn.classList.add('gb-view-btn-active');
             gridBtn.classList.remove('gb-view-btn-active');
+            if (overlayEl) overlayEl.classList.add('gb-mode-carousel');
             scrollEl.style.display = 'none';
             if (carouselEl) {
                 carouselEl.style.display = '';
@@ -1049,33 +1172,20 @@
         overlayEl = overlay;
         document.body.appendChild(overlay);
 
-        overlay.addEventListener('click', e => {
-            if (e.target === overlay) closeGuestBook();
-        });
+        escKeyHandler = e => { if (e.key === 'Escape') closeGuestBook(); };
+        document.addEventListener('keydown', escKeyHandler);
 
-        const closeBtn = document.createElement('div');
-        closeBtn.className = 'gb-close-btn';
-        closeBtn.setAttribute('role', 'button');
-        closeBtn.setAttribute('tabindex', '0');
-        closeBtn.innerHTML = `
-            <img class="gb-crate-back"    src="/images/crate/crate-back.svg"    alt="" draggable="false">
-            <img class="gb-crate-stamps"  src="/images/crate/crate-stamps.svg"  alt="" draggable="false">
-            <img class="gb-crate-front"   src="/images/crate/crate-front.svg"   alt="" draggable="false">
-        `;
-        closeBtn.addEventListener('click', closeGuestBook);
-        closeBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') closeGuestBook(); });
-        overlay.appendChild(closeBtn);
-        setTimeout(() => closeBtn.classList.add('gb-close-ready'), 400);
+        const windowBox = buildGbWindowStructure(overlay);
 
         const scroll = document.createElement('div');
         scroll.className = 'gb-grid-scroll';
-        overlay.appendChild(scroll);
+        windowBox.appendChild(scroll);
 
         const grid = document.createElement('div');
         grid.className = 'gb-grid';
         scroll.appendChild(grid);
 
-        requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('gb-overlay-in')));
+        genieOpenOverlay(overlay);
 
         const cards   = await fetchCards();
         let ordered   = organizeCards(cards);
@@ -1161,7 +1271,7 @@
                             };
                         }
                         if (window.__openEditPrescreen) window.__openEditPrescreen(cell._cardData);
-                        closeGuestBookFast();
+                        closeGuestBookForEdit();
                     });
                     cell.appendChild(editBtn);
                 }
@@ -1172,26 +1282,42 @@
 
             buildFilterBar(overlay, ordered, grid);
             buildCounter(overlay, ordered.length);
-            buildCarousel(overlay);
+            buildCarousel(windowBox);
             buildViewToggle(overlay, scroll);
 
-            // Default to carousel mode — hide grid scroll, spin in from right
-            scroll.style.display = 'none';
-            carouselCards = ordered;
+            // Top bar: [title] | [filters — absolute centre] | [toggle — stamp right edge]
+            const topBar = document.createElement('div');
+            topBar.className = 'gb-top-bar';
+
+            const topBarLeft = document.createElement('div');
+            topBarLeft.className = 'gb-top-left';
+            const gbTitle = document.createElement('div');
+            gbTitle.className = 'gb-collection-title';
+            gbTitle.textContent = 'The collection';
+            topBarLeft.appendChild(gbTitle);
+
+            const topBarCenter = document.createElement('div');
+            topBarCenter.className = 'gb-top-center';
+            if (filterBarEl) topBarCenter.appendChild(filterBarEl);
+
+            const topBarRight = document.createElement('div');
+            topBarRight.className = 'gb-top-right';
+            const toggleWrap = overlay.querySelector('.gb-view-toggle');
+            if (toggleWrap) topBarRight.appendChild(toggleWrap);
+
+            topBar.appendChild(topBarLeft);
+            topBar.appendChild(topBarCenter);
+            topBar.appendChild(topBarRight);
+            overlay.appendChild(topBar);
+            animateTopBarIn(overlay, 0.35);
+
+            // Default to grid mode
+            viewMode = 'grid';
+            if (carouselEl) carouselEl.style.display = 'none';
             setCounterValue(ordered.length);
-            carouselPos = -4;
-            renderCarousel();
-            if (typeof gsap !== 'undefined') {
-                const proxy = { pos: -4 };
-                carouselTween = gsap.to(proxy, {
-                    pos: 0, duration: 1.8, ease: 'power4.out',
-                    onUpdate()  { carouselPos = proxy.pos; renderCarousel(); },
-                    onComplete(){ carouselPos = 0; carouselTween = null; },
-                });
-            } else {
-                carouselPos = 0; renderCarousel();
-            }
-            setupCarouselInput();
+            updateGrid(grid);
+
+            setupTopBarScroll(overlay, scroll);
 
             // (carousel tilt is handled per-frame inside renderCarousel — no listeners needed)
         }
@@ -1202,6 +1328,12 @@
         if (!isOpen || !overlayEl) return;
         isOpen = false;
 
+        if (escKeyHandler) { document.removeEventListener('keydown', escKeyHandler); escKeyHandler = null; }
+        if (scrollHandler) {
+            const scrollEl = overlayEl?.querySelector('.gb-grid-scroll');
+            if (scrollEl) scrollEl.removeEventListener('scroll', scrollHandler);
+            scrollHandler = null;
+        }
         closePalette();
         teardownCarouselInput();
         stopCarouselSpin();
@@ -1218,7 +1350,7 @@
         filterPillEl       = null;
         counterEl          = null;
         counterCount       = 0;
-        viewMode      = 'carousel';
+        viewMode      = 'grid';
         carouselEl    = null;
         carouselCards = [];
         carouselPos   = 0;
@@ -1230,47 +1362,37 @@
         draggableInstances.forEach(d => d.kill());
         draggableInstances = [];
 
-        // Fade crate button out immediately
-        const openBtn = document.getElementById('gb-crate-btn');
-        if (openBtn) {
-            openBtn.style.transition    = 'opacity 0.15s ease, transform 0.15s ease';
-            openBtn.style.opacity       = '0';
-            openBtn.style.pointerEvents = 'none';
-            setTimeout(() => {
-                openBtn.style.transition    = 'opacity 0.6s ease, transform 0.15s ease';
-                openBtn.style.opacity       = '';
-                openBtn.style.pointerEvents = '';
-                setTimeout(() => { openBtn.style.transition = ''; }, 700);
-            }, 400);
-        }
-
         const el = overlayEl;
         overlayEl = null;
 
-        function doOverlayFade() {
+        function doGenieClose() {
             originalOrder = [];
-            el.classList.remove('gb-overlay-in');
-            el.classList.add('gb-overlay-out');
-            setTimeout(() => el.remove(), 400);
+            genieCloseOverlay(el);
         }
 
         if (typeof gsap !== 'undefined' && animateEls.length > 0) {
-            gsap.timeline({ onComplete: doOverlayFade })
+            gsap.timeline({ onComplete: doGenieClose })
                 .to(animateEls, {
                     opacity: 0, y: 10, duration: 0.2, ease: 'power2.in',
                     stagger: { amount: 0.12, from: closingInCarousel ? 'center' : 'end' },
                     overwrite: 'auto',
                 });
         } else {
-            doOverlayFade();
+            doGenieClose();
         }
     }
 
-    // ─── Fast-close for edit transition (no stamp stagger, instant fade) ────────
-    function closeGuestBookFast() {
+    // ─── Fade-close for edit transition — overlay fades out, ghost stamp stays visible ──
+    function closeGuestBookForEdit() {
         if (!isOpen || !overlayEl) return;
         isOpen = false;
 
+        if (escKeyHandler) { document.removeEventListener('keydown', escKeyHandler); escKeyHandler = null; }
+        if (scrollHandler) {
+            const scrollEl = overlayEl?.querySelector('.gb-grid-scroll');
+            if (scrollEl) scrollEl.removeEventListener('scroll', scrollHandler);
+            scrollHandler = null;
+        }
         closePalette();
         teardownCarouselInput();
         stopCarouselSpin();
@@ -1279,7 +1401,7 @@
         sortByNumber   = window.innerWidth <= 768;
         filterBarEl    = filterPillEl = counterEl = null;
         counterCount   = 0;
-        viewMode       = 'carousel';
+        viewMode       = 'grid';
         carouselEl     = null;
         carouselCards  = [];
         carouselPos    = carouselVel = 0;
@@ -1291,9 +1413,18 @@
         overlayEl    = null;
         originalOrder = [];
 
-        el.style.transition = 'opacity 0.55s ease';
-        el.style.opacity    = '0';
-        setTimeout(() => el.remove(), 570);
+        if (typeof gsap !== 'undefined') {
+            gsap.to(el, {
+                opacity: 0, duration: 0.3, ease: 'power2.in',
+                onComplete() {
+                    el.remove();
+                    if (window.__refreshFolderCoverage) window.__refreshFolderCoverage();
+                }
+            });
+        } else {
+            el.remove();
+            if (window.__refreshFolderCoverage) window.__refreshFolderCoverage();
+        }
     }
 
     // ─── Open from edit — grid mode, cells start hidden, callback on first cell ─
@@ -1311,34 +1442,25 @@
         const overlay = document.createElement('div');
         overlay.id    = 'gb-overlay';
         overlayEl     = overlay;
-        overlay.style.cssText = 'opacity:0;transition:none;'; // reveal controlled by caller
+        // Start invisible — reveal is controlled by __triggerGuestBookGridStagger
+        overlay.style.cssText = 'opacity:0;transition:none;left:0;top:0;width:100vw;height:100vh;';
         document.body.appendChild(overlay);
 
-        overlay.addEventListener('click', e => { if (e.target === overlay) closeGuestBook(); });
+        escKeyHandler = e => { if (e.key === 'Escape') closeGuestBook(); };
+        document.addEventListener('keydown', escKeyHandler);
 
-        const closeBtn = document.createElement('div');
-        closeBtn.className = 'gb-close-btn';
-        closeBtn.setAttribute('role', 'button');
-        closeBtn.setAttribute('tabindex', '0');
-        closeBtn.innerHTML = `
-            <img class="gb-crate-back"   src="/images/crate/crate-back.svg"   alt="" draggable="false">
-            <img class="gb-crate-stamps" src="/images/crate/crate-stamps.svg" alt="" draggable="false">
-            <img class="gb-crate-front"  src="/images/crate/crate-front.svg"  alt="" draggable="false">
-        `;
-        closeBtn.addEventListener('click', closeGuestBook);
-        closeBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') closeGuestBook(); });
-        overlay.appendChild(closeBtn);
+        const windowBox = buildGbWindowStructure(overlay);
 
         const scroll = document.createElement('div');
         scroll.className = 'gb-grid-scroll';
-        overlay.appendChild(scroll);
+        windowBox.appendChild(scroll);
 
         const grid = document.createElement('div');
         grid.className = 'gb-grid';
         scroll.appendChild(grid);
 
         // Build carousel container (needed if user switches view later)
-        buildCarousel(overlay);
+        buildCarousel(windowBox);
         if (carouselEl) carouselEl.style.display = 'none';
 
         const cards   = await fetchCards();
@@ -1415,7 +1537,7 @@
                         };
                     }
                     if (window.__openEditPrescreen) window.__openEditPrescreen(cell._cardData);
-                    closeGuestBookFast();
+                    closeGuestBookForEdit();
                 });
                 cell.appendChild(editBtn);
             }
@@ -1428,16 +1550,48 @@
         buildCounter(overlay, ordered.length);
         buildViewToggle(overlay, scroll);
 
-        // Activate grid toggle button
+        // Top bar: [title] | [filters — absolute centre] | [toggle — stamp right edge]
+        const topBar = document.createElement('div');
+        topBar.className = 'gb-top-bar';
+
+        const topBarLeft = document.createElement('div');
+        topBarLeft.className = 'gb-top-left';
+        const gbTitle = document.createElement('div');
+        gbTitle.className = 'gb-collection-title';
+        gbTitle.textContent = 'The collection';
+        topBarLeft.appendChild(gbTitle);
+
+        const topBarCenter = document.createElement('div');
+        topBarCenter.className = 'gb-top-center';
+        if (filterBarEl) topBarCenter.appendChild(filterBarEl);
+
+        const topBarRight = document.createElement('div');
+        topBarRight.className = 'gb-top-right';
         const toggleWrap = overlay.querySelector('.gb-view-toggle');
-        if (toggleWrap) {
-            const btns = toggleWrap.querySelectorAll('.gb-view-btn');
-            if (btns[0]) btns[0].classList.add('gb-view-btn-active');    // grid
-            if (btns[1]) btns[1].classList.remove('gb-view-btn-active'); // carousel
+        if (toggleWrap) topBarRight.appendChild(toggleWrap);
+
+        topBar.appendChild(topBarLeft);
+        topBar.appendChild(topBarCenter);
+        topBar.appendChild(topBarRight);
+        overlay.appendChild(topBar);
+
+        // Pre-hide so they don't flash before __triggerGuestBookGridStagger fires
+        if (typeof gsap !== 'undefined') {
+            const title     = overlay.querySelector('.gb-collection-title');
+            const filterEls = Array.from(overlay.querySelectorAll('.gb-filter-all-btn, .gb-filter-btn, .gb-filter-123-btn'));
+            const tBtns     = Array.from(overlay.querySelectorAll('.gb-view-btn'));
+            gsap.set([title, ...tBtns, ...filterEls].filter(Boolean), { opacity: 0, y: 12 });
         }
+
+        // Activate grid toggle button
+        const btns = toggleWrap ? toggleWrap.querySelectorAll('.gb-view-btn') : [];
+        if (btns[0]) btns[0].classList.add('gb-view-btn-active');
+        if (btns[1]) btns[1].classList.remove('gb-view-btn-active');
 
         viewMode = 'grid';
         setCounterValue(ordered.length);
+
+        setupTopBarScroll(overlay, scroll);
 
         // Signal first cell ready (after layout tick so getBoundingClientRect works)
         const firstCell = grid.firstElementChild;
@@ -1457,8 +1611,7 @@
                 overlay.style.opacity    = '';           // clear inline — CSS takes over
                 overlay.style.transition = '';           // restore transition for close animation
             });
-            setTimeout(() => closeBtn.classList.add('gb-close-ready'), 600);
-
+            animateTopBarIn(overlay, 0);
             let staggerIdx = 0;
             originalOrder.forEach((cell, i) => {
                 // Skip first cell — ghost already snapped it in at full opacity
@@ -1479,34 +1632,66 @@
         };
     };
 
-    // ─── Crate button ─────────────────────────────────────────────────────────
-    function buildCrateButton() {
-        if (document.getElementById('gb-crate-btn')) return;
+    // ─── Guestbook folder trigger ─────────────────────────────────────────────
+    const DRAG_THRESHOLD = 6;
 
-        const btn = document.createElement('div');
-        btn.id = 'gb-crate-btn';
-        btn.setAttribute('role', 'button');
-        btn.setAttribute('tabindex', '0');
-        btn.innerHTML = `
-            <img class="gb-crate-back"   src="/images/crate/crate-back.svg"   alt="" draggable="false">
-            <img class="gb-crate-stamps" src="/images/crate/crate-stamps.svg" alt="" draggable="false">
-            <img class="gb-crate-front"  src="/images/crate/crate-front.svg"  alt="" draggable="false">
-        `;
-        btn.addEventListener('click', () => isOpen ? closeGuestBook() : openGuestBook());
-        btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') btn.click(); });
-        document.body.appendChild(btn);
-
-        function show() {
-            requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.add('gb-crate-visible')));
-        }
-        if (document.body.classList.contains('system-ready')) {
-            show();
-        } else {
-            document.addEventListener('system:ready', show, { once: true });
-        }
+    async function fetchStampCount() {
+        try {
+            const res = await fetch(
+                `${SB_URL}/rest/v1/guest_cards?select=stamp_number`,
+                {
+                    method: 'HEAD',
+                    headers: {
+                        apikey: SB_ANON,
+                        Authorization: `Bearer ${SB_ANON}`,
+                        'Prefer': 'count=exact',
+                    },
+                }
+            );
+            if (!res.ok) return null;
+            const range = res.headers.get('Content-Range');
+            if (!range) return null;
+            const match = range.match(/\/(\d+)$/);
+            return match ? parseInt(match[1]) : null;
+        } catch { return null; }
     }
 
-    document.addEventListener('DOMContentLoaded', buildCrateButton);
+    function buildGuestbookTrigger() {
+        const folder = document.getElementById('guestbook-folder');
+        if (!folder) return;
+
+        // Update speech bubble with live stamp count
+        const bubble = folder.querySelector('.folder-bubble-always');
+        if (bubble) {
+            fetchStampCount().then(count => {
+                if (count !== null) {
+                    bubble.textContent = `${count} stamps and counting`;
+                }
+            });
+        }
+
+        let mouseDownX = 0, mouseDownY = 0, moved = false;
+
+        folder.addEventListener('mousedown', e => {
+            mouseDownX = e.clientX;
+            mouseDownY = e.clientY;
+            moved = false;
+        });
+        document.addEventListener('mousemove', e => {
+            if (Math.abs(e.clientX - mouseDownX) > DRAG_THRESHOLD ||
+                Math.abs(e.clientY - mouseDownY) > DRAG_THRESHOLD) {
+                moved = true;
+            }
+        });
+        folder.addEventListener('click', () => {
+            if (!moved) openGuestBook();
+        });
+        folder.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') openGuestBook();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', buildGuestbookTrigger);
 
     // Expose renderer so prescreen.js can build matching ghost HTML for edit→grid transition
     window.__gbRenderer = { renderStampHTML };

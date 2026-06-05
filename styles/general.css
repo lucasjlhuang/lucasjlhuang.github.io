@@ -475,6 +475,11 @@ img.projectimage {
     text-align: center;
     padding-bottom: 5vh;
     z-index: 1000;
+    pointer-events: none; /* padding area must not swallow folder clicks */
+}
+
+.dock {
+    pointer-events: auto; /* re-enable for the actual dock bar */
 }
 
 .dock-disclaimer {
@@ -1324,7 +1329,7 @@ main.window-about-me {
     position: absolute;
     inset: 0;
     overflow: hidden;
-    background: #ffffff;
+    background: url('/images/about-me-wp.jpg') center/cover no-repeat;
 }
 
 
@@ -1540,10 +1545,7 @@ main.window-about-me {
     bottom: calc(100% + 12px);
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.28);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: #ffffff;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
     color: #222;
     font-family: 'SFMedium', sans-serif;
@@ -1565,7 +1567,7 @@ main.window-about-me {
     left: 50%;
     transform: translateX(-50%);
     border: 7px solid transparent;
-    border-top-color: rgba(255, 255, 255, 0.45);
+    border-top-color: #ffffff;
 }
 
 .overlay-location {
@@ -1611,13 +1613,9 @@ main.window-about-me {
     inset: 0;
     flex-direction: column;
     padding: 16px 18px 14px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(0,0,0,0.1) transparent;
+    overflow: hidden;
     pointer-events: auto;
 }
-.overlay-tp::-webkit-scrollbar       { width: 3px; }
-.overlay-tp::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
 
 .overlay-tp-title {
     display: none;

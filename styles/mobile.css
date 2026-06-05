@@ -260,6 +260,17 @@
         left: 8px !important;
     }
 
+    /* ─── Playground: hidden on mobile ─── */
+    #playground-folder {
+        display: none !important;
+    }
+
+    /* ─── Guestbook: under HESS, shifted right ─── */
+    #guestbook-folder {
+        top:  calc(68vh + 50px) !important;
+        left: calc(58vw + 55px) !important;
+    }
+
     /* ─── Hide stamp count ─── */
     .gb-counter {
         display: none !important;

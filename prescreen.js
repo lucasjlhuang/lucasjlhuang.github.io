@@ -1987,6 +1987,10 @@
 
         if (editMode && typeof gsap !== 'undefined' && window.__openGuestBookFromEdit) {
             // ── Edit → guestbook grid transition ──────────────────────────────
+            // Fade wallpaper in now so the desktop is ready when the prescreen closes
+            const wallpaper = document.querySelector('.wallpaper');
+            if (wallpaper) gsap.to(wallpaper, { opacity: 1, duration: 0.6, ease: 'power2.out' });
+
             const FADE = '0.4s ease';
             document.querySelectorAll('.scatter-icon').forEach(icon => {
                 icon.style.transition = `opacity ${FADE}`;
@@ -2052,13 +2056,18 @@
                             if (body) gsap.set(body, { opacity: 1, y: 0 });
                             ghost.remove();
                             if (window.__triggerGuestBookGridStagger) window.__triggerGuestBookGridStagger();
-                            // Keep prescreen alive until guestbook overlay is fully opaque
-                            setTimeout(() => {
-                                prescreen.remove();
-                                const old = document.getElementById('desktop-id-card');
-                                if (old) old.remove();
-                                buildDesktopWidget(cardData);
-                            }, 560);
+                            // Cross-fade prescreen out as the guestbook grid comes in
+                            gsap.to(prescreen, {
+                                opacity: 0, duration: 0.4, ease: 'power2.in',
+                                onComplete() {
+                                    prescreen.remove();
+                                    // Remove stale widget now; rebuild deferred until guestbook closes
+                                    // so the entrance animation doesn't flash through the glassmorphism.
+                                    const old = document.getElementById('desktop-id-card');
+                                    if (old) old.remove();
+                                    window.__pendingDesktopWidget = cardData;
+                                }
+                            });
                         },
                     });
                 };
@@ -2440,4 +2449,5 @@
     });
 
     window.__stampRenderer = { makeOutlineSVG, PATTERNS };
+    window.__buildDesktopWidget = buildDesktopWidget;
 })();

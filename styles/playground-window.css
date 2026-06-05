@@ -1,0 +1,313 @@
+/* ─── Playground full-screen window ──────────────────────────────────────── */
+
+#playground-window {
+  /* left / top / width / height are set by JS for genie animation */
+  position: fixed;
+  z-index: 4000;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* window-box must be overflow:visible so the CSS 3D carousel (preserve-3d) works */
+#playground-window .window-box {
+  flex: 1;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  /* Strip inherited glassmorphism — header keeps it, stage gets solid white */
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* White canvas below the header */
+#playground-window .carousel-stage {
+  background: #ffffff;
+}
+
+/* Header gets its own glassmorphism since window-box is now transparent */
+#playground-window .window-header {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.17);
+}
+
+/* carousel fills the space below the header */
+.carousel-stage {
+  flex: 1;
+  position: relative;
+  overflow: visible;
+}
+
+/* ─── Carousel ────────────────────────────────────────────────────────────── */
+
+.carousel-ring-anchor {
+  position: absolute;
+  top: 45%; left: 50%;
+  perspective: 1100px;
+  perspective-origin: 50% 50%;
+  transform: translate(-50%, -50%);
+}
+
+.carousel-ring {
+  position: relative;
+  width: 0; height: 0;
+  transform-style: preserve-3d;
+}
+
+.album {
+  position: absolute;
+  left: -80px; top: -80px;
+  width: 160px; height: 160px;
+  border-radius: 0;
+  transform-style: preserve-3d;
+  cursor: pointer;
+  transition: opacity 0.4s ease;
+}
+
+.album-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.album-placeholder {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  padding: 14px;
+}
+
+.album-placeholder-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+#dragHint {
+  position: absolute;
+  bottom: 36px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px; letter-spacing: 0.1em; color: #bbb;
+  opacity: 0; white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  pointer-events: none;
+}
+
+/* ─── Playground overlays ─────────────────────────────────────────────────── */
+
+#pg-top-left {
+  position: absolute;
+  top: 52px;
+  left: 28px;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+}
+
+.pg-title {
+  font-family: 'SFRegular', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 76px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: rgba(0, 0, 0, 0.72);
+  line-height: 1;
+}
+
+.pg-subtitle {
+  font-family: 'SFRegular', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 76px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: rgba(0, 0, 0, 0.72);
+  line-height: 1;
+  margin-top: 0;
+}
+
+#pg-top-right {
+  position: absolute;
+  top: 58px;
+  right: 28px;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.01em;
+  text-align: right;
+}
+
+/* ─── Bottom bar ──────────────────────────────────────────────────────────── */
+
+#pg-bottom-bar {
+  position: absolute;
+  bottom: 18px;
+  left: 28px;
+  right: 28px;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+#pg-bottom-left {
+  display: flex;
+  align-items: flex-end;
+  gap: 11px;
+  pointer-events: none;
+  user-select: none;
+}
+
+#pg-active-thumb {
+  width: 55px;
+  height: 55px;
+  border-radius: 0;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+#pg-active-label {
+  font-family: 'SFRegular', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.03em;
+  text-transform: capitalize;
+}
+
+#pg-count {
+  pointer-events: none;
+  user-select: none;
+  font-family: 'SFMedium', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.28);
+  letter-spacing: 0.12em;
+}
+
+#pg-right-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 250px;
+  pointer-events: none;
+}
+
+#pg-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.pg-strip-thumb {
+  width: 35px;
+  height: 35px;
+  border-radius: 0;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: width 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              height 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              outline-color 0.15s ease,
+              transform 0.12s ease;
+}
+
+.pg-strip-thumb:hover:not(.pg-strip-active) {
+  transform: translateY(-2px);
+}
+
+.pg-strip-thumb.pg-strip-active {
+  width: 40px;
+  height: 40px;
+  outline-color: rgba(0, 0, 0, 0.3);
+  cursor: default;
+}
+
+/* ─── Detail panel (slides in from left on album click) ──────────────────── */
+
+.pg-detail {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 4300;
+  display: flex;
+  align-items: center;
+  padding-left: 80px;
+  pointer-events: none;
+}
+
+.pg-detail-box {
+  pointer-events: all;
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 16px;
+  padding: 40px 44px 32px;
+  width: 340px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pg-detail-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: rgba(0, 0, 0, 0.82);
+  text-transform: capitalize;
+  line-height: 1.1;
+}
+
+.pg-detail-sub {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.3);
+  margin-top: -2px;
+}
+
+.pg-detail-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.5);
+  line-height: 1.6;
+  margin-top: 6px;
+}
+
+.pg-detail-back {
+  border: none;
+  background: none;
+  padding: 0;
+  margin-top: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-align: left;
+  transition: color 0.15s ease;
+}
+
+.pg-detail-back:hover {
+  color: rgba(0, 0, 0, 0.65);
+}

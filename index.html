@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="/styles/projects.css">
     <link rel="stylesheet" href="/styles/mobile.css">
     <link rel="stylesheet" href="/styles/cursors.css">
+    <link rel="stylesheet" href="/styles/playground-window.css">
     <link rel="icon" type="image/png" href="/images/web-icon.png">
     <title>Lucas Lee Huang</title>
 </head>
@@ -36,6 +37,7 @@
 <!-- <script src="/daynightoggle.js" defer></script> -->
 <script src="/slideshow.js" defer></script>
 <script src="/windows.js" defer></script>
+<script src="/playground.js" defer></script>
 <script src="/guestbook.js" defer></script>
 <script src="/bgcursors.js" defer></script>
 
@@ -200,6 +202,26 @@
         </div> 
             
             
+        <!-- Guestbook folder — bottom-right, opens full-screen guestbook window -->
+        <div id="guestbook-folder" class="projectfolder is-tooltip-only isolate-bubble system-static" style="top: 86vh; left: 78vw;">
+          <div class="projectfolderheader">
+            <div class="gb-folder-crate">
+              <img class="gb-folder-crate-layer" src="/images/crate/crate-back.svg" alt="" draggable="false">
+              <img class="gb-folder-crate-layer gb-folder-crate-stamps" src="/images/crate/crate-stamps.svg" alt="" draggable="false">
+              <img class="gb-folder-crate-layer" src="/images/crate/crate-front.svg" alt="" draggable="false">
+            </div>
+          </div>
+          <p class="ProjectText">Stamps</p>
+          <span class="folder-bubble-always">sign my guestbook!</span>
+        </div>
+
+        <!-- Playground folder — bottom-left, opens full-screen carousel window -->
+        <!-- <div id="playground-folder" class="projectfolder is-tooltip-only isolate-bubble system-static" style="top: 83vh; left: 15vw;">
+          <div class="projectfolderheader"><img class="projectimage" src="/images/Playground.svg"></div>
+          <p class="ProjectText">Playground</p>
+          <span class="folder-bubble-always">Randomly cool stuff</span>
+        </div> -->
+
             <!-- WINDOW RESIZING -->
             <div id="window-template" class="window" style="display: none;">
               <div class="window-box">
@@ -223,7 +245,6 @@
     <div class="playground-label">playground</div>
 
     <div id="progress-dock" class="progress-dock-hidden">
-
 
          <div class="progress-item incomplete">
     <img src="/images/Mahj.png">
@@ -273,6 +294,24 @@
             <path d="M2 10L10 2L18 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
     </div>
+</div>
+
+<!-- Playground full-screen window — shown/hidden by playground.js via genie animation -->
+<div id="playground-window" style="display:none;">
+  <div class="window-box">
+    <div class="window-header">
+      <div class="window-controls">
+        <button class="window-close-btn" id="playground-close-btn"></button>
+      </div>
+      <span class="window-title title-visible">Playground</span>
+    </div>
+    <div class="carousel-stage">
+      <div class="carousel-ring-anchor">
+        <div class="carousel-ring" id="carouselRing"></div>
+      </div>
+      <div id="dragHint">drag to spin</div>
+    </div>
+  </div>
 </div>
 
 
